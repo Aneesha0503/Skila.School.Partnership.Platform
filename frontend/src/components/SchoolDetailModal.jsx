@@ -6,9 +6,26 @@ import {
 } from 'lucide-react';
 
 export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onOpenEditModal }) {
+  const formatRemarks = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object') {
+      try {
+        return Object.entries(val).map(([k, v]) => {
+          const title = k.replace(/_/g, ' ').toUpperCase();
+          if (typeof v === 'object') return `${title}:\n${JSON.stringify(v, null, 2)}`;
+          return `${title}: ${v}`;
+        }).join('\n\n');
+      } catch (e) {
+        return JSON.stringify(val, null, 2);
+      }
+    }
+    return String(val);
+  };
+
   const [activeTab, setActiveTab] = useState('info'); // 'info' | 'tech' | 'sales'
   const [leadStatus, setLeadStatus] = useState(school?.sales?.lead_status || 'New');
-  const [remarks, setRemarks] = useState(school?.sales?.remarks || '');
+  const [remarks, setRemarks] = useState(() => formatRemarks(school?.sales?.remarks));
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isEnriching, setIsEnriching] = useState(false);
@@ -28,7 +45,7 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
       if (res.ok) {
         const enriched = await res.json();
         onUpdateSchool(enriched);
-        if (enriched?.sales?.remarks) setRemarks(enriched.sales.remarks);
+        if (enriched?.sales?.remarks) setRemarks(formatRemarks(enriched.sales.remarks));
         if (enriched?.sales?.lead_status) setLeadStatus(enriched.sales.lead_status);
       } else {
         setRunDetailsError('Failed to fetch school details. Please try again.');
@@ -48,8 +65,8 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
       if (res.ok) {
         const data = await res.json();
         onUpdateSchool(data.school);
-        if (data.school.sales.remarks) {
-          setRemarks(data.school.sales.remarks);
+        if (data.school?.sales?.remarks) {
+          setRemarks(formatRemarks(data.school.sales.remarks));
         }
         setEnrichSuccess(true);
         setTimeout(() => setEnrichSuccess(false), 4000);
@@ -610,7 +627,11 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
                   </div>
                   <div className="sm:col-span-2 md:col-span-3">
                     <span className="text-slate-400 block mb-0.5">Existing EdTech Partners</span>
-                    <span className="font-medium text-slate-800">{sales?.existing_edtech_partners || 'None known'}</span>
+                    <span className="font-medium text-slate-800">
+                      {Array.isArray(sales?.existing_edtech_partners) 
+                        ? sales.existing_edtech_partners.join(', ') 
+                        : (sales?.existing_edtech_partners || 'None known')}
+                    </span>
                   </div>
                 </div>
               </div>

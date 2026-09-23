@@ -258,6 +258,7 @@ export default function App() {
           onDistrictRunComplete={handleDistrictRunComplete}
           currentState={selectedHierarchy.state}
           currentDistrict={selectedHierarchy.district}
+          totalSchoolsLoaded={schools.length}
         />
 
         {/* Administrative Hierarchy Cascading Drill-Down */}

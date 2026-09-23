@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Sparkles, RefreshCw, CheckCircle2, MapPin, Zap, ChevronRight, Award, Layers } from 'lucide-react';
+import { Play, Sparkles, RefreshCw, CheckCircle2, MapPin, Zap, ChevronRight, Award, Layers, PlusCircle } from 'lucide-react';
 
 const FALLBACK_STATES_DISTRICTS = {
-  'Telangana': ['Hyderabad', 'Rangareddy', 'Medchal-Malkajgiri', 'Sangareddy', 'Warangal', 'Nizamabad', 'Karimnagar', 'Khammam'],
+  'Telangana': ['Hyderabad', 'Rangareddy', 'Medchal-Malkajgiri', 'Sangareddy', 'Warangal', 'Nizamabad', 'Karimnagar', 'Khammam', 'Siddipet'],
   'Andhra Pradesh': ['Visakhapatnam', 'Krishna', 'Guntur', 'NTR District', 'Tirupati', 'Chittoor', 'East Godavari'],
   'Karnataka': ['Bengaluru Urban', 'Bengaluru Rural', 'Mysuru', 'Dakshina Kannada', 'Belagavi'],
   'Maharashtra': ['Mumbai City', 'Mumbai Suburban', 'Pune', 'Thane', 'Nagpur', 'Nashik'],
@@ -10,7 +10,7 @@ const FALLBACK_STATES_DISTRICTS = {
   'Delhi': ['New Delhi', 'South Delhi', 'North Delhi', 'West Delhi', 'South West Delhi']
 };
 
-export default function DistrictRunner({ onDistrictRunComplete, currentDistrict, currentState }) {
+export default function DistrictRunner({ onDistrictRunComplete, currentDistrict, currentState, totalSchoolsLoaded }) {
   const [statesList, setStatesList] = useState(Object.keys(FALLBACK_STATES_DISTRICTS));
   const [districtsMap, setDistrictsMap] = useState(FALLBACK_STATES_DISTRICTS);
   
@@ -18,9 +18,11 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
   const [selectedDistrict, setSelectedDistrict] = useState(currentDistrict || 'Hyderabad');
   const [customDistrict, setCustomDistrict] = useState('');
   const [useCustomDistrict, setUseCustomDistrict] = useState(false);
+  const [scanCount, setScanCount] = useState(25);
   const [forceScrape, setForceScrape] = useState(false);
   
   const [isRunning, setIsRunning] = useState(false);
+  const [isScrapingMore, setIsScrapingMore] = useState(false);
   const [runMessage, setRunMessage] = useState('');
 
   // Fetch all official Indian States and Districts on mount
@@ -66,15 +68,20 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
     setUseCustomDistrict(false);
   };
 
-  const handleRunDistrict = async (e) => {
+  const handleRunDistrict = async (e, scrapeMore = false) => {
     e?.preventDefault();
     if (!selectedState || !activeDistrict) {
       alert('Please select or enter both a State and a District.');
       return;
     }
 
-    setIsRunning(true);
-    setRunMessage(`Mistral 14B is researching and scraping schools in ${activeDistrict}, ${selectedState}...`);
+    if (scrapeMore) {
+      setIsScrapingMore(true);
+      setRunMessage(`Mistral 14B is discovering 25 more schools in other mandals of ${activeDistrict}...`);
+    } else {
+      setIsRunning(true);
+      setRunMessage(`Mistral 14B is scanning ${activeDistrict}, ${selectedState} for up to ${scanCount} schools across mandals...`);
+    }
 
     try {
       const res = await fetch('/api/run-district', {
@@ -83,15 +90,16 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
         body: JSON.stringify({
           state: selectedState,
           district: activeDistrict,
-          count: 6,
-          force_scrape: forceScrape
+          count: scrapeMore ? 25 : scanCount,
+          force_scrape: scrapeMore ? false : forceScrape,
+          scrape_more: scrapeMore
         })
       });
 
       if (res.ok) {
         const data = await res.json();
         const sourceLabel = data.source === 'mistral_ai' ? 'Mistral AI Live Scraped' : 'Loaded from Stored Database';
-        setRunMessage(`Loaded ${data.count} schools in ${activeDistrict} (${sourceLabel})! Sorted High to Low. Click 'Run Details' on any school below to fetch its 49 fields.`);
+        setRunMessage(`Loaded ${data.count} schools in ${activeDistrict} (${sourceLabel})! Sorted High to Low. Click 'Run Details' on any school to fetch all 49 fields.`);
         
         onDistrictRunComplete({
           state: selectedState,
@@ -110,6 +118,7 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
       setRunMessage('');
     } finally {
       setIsRunning(false);
+      setIsScrapingMore(false);
     }
   };
 
@@ -129,38 +138,62 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
                 Automated District School Discovery & AI Scraper
               </h2>
               <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 font-semibold inline-flex items-center gap-1">
-                <Sparkles className="w-3 h-3" /> Mistral 14B Powered
+                <Sparkles className="w-3 h-3" /> Mistral 14B Multi-Mandal
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-0.5">
-              Select any Indian State and District to automatically retrieve or scrape school profiles with 16 Info, 17 Tech, and 16 CRM fields.
+              Select State and District to automatically retrieve entire school listings across mandals, ranked strictly High to Low.
             </p>
           </div>
         </div>
 
-        {/* Force re-scrape toggle */}
-        <label className="inline-flex items-center gap-2 text-xs text-slate-300 cursor-pointer self-start md:self-center bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-          <input
-            type="checkbox"
-            checked={forceScrape}
-            onChange={(e) => setForceScrape(e.target.checked)}
-            className="rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-0"
-          />
-          <span>Force fresh AI re-scrape</span>
-        </label>
+        {/* Action controls */}
+        <div className="flex items-center gap-3 self-start md:self-center flex-wrap">
+          <label className="inline-flex items-center gap-2 text-xs text-slate-300 cursor-pointer bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+            <input
+              type="checkbox"
+              checked={forceScrape}
+              onChange={(e) => setForceScrape(e.target.checked)}
+              className="rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-0"
+            />
+            <span>Force fresh AI re-scrape</span>
+          </label>
+
+          {/* Quick discover more button if schools are currently loaded */}
+          {totalSchoolsLoaded > 0 && (
+            <button
+              type="button"
+              onClick={(e) => handleRunDistrict(e, true)}
+              disabled={isRunning || isScrapingMore}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-700/80 hover:bg-indigo-600 text-white text-xs font-semibold border border-indigo-500/40 shadow-xs cursor-pointer transition disabled:opacity-50"
+            >
+              {isScrapingMore ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Discovering +25 More...</span>
+                </>
+              ) : (
+                <>
+                  <PlusCircle className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Discover +25 More Schools</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Control Form */}
-      <form onSubmit={handleRunDistrict} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3.5 items-end">
+      <form onSubmit={(e) => handleRunDistrict(e, false)} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3.5 items-end">
         {/* 1. State Selector */}
-        <div className="md:col-span-4">
+        <div className="md:col-span-3">
           <label className="block text-[11px] font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
             1. Select State ({statesList.length} States & UTs)
           </label>
           <select
             value={selectedState}
             onChange={(e) => handleStateChange(e.target.value)}
-            disabled={isRunning}
+            disabled={isRunning || isScrapingMore}
             className="w-full text-xs rounded-xl bg-slate-800/90 border border-indigo-700/50 text-white p-2.5 font-medium focus:ring-2 focus:ring-amber-400 focus:outline-none cursor-pointer"
           >
             {statesList.map((st) => (
@@ -170,7 +203,7 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
         </div>
 
         {/* 2. District Selector / Custom Input */}
-        <div className="md:col-span-5">
+        <div className="md:col-span-4">
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
               2. Select District ({districtList.length} in {selectedState})
@@ -190,14 +223,14 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
               value={customDistrict}
               onChange={(e) => setCustomDistrict(e.target.value)}
               placeholder="e.g. Warangal, Mysuru, Pune..."
-              disabled={isRunning}
+              disabled={isRunning || isScrapingMore}
               className="w-full text-xs rounded-xl bg-slate-800/90 border border-indigo-700/50 text-white p-2.5 font-medium focus:ring-2 focus:ring-amber-400 focus:outline-none placeholder-slate-400"
             />
           ) : (
             <select
               value={selectedDistrict}
               onChange={(e) => setSelectedDistrict(e.target.value)}
-              disabled={isRunning || districtList.length === 0}
+              disabled={isRunning || isScrapingMore || districtList.length === 0}
               className="w-full text-xs rounded-xl bg-slate-800/90 border border-indigo-700/50 text-white p-2.5 font-medium focus:ring-2 focus:ring-amber-400 focus:outline-none cursor-pointer"
             >
               {districtList.length === 0 ? (
@@ -211,17 +244,34 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
           )}
         </div>
 
-        {/* 3. Run Button */}
+        {/* 3. Discovery Depth / Batch Size */}
+        <div className="md:col-span-2">
+          <label className="block text-[11px] font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+            3. Schools to Fetch
+          </label>
+          <select
+            value={scanCount}
+            onChange={(e) => setScanCount(Number(e.target.value))}
+            disabled={isRunning || isScrapingMore}
+            className="w-full text-xs rounded-xl bg-slate-800/90 border border-indigo-700/50 text-white p-2.5 font-medium focus:ring-2 focus:ring-amber-400 focus:outline-none cursor-pointer"
+          >
+            <option value={25} className="bg-slate-900 text-white">25 Schools (Fast)</option>
+            <option value={50} className="bg-slate-900 text-white">50 Schools (Deep)</option>
+            <option value={100} className="bg-slate-900 text-white">100 Schools (District Wide)</option>
+          </select>
+        </div>
+
+        {/* 4. Run Button */}
         <div className="md:col-span-3">
           <button
             type="submit"
-            disabled={isRunning}
+            disabled={isRunning || isScrapingMore}
             className="w-full h-[40px] inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 text-xs font-bold shadow-lg shadow-amber-500/20 transition-all duration-200 disabled:opacity-50 cursor-pointer"
           >
             {isRunning ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
-                <span>Researching Schools...</span>
+                <span>Scanning District...</span>
               </>
             ) : (
               <>
@@ -256,14 +306,14 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
       </div>
 
       {/* Live status / progress banner */}
-      {isRunning && (
+      {(isRunning || isScrapingMore) && (
         <div className="mt-3.5 pt-3 border-t border-indigo-800/40 flex items-center gap-2 text-xs text-amber-300 animate-pulse">
           <Sparkles className="w-4 h-4 shrink-0" />
           <span>{runMessage}</span>
         </div>
       )}
 
-      {!isRunning && runMessage && (
+      {!isRunning && !isScrapingMore && runMessage && (
         <div className="mt-3.5 pt-3 border-t border-indigo-800/40 flex items-center gap-2 text-xs text-emerald-400">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{runMessage}</span>

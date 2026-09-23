@@ -395,8 +395,9 @@ def api_enrich_school(school_id: str):
 class RunDistrictRequest(BaseModel):
     state: str
     district: str
-    count: int = 8
+    count: int = 25
     force_scrape: bool = False
+    scrape_more: bool = False
 
 @app.post("/api/run-district")
 def api_run_district(req: RunDistrictRequest):
@@ -407,10 +408,11 @@ def api_run_district(req: RunDistrictRequest):
     2. State Board High Strength (1200+)
     3. State Board Mid Strength (500-1200)
     4. State Board Low Strength (<500)
-    Lightweight and fast (~5s). Deep 49-field details are fetched on demand when user runs a specific school.
+    Supports continuous multi-mandal scaling (25, 50, 100+ schools) without duplicates.
     """
     state_clean = req.state.strip()
     district_clean = req.district.strip()
+    col = db.collection("schools")
     
     existing = [
         s for s in get_all_schools_raw()
@@ -418,49 +420,58 @@ def api_run_district(req: RunDistrictRequest):
         and s.get("hierarchy", {}).get("district", "").lower() == district_clean.lower()
     ]
     
+    # If force_scrape is requested, wipe existing schools for this district to start fresh
+    if req.force_scrape:
+        for s in existing:
+            col.document(s["id"]).delete()
+        existing = []
+
+    # If scrape_more is requested or if fewer than req.count schools exist:
+    if req.scrape_more or len(existing) < req.count:
+        existing_names = [s.get("info", {}).get("school_name", "") for s in existing]
+        needed_count = req.count if req.scrape_more else (req.count - len(existing))
+        
+        scraped = scrape_district_schools_ai(
+            state=state_clean,
+            district=district_clean,
+            count=min(50, max(15, needed_count)),
+            exclude_names=existing_names
+        )
+        
+        for s in scraped:
+            col.document(s["id"]).set(s)
+            
+        all_district_schools = [
+            s for s in get_all_schools_raw()
+            if s.get("hierarchy", {}).get("state", "").lower() == state_clean.lower()
+            and s.get("hierarchy", {}).get("district", "").lower() == district_clean.lower()
+        ]
+        all_district_schools.sort(key=lambda x: (
+            x.get("tier", {}).get("rank", 99),
+            -int(x.get("info", {}).get("student_strength") or 0)
+        ))
+        
+        return {
+            "schools": all_district_schools,
+            "count": len(all_district_schools),
+            "source": "mistral_ai",
+            "state": state_clean,
+            "district": district_clean,
+            "scraped_new": len(scraped)
+        }
+        
+    # Return existing schools sorted High to Low
     existing.sort(key=lambda x: (
         x.get("tier", {}).get("rank", 99),
         -int(x.get("info", {}).get("student_strength") or 0)
     ))
-    
-    if len(existing) >= 3 and not req.force_scrape:
-        return {
-            "schools": existing,
-            "count": len(existing),
-            "source": "database",
-            "state": state_clean,
-            "district": district_clean,
-            "scraped_new": 0
-        }
-        
-    # Run lightweight Step 1 district scraper
-    scraped = scrape_district_schools_ai(
-        state=state_clean,
-        district=district_clean,
-        count=req.count or 8
-    )
-    
-    col = db.collection("schools")
-    for s in scraped:
-        col.document(s["id"]).set(s)
-        
-    all_district_schools = [
-        s for s in get_all_schools_raw()
-        if s.get("hierarchy", {}).get("state", "").lower() == state_clean.lower()
-        and s.get("hierarchy", {}).get("district", "").lower() == district_clean.lower()
-    ]
-    all_district_schools.sort(key=lambda x: (
-        x.get("tier", {}).get("rank", 99),
-        -int(x.get("info", {}).get("student_strength") or 0)
-    ))
-    
     return {
-        "schools": all_district_schools,
-        "count": len(all_district_schools),
-        "source": "mistral_ai",
+        "schools": existing,
+        "count": len(existing),
+        "source": "database",
         "state": state_clean,
         "district": district_clean,
-        "scraped_new": len(scraped)
+        "scraped_new": 0
     }
 
 @app.post("/api/schools/{school_id}/run-details")

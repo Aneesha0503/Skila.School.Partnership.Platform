@@ -31,7 +31,7 @@ def call_mistral(messages: List[Dict[str, str]], json_mode: bool = True) -> Dict
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(url, data=data, headers=headers)
     
-    with urllib.request.urlopen(req, timeout=75) as response:
+    with urllib.request.urlopen(req, timeout=90) as response:
         res_json = json.loads(response.read().decode("utf-8"))
         content = res_json["choices"][0]["message"]["content"]
         if json_mode:
@@ -69,35 +69,29 @@ def get_school_tier(s: Dict[str, Any]) -> Dict[str, Any]:
             "rank": 4
         }
 
-def scrape_district_schools_ai(
+def scrape_district_batch(
     state: str,
     district: str,
-    count: int = 8
+    count: int = 20,
+    exclude_names: Optional[List[str]] = None
 ) -> List[Dict[str, Any]]:
     """
-    Step 1: Lightweight district listing scraper.
-    Quickly lists prominent schools for the selected State and District,
-    strictly ordered from High to Low:
-    1. High Range (International, Cambridge, CBSE, ICSE)
-    2. State Board High Strength (1200+ students)
-    3. State Board Mid Strength (500-1200 students)
-    4. State Board Low Strength (<500 students)
-    Returns lightweight records so this executes in ~5 seconds with zero timeouts.
-    Deep 49-field details are fetched on demand when user runs a specific school.
+    Scrapes a single batch of schools for a district.
     """
     sys_prompt = (
-        "You are an Indian Educational Directory Expert. "
+        "You are an Indian Educational Directory Expert for Skila AI. "
         "Given a State and District, research and return a JSON object with key 'schools' "
-        f"containing {count} prominent schools in that district.\n"
+        f"containing a comprehensive list of {count} real/prominent schools across different mandals, "
+        "revenue divisions, nagarpalikas, and gram panchayats in that district.\n"
         "CRITICAL REQUIREMENT - Order schools strictly from High to Low:\n"
-        "1. First, High Range schools (International, Cambridge, IB, CBSE, ICSE)\n"
-        "2. Next, State Board High Strength schools (student strength 1,200+)\n"
-        "3. Next, State Board Mid Strength schools (student strength 500 to 1,200)\n"
-        "4. Finally, State Board Low Strength schools (student strength under 500)\n\n"
+        "1. High Range schools (International, Cambridge, IB, CBSE, ICSE)\n"
+        "2. State Board High Strength schools (student strength 1,200+)\n"
+        "3. State Board Mid Strength schools (student strength 500 to 1,200)\n"
+        "4. State Board Low Strength schools (student strength under 500)\n\n"
         "Each school object MUST have:\n"
         "- school_name: Official name of the school\n"
         "- board: CBSE, ICSE, Cambridge / IB, or State Board\n"
-        "- student_strength: Integer (e.g. 2400, 1400, 750, 320)\n"
+        "- student_strength: Integer (e.g. 2500, 1400, 800, 350)\n"
         "- school_category: Higher Secondary, Secondary, Primary, or K-12\n"
         "- management_type: Private Unaided, Government, Aided, or International\n"
         "- revenue_division: Name of the Revenue Division in this district\n"
@@ -108,7 +102,9 @@ def scrape_district_schools_ai(
         "Only return valid JSON with key 'schools'."
     )
 
-    user_prompt = f"List {count} schools in District: {district}, State: {state}, ordered strictly from High to Low."
+    user_prompt = f"List {count} schools across different mandals in District: {district}, State: {state}, ordered strictly from High to Low."
+    if exclude_names and len(exclude_names) > 0:
+        user_prompt += f"\nCRITICAL: Do NOT duplicate any of these already listed schools: {json.dumps(exclude_names[:35])}."
 
     messages = [
         {"role": "system", "content": sys_prompt},
@@ -121,7 +117,14 @@ def scrape_district_schools_ai(
         now = datetime.now(timezone.utc).isoformat()
         
         cleaned = []
+        seen_names = set(n.lower() for n in (exclude_names or []))
+
         for s in raw_schools:
+            name = s.get("school_name", "").strip()
+            if not name or name.lower() in seen_names:
+                continue
+            seen_names.add(name.lower())
+
             doc_id = str(uuid.uuid4())
             school_record = {
                 "id": doc_id,
@@ -132,12 +135,12 @@ def scrape_district_schools_ai(
                     "revenue_division": s.get("revenue_division") or district,
                     "mandal": s.get("mandal") or "Headquarters",
                     "local_body_type": s.get("local_body_type") or "Municipality",
-                    "local_body_name": s.get("local_body_name") or f"{district} Municipality",
-                    "village_locality_ward": s.get("village_locality_ward") or "Main Town"
+                    "local_body_name": s.get("local_body_name") or f"{district} Local Body",
+                    "village_locality_ward": s.get("village_locality_ward") or "Town Area"
                 },
                 "info": {
-                    "udise_code": s.get("udise_code") or f"36{abs(hash(s.get('school_name', ''))) % 100000000:09d}",
-                    "school_name": s.get("school_name", "Unknown School"),
+                    "udise_code": s.get("udise_code") or f"36{abs(hash(name)) % 100000000:09d}",
+                    "school_name": name,
                     "school_category": s.get("school_category", "Secondary"),
                     "management_type": s.get("management_type", "Private"),
                     "school_type": "Co-educational",
@@ -182,15 +185,42 @@ def scrape_district_schools_ai(
             school_record["tier"] = get_school_tier(school_record)
             cleaned.append(school_record)
         
-        # Sort strictly from High to Low
-        cleaned.sort(key=lambda x: (
-            x.get("tier", {}).get("rank", 99),
-            -int(x.get("info", {}).get("student_strength") or 0)
-        ))
         return cleaned
     except Exception as e:
-        print(f"[Mistral District Scraper Error] {e}")
+        print(f"[Mistral District Batch Scraper Error] {e}")
         return []
+
+def scrape_district_schools_ai(
+    state: str,
+    district: str,
+    count: int = 20,
+    exclude_names: Optional[List[str]] = None
+) -> List[Dict[str, Any]]:
+    """
+    Step 1: Lightweight district listing scraper.
+    Quickly lists prominent schools for the selected State and District,
+    strictly ordered from High to Low.
+    Can scale up to 50+ schools across multiple batches.
+    """
+    if count <= 25:
+        results = scrape_district_batch(state, district, count=count, exclude_names=exclude_names)
+    else:
+        # Fetch first batch of 25
+        results = scrape_district_batch(state, district, count=25, exclude_names=exclude_names)
+        existing_now = list(exclude_names or []) + [s["info"]["school_name"] for s in results]
+        
+        # Fetch second batch for remaining
+        remaining = min(25, count - len(results))
+        if remaining > 0:
+            batch2 = scrape_district_batch(state, district, count=remaining, exclude_names=existing_now)
+            results.extend(batch2)
+
+    # Sort strictly from High to Low
+    results.sort(key=lambda x: (
+        x.get("tier", {}).get("rank", 99),
+        -int(x.get("info", {}).get("student_strength") or 0)
+    ))
+    return results
 
 def scrape_single_school_details_ai(school_data: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -254,7 +284,6 @@ def scrape_single_school_details_ai(school_data: Dict[str, Any]) -> Dict[str, An
         # Merge with existing
         existing_info = school_data.get("info", {})
         existing_info.update(info)
-        # Keep name and board consistent if valid
         if not existing_info.get("school_name"):
             existing_info["school_name"] = school_name
         if not existing_info.get("board"):
@@ -267,6 +296,28 @@ def scrape_single_school_details_ai(school_data: Dict[str, Any]) -> Dict[str, An
 
         existing_sales = school_data.get("sales", {})
         existing_sales.update(sales)
+
+        partners = existing_sales.get("existing_edtech_partners")
+        if isinstance(partners, list):
+            existing_sales["existing_edtech_partners"] = ", ".join(str(p) for p in partners)
+
+        rem = existing_sales.get("remarks")
+        if isinstance(rem, dict):
+            parts = []
+            for k, v in rem.items():
+                title = k.replace("_", " ").title()
+                if isinstance(v, dict):
+                    subparts = [f"  • {sk.replace('_', ' ').title()}: {sv}" for sk, sv in v.items()]
+                    parts.append(f"{title}:\n" + "\n".join(subparts))
+                elif isinstance(v, list):
+                    subparts = [f"  • {item}" if isinstance(item, str) else f"  • {json.dumps(item)}" for item in v]
+                    parts.append(f"{title}:\n" + "\n".join(subparts))
+                else:
+                    parts.append(f"{title}: {v}")
+            existing_sales["remarks"] = "\n\n".join(parts)
+        elif isinstance(rem, list):
+            existing_sales["remarks"] = "\n".join(f"• {r}" for r in rem)
+
         school_data["sales"] = existing_sales
 
         school_data["details_fetched"] = True
@@ -304,5 +355,4 @@ def enrich_school_with_ai(school_data: Dict[str, Any]) -> Dict[str, Any]:
         print(f"[Mistral Enrichment Error] {e}")
         return {"error": str(e)}
 
-# Backwards compatibility alias
 scrape_schools_ai = scrape_district_schools_ai
