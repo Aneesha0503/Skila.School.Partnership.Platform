@@ -1,11 +1,40 @@
-﻿import React from 'react';
+import React from 'react';
 import { 
   Building, MapPin, Users, GraduationCap, Laptop, 
-  Sparkles, Calendar, ChevronRight, Phone, Award, ShieldCheck 
+  Sparkles, Calendar, ChevronRight, Phone, Award, ShieldCheck, Layers 
 } from 'lucide-react';
 
 export default function SchoolCard({ school, onSelectSchool }) {
-  const { hierarchy, info, technology, sales } = school;
+  const { hierarchy, info, technology, sales, tier } = school;
+
+  // Tier Badge Styling
+  const getTierBadge = (tierObj) => {
+    const t = tierObj?.tier || '';
+    if (t === 'High Range') {
+      return {
+        label: '👑 High Range (International / CBSE / ICSE)',
+        className: 'bg-purple-100 text-purple-900 border-purple-300 font-bold'
+      };
+    } else if (t === 'State Board - High Strength') {
+      return {
+        label: '🔷 State High (1,200+ Students)',
+        className: 'bg-blue-100 text-blue-900 border-blue-300 font-bold'
+      };
+    } else if (t === 'State Board - Mid Strength') {
+      return {
+        label: '🔶 State Mid (500–1,200 Students)',
+        className: 'bg-amber-100 text-amber-900 border-amber-300 font-bold'
+      };
+    } else if (t === 'State Board - Low Strength') {
+      return {
+        label: '⚪ State Low (<500 Students)',
+        className: 'bg-slate-100 text-slate-700 border-slate-300 font-semibold'
+      };
+    }
+    return null;
+  };
+
+  const tierBadge = getTierBadge(tier);
 
   // Status badge styling
   const getStatusBadge = (status) => {
@@ -41,6 +70,15 @@ export default function SchoolCard({ school, onSelectSchool }) {
       onClick={() => onSelectSchool(school)}
       className="bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col p-4 group"
     >
+      {/* Tier Category Indicator */}
+      {tierBadge && (
+        <div className="mb-2.5">
+          <span className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full border shadow-2xs ${tierBadge.className}`}>
+            {tierBadge.label}
+          </span>
+        </div>
+      )}
+
       {/* Top row: Name & UDISE */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1">

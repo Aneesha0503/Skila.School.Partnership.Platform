@@ -22,6 +22,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from india_data import get_states_and_districts
+from mistral_scraper import get_school_tier
+
 db = get_db()
 seed_database(db)
 
@@ -33,8 +36,15 @@ def get_all_schools_raw() -> List[Dict[str, Any]]:
         data = d.to_dict()
         if not data.get("id"):
             data["id"] = d.id
+        if not data.get("tier"):
+            data["tier"] = get_school_tier(data)
         schools.append(data)
     return schools
+
+@app.get("/api/states-districts")
+def api_states_districts():
+    """Returns official Indian states and their districts."""
+    return get_states_and_districts()
 
 @app.get("/api/status")
 def get_status():
@@ -103,7 +113,8 @@ def list_schools(
     board: Optional[str] = None,
     lead_status: Optional[str] = None,
     skila_ai_potential: Optional[str] = None,
-    technology_adoption_level: Optional[str] = None
+    technology_adoption_level: Optional[str] = None,
+    tier: Optional[str] = None
 ):
     schools = get_all_schools_raw()
     filtered = []
@@ -115,6 +126,7 @@ def list_schools(
         info = s.get("info", {})
         tech = s.get("technology", {})
         sales = s.get("sales", {})
+        t_info = s.get("tier", {})
         
         if state and h.get("state") != state:
             continue
@@ -129,6 +141,8 @@ def list_schools(
         if village_locality_ward and h.get("village_locality_ward") != village_locality_ward:
             continue
             
+        if tier and tier != "All" and t_info.get("tier") != tier:
+            continue
         if board and board != "All" and board.lower() not in info.get("board", "").lower():
             continue
         if lead_status and lead_status != "All" and sales.get("lead_status") != lead_status:
@@ -145,6 +159,11 @@ def list_schools(
                 
         filtered.append(s)
         
+    # Sort from High to Low: High Range first, then State Board by strength descending
+    filtered.sort(key=lambda x: (
+        x.get("tier", {}).get("rank", 99),
+        -int(x.get("info", {}).get("student_strength") or 0)
+    ))
     return filtered
 
 @app.get("/api/schools/{school_id}")
@@ -389,6 +408,11 @@ def api_run_district(req: RunDistrictRequest):
         and s.get("hierarchy", {}).get("district", "").lower() == district_clean.lower()
     ]
     
+    existing.sort(key=lambda x: (
+        x.get("tier", {}).get("rank", 99),
+        -int(x.get("info", {}).get("student_strength") or 0)
+    ))
+    
     if len(existing) >= 3 and not req.force_scrape:
         return {
             "schools": existing,
@@ -417,6 +441,10 @@ def api_run_district(req: RunDistrictRequest):
         if s.get("hierarchy", {}).get("state", "").lower() == state_clean.lower()
         and s.get("hierarchy", {}).get("district", "").lower() == district_clean.lower()
     ]
+    all_district_schools.sort(key=lambda x: (
+        x.get("tier", {}).get("rank", 99),
+        -int(x.get("info", {}).get("student_strength") or 0)
+    ))
     
     return {
         "schools": all_district_schools,

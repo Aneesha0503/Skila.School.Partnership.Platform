@@ -32,6 +32,7 @@ export default function App() {
   // Secondary Search & Category Filters
   const [filters, setFilters] = useState({
     search: '',
+    tier: 'All',
     board: 'All',
     lead_status: 'All',
     skila_ai_potential: 'All',
@@ -110,6 +111,7 @@ export default function App() {
       if (selectedHierarchy.village_locality_ward) params.append('village_locality_ward', selectedHierarchy.village_locality_ward);
 
       if (filters.search) params.append('search', filters.search);
+      if (filters.tier && filters.tier !== 'All') params.append('tier', filters.tier);
       if (filters.board !== 'All') params.append('board', filters.board);
       if (filters.lead_status !== 'All') params.append('lead_status', filters.lead_status);
       if (filters.skila_ai_potential !== 'All') params.append('skila_ai_potential', filters.skila_ai_potential);
@@ -191,7 +193,7 @@ export default function App() {
     window.open('/api/export', '_blank');
   };
 
-  const handleDistrictRunComplete = ({ state, district }) => {
+  const handleDistrictRunComplete = ({ state, district, schools: returnedSchools }) => {
     setSelectedHierarchy({
       state: state,
       district: district,
@@ -200,7 +202,11 @@ export default function App() {
       local_body_name: '',
       village_locality_ward: ''
     });
-    fetchSchools();
+    if (returnedSchools && returnedSchools.length > 0) {
+      setSchools(returnedSchools);
+    } else {
+      fetchSchools();
+    }
     fetchHierarchyOptions();
     fetchStats();
   };
@@ -263,7 +269,7 @@ export default function App() {
             <button
               onClick={() => {
                 handleResetHierarchy();
-                setFilters({ search: '', board: 'All', lead_status: 'All', skila_ai_potential: 'All', technology_adoption_level: 'All' });
+                setFilters({ search: '', tier: 'All', board: 'All', lead_status: 'All', skila_ai_potential: 'All', technology_adoption_level: 'All' });
               }}
               className="text-xs font-semibold px-4 py-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition"
             >

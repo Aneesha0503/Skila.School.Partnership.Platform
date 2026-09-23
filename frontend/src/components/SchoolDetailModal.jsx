@@ -70,6 +70,34 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
     }
   };
 
+  const getTierBadge = (tierObj) => {
+    const t = tierObj?.tier || '';
+    if (t === 'High Range') {
+      return {
+        label: '👑 High Range (International / CBSE / ICSE)',
+        className: 'bg-purple-500/25 text-purple-200 border-purple-500/40'
+      };
+    } else if (t === 'State Board - High Strength') {
+      return {
+        label: '🔷 State Board - High Strength (1,200+ Students)',
+        className: 'bg-blue-500/25 text-blue-200 border-blue-500/40'
+      };
+    } else if (t === 'State Board - Mid Strength') {
+      return {
+        label: '🔶 State Board - Mid Strength (500–1,200 Students)',
+        className: 'bg-amber-500/25 text-amber-200 border-amber-500/40'
+      };
+    } else if (t === 'State Board - Low Strength') {
+      return {
+        label: '⚪ State Board - Low Strength (<500 Students)',
+        className: 'bg-slate-700 text-slate-300 border-slate-600'
+      };
+    }
+    return null;
+  };
+
+  const tierBadge = getTierBadge(school.tier);
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in duration-200">
@@ -79,6 +107,11 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 flex-wrap mb-2">
+                {tierBadge && (
+                  <span className={`text-xs px-2.5 py-0.5 rounded-full border font-bold ${tierBadge.className}`}>
+                    {tierBadge.label}
+                  </span>
+                )}
                 <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
                   UDISE: {info?.udise_code}
                 </span>

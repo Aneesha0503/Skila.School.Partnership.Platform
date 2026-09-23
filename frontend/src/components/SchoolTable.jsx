@@ -1,7 +1,41 @@
-﻿import React from 'react';
-import { Sparkles, ChevronRight, MapPin } from 'lucide-react';
+import React from 'react';
+import { Sparkles, ChevronRight, MapPin, Award, Layers } from 'lucide-react';
 
 export default function SchoolTable({ schools, onSelectSchool }) {
+  const getTierBadge = (tierObj) => {
+    const t = tierObj?.tier || '';
+    if (t === 'High Range') {
+      return {
+        label: '👑 High Range',
+        sub: 'Intl / CBSE / ICSE',
+        className: 'bg-purple-100 text-purple-900 border-purple-300'
+      };
+    } else if (t === 'State Board - High Strength') {
+      return {
+        label: '🔷 State High',
+        sub: '1,200+ Students',
+        className: 'bg-blue-100 text-blue-900 border-blue-300'
+      };
+    } else if (t === 'State Board - Mid Strength') {
+      return {
+        label: '🔶 State Mid',
+        sub: '500–1,200 Students',
+        className: 'bg-amber-100 text-amber-900 border-amber-300'
+      };
+    } else if (t === 'State Board - Low Strength') {
+      return {
+        label: '⚪ State Low',
+        sub: '<500 Students',
+        className: 'bg-slate-100 text-slate-700 border-slate-300'
+      };
+    }
+    return {
+      label: 'Standard',
+      sub: '',
+      className: 'bg-slate-100 text-slate-600 border-slate-200'
+    };
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
       case 'Closed Won':
@@ -36,6 +70,7 @@ export default function SchoolTable({ schools, onSelectSchool }) {
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-[10px] font-bold tracking-wider">
+              <th className="py-3 px-4">Tier (High to Low)</th>
               <th className="py-3 px-4">School & UDISE</th>
               <th className="py-3 px-4">Administrative Location</th>
               <th className="py-3 px-4">Board & Strength</th>
@@ -48,13 +83,25 @@ export default function SchoolTable({ schools, onSelectSchool }) {
           </thead>
           <tbody className="divide-y divide-slate-100 text-slate-700">
             {schools.map((school) => {
-              const { hierarchy, info, technology, sales } = school;
+              const { hierarchy, info, technology, sales, tier } = school;
+              const tierBadge = getTierBadge(tier);
+
               return (
                 <tr
                   key={school.id}
                   onClick={() => onSelectSchool(school)}
                   className="hover:bg-indigo-50/40 transition cursor-pointer"
                 >
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    <span className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-bold border ${tierBadge.className}`}>
+                      {tierBadge.label}
+                    </span>
+                    {tierBadge.sub && (
+                      <div className="text-[10px] text-slate-500 mt-0.5 font-medium pl-1">
+                        {tierBadge.sub}
+                      </div>
+                    )}
+                  </td>
                   <td className="py-3 px-4">
                     <div className="font-semibold text-slate-900">{info?.school_name}</div>
                     <div className="text-[11px] font-mono text-slate-500">UDISE: {info?.udise_code}</div>

@@ -38,6 +38,37 @@ def call_mistral(messages: List[Dict[str, str]], json_mode: bool = True) -> Dict
             return json.loads(content)
         return {"content": content}
 
+def get_school_tier(s: Dict[str, Any]) -> Dict[str, Any]:
+    info = s.get("info", {})
+    board = (info.get("board") or "").upper()
+    mgmt = (info.get("management_type") or "").upper()
+    strength = int(info.get("student_strength") or 0)
+    
+    if any(k in board or k in mgmt for k in ["INTERNATIONAL", "IB", "CAMBRIDGE", "CBSE", "ICSE"]):
+        return {
+            "tier": "High Range",
+            "tier_category": "International / CBSE / ICSE / Cambridge",
+            "rank": 1
+        }
+    elif strength >= 1200:
+        return {
+            "tier": "State Board - High Strength",
+            "tier_category": "State Board (1200+ Students)",
+            "rank": 2
+        }
+    elif strength >= 500:
+        return {
+            "tier": "State Board - Mid Strength",
+            "tier_category": "State Board (500-1200 Students)",
+            "rank": 3
+        }
+    else:
+        return {
+            "tier": "State Board - Low Strength",
+            "tier_category": "State Board (<500 Students)",
+            "rank": 4
+        }
+
 def scrape_schools_ai(
     query: Optional[str] = None,
     state: Optional[str] = "Telangana",
@@ -129,7 +160,15 @@ def scrape_schools_ai(
     if mandal:
         user_prompt += f", Mandal: {mandal}"
 
-    user_prompt += ". Ensure real local mandals, local bodies, wards/villages, realistic UDISE codes, and comprehensive technology & sales profiles."
+    user_prompt += (
+        ". CRITICAL INSTRUCTION: You MUST return schools ordered from High to Low:\n"
+        "1. First, High Range schools (International schools, Cambridge, IB, CBSE, ICSE) with modern infrastructure.\n"
+        "2. Next, State Board schools representing:\n"
+        "   - High strength State Board schools (student strength 1200+)\n"
+        "   - Mid strength State Board schools (student strength 500 to 1200)\n"
+        "   - Low strength State Board schools (student strength under 500)\n"
+        "Ensure real local mandals, local bodies, wards/villages, realistic UDISE codes, and comprehensive technology & sales profiles."
+    )
 
     messages = [
         {"role": "system", "content": sys_prompt},
@@ -144,8 +183,10 @@ def scrape_schools_ai(
         cleaned = []
         for s in raw_schools:
             doc_id = str(uuid.uuid4())
+            tier = get_school_tier(s)
             cleaned.append({
                 "id": doc_id,
+                "tier": tier,
                 "hierarchy": s.get("hierarchy", {}),
                 "info": s.get("info", {}),
                 "technology": s.get("technology", {}),
@@ -154,6 +195,9 @@ def scrape_schools_ai(
                 "updated_at": now,
                 "scraped_by": "Mistral AI (ministral-14b-latest)"
             })
+        
+        # Sort from High to Low
+        cleaned.sort(key=lambda x: (x.get("tier", {}).get("rank", 99), -int(x.get("info", {}).get("student_strength") or 0)))
         return cleaned
     except Exception as e:
         print(f"[Mistral Scraper Error] {e}")
