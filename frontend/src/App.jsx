@@ -8,6 +8,7 @@ import SchoolTable from './components/SchoolTable';
 import SchoolDetailModal from './components/SchoolDetailModal';
 import AddEditSchoolModal from './components/AddEditSchoolModal';
 import MistralScraperModal from './components/MistralScraperModal';
+import DistrictRunner from './components/DistrictRunner';
 import { School, RefreshCw } from 'lucide-react';
 
 export default function App() {
@@ -190,6 +191,20 @@ export default function App() {
     window.open('/api/export', '_blank');
   };
 
+  const handleDistrictRunComplete = ({ state, district }) => {
+    setSelectedHierarchy({
+      state: state,
+      district: district,
+      revenue_division: '',
+      mandal: '',
+      local_body_name: '',
+      village_locality_ward: ''
+    });
+    fetchSchools();
+    fetchHierarchyOptions();
+    fetchStats();
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Top Header */}
@@ -205,6 +220,13 @@ export default function App() {
         
         {/* KPI Summary Cards */}
         <StatsBar stats={stats} />
+
+        {/* Automated District Discovery & AI Scraper */}
+        <DistrictRunner
+          onDistrictRunComplete={handleDistrictRunComplete}
+          currentState={selectedHierarchy.state}
+          currentDistrict={selectedHierarchy.district}
+        />
 
         {/* Administrative Hierarchy Cascading Drill-Down */}
         <HierarchyNavigator

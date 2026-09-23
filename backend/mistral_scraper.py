@@ -6,9 +6,11 @@ from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 
+ENV_FILE = os.path.join(os.path.dirname(__file__), ".env")
+load_dotenv(ENV_FILE)
 load_dotenv()
 
-MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY", "")
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY") or os.getenv("\ufeffMISTRAL_API_KEY", "")
 MISTRAL_MODEL = os.getenv("MISTRAL_MODEL", "ministral-14b-latest")
 MISTRAL_BASE_URL = os.getenv("MISTRAL_BASE_URL", "https://api.mistral.ai/v1")
 

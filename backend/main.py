@@ -365,3 +365,66 @@ def api_enrich_school(school_id: str):
         
     return {"school": school_data, "ai_insights": enriched}
 
+class RunDistrictRequest(BaseModel):
+    state: str
+    district: str
+    count: int = 5
+    force_scrape: bool = False
+
+@app.post("/api/run-district")
+def api_run_district(req: RunDistrictRequest):
+    """
+    Runs automated school discovery & scraping for a selected State and District.
+    If schools already exist for this district, returns them. If fewer than 3 exist or
+    force_scrape=True, triggers Mistral AI to research and scrape new schools with
+    their full administrative hierarchy (Divisions, Mandals, Local Bodies, Wards)
+    and all 16 Info, 17 Tech, and 16 Sales fields.
+    """
+    state_clean = req.state.strip()
+    district_clean = req.district.strip()
+    
+    existing = [
+        s for s in get_all_schools_raw()
+        if s.get("hierarchy", {}).get("state", "").lower() == state_clean.lower()
+        and s.get("hierarchy", {}).get("district", "").lower() == district_clean.lower()
+    ]
+    
+    if len(existing) >= 3 and not req.force_scrape:
+        return {
+            "schools": existing,
+            "count": len(existing),
+            "source": "database",
+            "state": state_clean,
+            "district": district_clean,
+            "scraped_new": 0
+        }
+        
+    # Run Mistral AI to scrape prominent schools across the district
+    scraped = scrape_schools_ai(
+        query=f"Prominent schools across revenue divisions, mandals, municipalities, and gram panchayats in {district_clean}, {state_clean}",
+        state=state_clean,
+        district=district_clean,
+        mandal=None,
+        count=req.count
+    )
+    
+    col = db.collection("schools")
+    for s in scraped:
+        col.document(s["id"]).set(s)
+        
+    all_district_schools = [
+        s for s in get_all_schools_raw()
+        if s.get("hierarchy", {}).get("state", "").lower() == state_clean.lower()
+        and s.get("hierarchy", {}).get("district", "").lower() == district_clean.lower()
+    ]
+    
+    return {
+        "schools": all_district_schools,
+        "count": len(all_district_schools),
+        "source": "mistral_ai",
+        "state": state_clean,
+        "district": district_clean,
+        "scraped_new": len(scraped)
+    }
+
+
