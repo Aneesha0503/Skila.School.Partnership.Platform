@@ -284,23 +284,27 @@ export default function App() {
             <p className="text-sm font-semibold text-slate-700">Loading school details...</p>
           </div>
         ) : schools.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-xl border border-slate-200 p-8 shadow-xs">
-            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mx-auto mb-3">
-              <School className="w-6 h-6" />
+          <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300 p-8 shadow-xs">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-100 to-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 mx-auto mb-3 shadow-xs">
+              <School className="w-7 h-7" />
             </div>
-            <h3 className="text-base font-bold text-slate-800 mb-1">No schools match this criteria</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
-              Try adjusting the administrative hierarchy or clearing some of the filters to see more results.
+            <h3 className="text-base font-bold text-slate-900 mb-1">
+              Database is Clean — Ready for Discovery
+            </h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto mb-4 leading-relaxed">
+              All dummy data has been removed. Select any <strong>State</strong> and <strong>District</strong> in the Automated Discovery box above, then click <strong>"Run District Schools"</strong> to scrape and list schools strictly from High to Low.
             </p>
-            <button
-              onClick={() => {
-                handleResetHierarchy();
-                setFilters({ search: '', tier: 'All', board: 'All', lead_status: 'All', skila_ai_potential: 'All', technology_adoption_level: 'All' });
-              }}
-              className="text-xs font-semibold px-4 py-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition"
-            >
-              Reset All Filters
-            </button>
+            {selectedHierarchy.district && (
+              <button
+                onClick={() => {
+                  handleResetHierarchy();
+                  setFilters({ search: '', tier: 'All', board: 'All', lead_status: 'All', skila_ai_potential: 'All', technology_adoption_level: 'All' });
+                }}
+                className="text-xs font-semibold px-4 py-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition cursor-pointer"
+              >
+                Clear District Selection
+              </button>
+            )}
           </div>
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

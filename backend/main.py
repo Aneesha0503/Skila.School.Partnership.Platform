@@ -10,7 +10,6 @@ from pydantic import BaseModel
 
 from firebase_config import get_db, is_live_firebase
 from models import SchoolModel, SchoolCreateUpdate
-from seed_data import seed_database
 
 app = FastAPI(title="Skila School Partnership Platform API", version="1.0.0")
 
@@ -26,7 +25,6 @@ from india_data import get_states_and_districts
 from mistral_scraper import get_school_tier
 
 db = get_db()
-seed_database(db)
 
 def get_all_schools_raw() -> List[Dict[str, Any]]:
     col = db.collection("schools")
@@ -210,6 +208,16 @@ def update_school(school_id: str, payload: SchoolCreateUpdate):
     }
     doc_ref.set(record)
     return record
+
+@app.delete("/api/schools/clear-all")
+def clear_all_schools():
+    """Clears all schools from the database."""
+    col = db.collection("schools")
+    docs = list(col.stream())
+    count = len(docs)
+    for d in docs:
+        col.document(d.id).delete()
+    return {"message": f"Successfully deleted {count} schools", "deleted_count": count}
 
 @app.delete("/api/schools/{school_id}")
 def delete_school(school_id: str):
