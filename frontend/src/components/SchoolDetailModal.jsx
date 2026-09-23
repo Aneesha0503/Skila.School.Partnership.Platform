@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   X, Building2, Cpu, DollarSign, MapPin, Phone, Mail, 
   Globe, User, CheckCircle2, XCircle, Edit3, Save, Sparkles, ExternalLink 
@@ -10,10 +10,32 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
   const [remarks, setRemarks] = useState(school?.sales?.remarks || '');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isEnriching, setIsEnriching] = useState(false);
+  const [enrichSuccess, setEnrichSuccess] = useState(false);
 
   if (!school) return null;
 
   const { hierarchy, info, technology, sales } = school;
+
+  const handleAiEnrich = async () => {
+    setIsEnriching(true);
+    try {
+      const res = await fetch(`/api/ai/enrich/${school.id}`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        onUpdateSchool(data.school);
+        if (data.school.sales.remarks) {
+          setRemarks(data.school.sales.remarks);
+        }
+        setEnrichSuccess(true);
+        setTimeout(() => setEnrichSuccess(false), 4000);
+      }
+    } catch (err) {
+      console.error('AI Enrichment error:', err);
+    } finally {
+      setIsEnriching(false);
+    }
+  };
 
   const handleQuickSave = async () => {
     setIsSaving(true);
@@ -393,8 +415,18 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
                   <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <DollarSign className="w-4 h-4 text-indigo-600" /> Sales Opportunity & Decision Maker
                   </h3>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-600">Quick Update Status:</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={handleAiEnrich}
+                      disabled={isEnriching}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold text-[11px] shadow-2xs transition disabled:opacity-50"
+                      title="Analyze with Mistral 14B"
+                    >
+                      <Sparkles className="w-3 h-3 text-amber-300" />
+                      {isEnriching ? 'AI Analyzing...' : 'AI Pitch & Tech Insights'}
+                    </button>
+
+                    <span className="text-xs font-bold text-slate-600">Quick Status:</span>
                     <select
                       value={leadStatus}
                       onChange={(e) => setLeadStatus(e.target.value)}
@@ -410,6 +442,13 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
                     </select>
                   </div>
                 </div>
+
+                {enrichSuccess && (
+                  <div className="mb-4 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Mistral AI analysis completed! Strategy notes and AI potential updated below.</span>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
                   <div>

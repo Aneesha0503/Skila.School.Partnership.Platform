@@ -1,7 +1,7 @@
-﻿import React from 'react';
+import React from 'react';
 import { School, Database, Download, Plus, Sparkles } from 'lucide-react';
 
-export default function Header({ statusInfo, onOpenAddModal, onExportCsv }) {
+export default function Header({ statusInfo, onOpenAddModal, onOpenMistralScraper, onExportCsv }) {
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -38,6 +38,15 @@ export default function Header({ statusInfo, onOpenAddModal, onExportCsv }) {
             >
               <Download className="w-3.5 h-3.5 text-slate-500" />
               Export CSV
+            </button>
+
+            {/* Mistral AI Scraper button */}
+            <button
+              onClick={onOpenMistralScraper}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 rounded-lg transition shadow-sm shadow-purple-200 border border-purple-400/20"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              Mistral AI Scraper
             </button>
 
             {/* Add School button */}

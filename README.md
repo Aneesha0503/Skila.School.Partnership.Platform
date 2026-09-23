@@ -1,4 +1,4 @@
-﻿# Skila School Partnership Platform
+# Skila School Partnership Platform
 
 A comprehensive school intelligence and EdTech partnership platform designed for **Skila AI**. Built with a **React.js** frontend and **Python FastAPI** backend powered by **Firebase Firestore**.
 
@@ -56,6 +56,12 @@ When clicking on any school card or table row, an interactive 3-tab drawer/modal
 - Last Contact Date & Next Follow-up Date
 - Sales Owner Assignment
 - Remarks & Interaction Timeline (Editable & saveable directly inside the modal)
+
+### 3. 🤖 Mistral AI Auto-Scraper & School Intelligence
+Powered by `ministral-14b-latest`:
+- **AI School Discovery**: Click **"Mistral AI Scraper"** in the top navigation, configure State/District/Mandal or provide search prompts (e.g. *"Top CBSE schools with coding and ATL labs in Kokapet"*), and Mistral AI automatically scrapes the entire 6-tier administrative hierarchy, 16 info fields, 17 tech fields, and 16 sales fields.
+- **1-Click Bulk Import**: Review discovered schools, select the ones you want, and import them directly into the database with 1 click.
+- **AI School Enrichment**: Inside any school's detail view, click **"AI Pitch & Tech Insights"** to analyze tech infrastructure gaps, predict Skila AI potential, and generate a customized sales pitch tailored to the decision maker.
 
 ---
 

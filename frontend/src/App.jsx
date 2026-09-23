@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import StatsBar from './components/StatsBar';
 import HierarchyNavigator from './components/HierarchyNavigator';
@@ -7,6 +7,7 @@ import SchoolCard from './components/SchoolCard';
 import SchoolTable from './components/SchoolTable';
 import SchoolDetailModal from './components/SchoolDetailModal';
 import AddEditSchoolModal from './components/AddEditSchoolModal';
+import MistralScraperModal from './components/MistralScraperModal';
 import { School, RefreshCw } from 'lucide-react';
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
   const [statusInfo, setStatusInfo] = useState(null);
   const [hierarchyData, setHierarchyData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [mistralModalOpen, setMistralModalOpen] = useState(false);
 
   // Administrative Hierarchy State
   const [selectedHierarchy, setSelectedHierarchy] = useState({
@@ -194,6 +196,7 @@ export default function App() {
       <Header
         statusInfo={statusInfo}
         onOpenAddModal={handleOpenAddModal}
+        onOpenMistralScraper={() => setMistralModalOpen(true)}
         onExportCsv={handleExportCsv}
       />
 
@@ -286,6 +289,18 @@ export default function App() {
             setEditingSchool(null);
           }}
           onSaveSuccess={handleSchoolSaved}
+        />
+      )}
+
+      {/* Mistral AI Scraper Modal */}
+      {mistralModalOpen && (
+        <MistralScraperModal
+          onClose={() => setMistralModalOpen(false)}
+          onImportSuccess={() => {
+            fetchSchools();
+            fetchStats();
+            fetchHierarchyOptions();
+          }}
         />
       )}
     </div>

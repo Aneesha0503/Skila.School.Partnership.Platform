@@ -1,4 +1,4 @@
-﻿import io
+import io
 import csv
 import uuid
 from datetime import datetime, timezone
@@ -286,3 +286,82 @@ def export_csv():
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=skila_schools.csv"}
     )
+
+from mistral_scraper import scrape_schools_ai, enrich_school_with_ai
+
+class AIScrapeRequest(BaseModel):
+    query: Optional[str] = None
+    state: Optional[str] = "Telangana"
+    district: Optional[str] = "Hyderabad"
+    mandal: Optional[str] = None
+    count: int = 4
+    auto_save: bool = False
+
+class AISaveScrapedRequest(BaseModel):
+    schools: List[Dict[str, Any]]
+
+@app.post("/api/ai/scrape")
+def api_scrape_schools(req: AIScrapeRequest):
+    """
+    Triggers Mistral AI (ministral-14b-latest) to research, extract, and scrape
+    schools matching the region or search prompt.
+    """
+    scraped = scrape_schools_ai(
+        query=req.query,
+        state=req.state,
+        district=req.district,
+        mandal=req.mandal,
+        count=req.count
+    )
+    if req.auto_save:
+        col = db.collection("schools")
+        for s in scraped:
+            col.document(s["id"]).set(s)
+    return {"schools": scraped, "count": len(scraped), "auto_saved": req.auto_save}
+
+@app.post("/api/ai/save")
+def api_save_scraped_schools(req: AISaveScrapedRequest):
+    """
+    Saves selected scraped schools into Firebase Firestore.
+    """
+    col = db.collection("schools")
+    saved_count = 0
+    now = datetime.now(timezone.utc).isoformat()
+    for s in req.schools:
+        doc_id = s.get("id") or str(uuid.uuid4())
+        s["id"] = doc_id
+        if not s.get("created_at"):
+            s["created_at"] = now
+        s["updated_at"] = now
+        col.document(doc_id).set(s)
+        saved_count += 1
+    return {"message": f"Successfully imported {saved_count} schools", "count": saved_count}
+
+@app.post("/api/ai/enrich/{school_id}")
+def api_enrich_school(school_id: str):
+    """
+    Uses Mistral AI to evaluate an existing school and enrich its tech recommendations
+    and sales strategy pitch.
+    """
+    doc_ref = db.collection("schools").document(school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+    school_data = doc.to_dict()
+    school_data["id"] = school_id
+    
+    enriched = enrich_school_with_ai(school_data)
+    
+    if "remarks" in enriched and enriched["remarks"]:
+        current_remarks = school_data.get("sales", {}).get("remarks", "")
+        updated_remarks = f"{current_remarks}\n[Mistral AI Analysis]: {enriched['remarks']}".strip()
+        school_data["sales"]["remarks"] = updated_remarks
+        if "skila_ai_potential" in enriched:
+            school_data["sales"]["skila_ai_potential"] = enriched["skila_ai_potential"]
+        if "technology_adoption_level" in enriched:
+            school_data["sales"]["technology_adoption_level"] = enriched["technology_adoption_level"]
+        school_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        doc_ref.set(school_data)
+        
+    return {"school": school_data, "ai_insights": enriched}
+
