@@ -104,7 +104,7 @@ def scrape_district_batch(
 
     user_prompt = f"List {count} schools across different mandals in District: {district}, State: {state}, ordered strictly from High to Low."
     if exclude_names and len(exclude_names) > 0:
-        user_prompt += f"\nCRITICAL: Do NOT duplicate any of these already listed schools: {json.dumps(exclude_names[:35])}."
+        user_prompt += f"\nCRITICAL: Do NOT duplicate any of these already listed schools: {json.dumps(exclude_names[:80])}."
 
     messages = [
         {"role": "system", "content": sys_prompt},
