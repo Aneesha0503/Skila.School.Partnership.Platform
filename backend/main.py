@@ -7,6 +7,9 @@ from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 
 from firebase_config import get_db, is_live_firebase
 from models import SchoolModel, SchoolCreateUpdate
@@ -265,9 +268,265 @@ def get_stats(state: Optional[str] = None, district: Optional[str] = None):
         "pilots_started": pilots_started
     }
 
+def build_schools_excel(schools: List[Dict[str, Any]]) -> bytes:
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Schools Intelligence"
+    
+    # Enable grid lines
+    ws.views.sheetView[0].showGridLines = True
+    
+    headers = [
+        "#",
+        "Tier Classification",
+        "UDISE Code",
+        "School Name",
+        "Affiliated Board",
+        "Student Strength",
+        "Teacher Strength",
+        "Student-Teacher Ratio",
+        "State",
+        "District",
+        "Revenue Division",
+        "Mandal",
+        "Local Body Type",
+        "Local Body Name",
+        "Village / Locality / Ward",
+        "Full Address",
+        "Pincode",
+        "Category",
+        "Management Type",
+        "School Type",
+        "Classes From",
+        "Classes To",
+        "Principal Name",
+        "Correspondent Name",
+        "Mobile Number",
+        "Official Email",
+        "Website",
+        "ERP Used",
+        "ERP Vendor",
+        "LMS Used",
+        "LMS Vendor",
+        "Coding Curriculum",
+        "Coding Vendor",
+        "Robotics Program",
+        "Robotics Vendor",
+        "AI Used",
+        "AI Vendor",
+        "STEM Program",
+        "ATL Lab (NITI Aayog)",
+        "Smart Classrooms",
+        "Computer Labs",
+        "Internet Connectivity",
+        "Parent App",
+        "School App",
+        "Key Decision Maker",
+        "Decision Maker Designation",
+        "Decision Maker Contact",
+        "Annual Fee Range",
+        "Technology Adoption Level",
+        "Skila AI Potential",
+        "Lead Status",
+        "Interest Level",
+        "Demo Completed",
+        "Proposal Shared",
+        "Pilot Started",
+        "Sales Owner",
+        "Last Contact Date",
+        "Next Follow-up Date",
+        "Existing EdTech Partners",
+        "Strategy Remarks",
+        "Details Status"
+    ]
+    
+    # Sort schools by tier and student strength
+    tier_order = {
+        "High Range": 1,
+        "State Board - High Strength": 2,
+        "State Board - Mid Strength": 3,
+        "State Board - Low Strength": 4
+    }
+    
+    def get_sort_key(s):
+        t = s.get("tier", {}).get("tier", "Standard")
+        rank = tier_order.get(t, 5)
+        strength = int(s.get("info", {}).get("student_strength") or 0)
+        return (rank, -strength)
+        
+    sorted_schools = sorted(schools, key=get_sort_key)
+    
+    # Header styling
+    header_fill = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid")
+    header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+    header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    
+    thin_border_side = Side(border_style="thin", color="CBD5E1")
+    cell_border = Border(left=thin_border_side, right=thin_border_side, top=thin_border_side, bottom=thin_border_side)
+    
+    ws.append(headers)
+    ws.row_dimensions[1].height = 28
+    
+    for col_idx in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=col_idx)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = header_alignment
+        cell.border = cell_border
+        
+    row_alt_fill = PatternFill(start_color="F8FAFC", end_color="F8FAFC", fill_type="solid")
+    regular_font = Font(name="Calibri", size=10)
+    
+    for row_idx, s in enumerate(sorted_schools, start=2):
+        h = s.get("hierarchy", {})
+        info = s.get("info", {})
+        tech = s.get("technology", {})
+        sales = s.get("sales", {})
+        tier = s.get("tier", {}).get("tier", "Standard")
+        
+        students = int(info.get("student_strength") or 0)
+        teachers = int(info.get("teacher_strength") or 0)
+        ratio = f"{(students / teachers):.1f}:1" if teachers > 0 else "N/A"
+        
+        partners = sales.get("existing_edtech_partners", "")
+        if isinstance(partners, list):
+            partners = ", ".join(partners)
+            
+        remarks = sales.get("remarks", "")
+        if isinstance(remarks, dict):
+            remarks = "; ".join(f"{k}: {v}" for k, v in remarks.items())
+            
+        details_status = "49 Fields Ready" if s.get("details_fetched") else "Pending Deep Run"
+        
+        row_values = [
+            row_idx - 1,
+            tier,
+            str(info.get("udise_code") or ""),
+            info.get("school_name", ""),
+            info.get("board", ""),
+            students,
+            teachers,
+            ratio,
+            h.get("state", ""),
+            h.get("district", ""),
+            h.get("revenue_division", ""),
+            h.get("mandal", ""),
+            h.get("local_body_type", ""),
+            h.get("local_body_name", ""),
+            h.get("village_locality_ward", ""),
+            info.get("full_address", ""),
+            str(info.get("pincode") or ""),
+            info.get("school_category", ""),
+            info.get("management_type", ""),
+            info.get("school_type", ""),
+            info.get("classes_from", ""),
+            info.get("classes_to", ""),
+            info.get("principal_name", ""),
+            info.get("correspondent_name", ""),
+            str(info.get("mobile") or ""),
+            info.get("email", ""),
+            info.get("website", ""),
+            tech.get("erp_used", ""),
+            tech.get("erp_vendor", ""),
+            tech.get("lms_used", ""),
+            tech.get("lms_vendor", ""),
+            tech.get("coding_used", ""),
+            tech.get("coding_vendor", ""),
+            tech.get("robotics_used", ""),
+            tech.get("robotics_vendor", ""),
+            tech.get("ai_used", ""),
+            tech.get("ai_vendor", ""),
+            tech.get("stem_program", ""),
+            tech.get("atl_lab", ""),
+            int(tech.get("smart_classroom_count") or 0),
+            int(tech.get("computer_lab_count") or 0),
+            tech.get("internet", ""),
+            tech.get("parent_app", ""),
+            tech.get("school_app", ""),
+            sales.get("decision_maker", ""),
+            sales.get("decision_maker_designation", ""),
+            str(sales.get("decision_maker_contact") or ""),
+            sales.get("annual_fee_range", ""),
+            sales.get("technology_adoption_level", ""),
+            sales.get("skila_ai_potential", ""),
+            sales.get("lead_status", ""),
+            sales.get("interest_level", ""),
+            sales.get("demo_done", ""),
+            sales.get("proposal_shared", ""),
+            sales.get("pilot_started", ""),
+            sales.get("sales_owner", ""),
+            sales.get("last_contact_date", ""),
+            sales.get("next_follow_up_date", ""),
+            partners,
+            str(remarks),
+            details_status
+        ]
+        
+        ws.append(row_values)
+        ws.row_dimensions[row_idx].height = 20
+        
+        is_alt = (row_idx % 2 == 1)
+        for col_idx in range(1, len(row_values) + 1):
+            cell = ws.cell(row=row_idx, column=col_idx)
+            cell.font = regular_font
+            cell.border = cell_border
+            if is_alt:
+                cell.fill = row_alt_fill
+            if col_idx in [1, 6, 7, 40, 41]: # Numbers / counts
+                cell.alignment = Alignment(horizontal="right", vertical="center")
+            elif col_idx in [2, 3, 5, 8, 17, 28, 30, 32, 34, 36, 38, 39, 43, 44, 50, 51, 52, 53, 54, 55, 61]:
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+            else:
+                cell.alignment = Alignment(horizontal="left", vertical="center")
+
+    # Auto-adjust column widths
+    for col in ws.columns:
+        col_letter = get_column_letter(col[0].column)
+        max_len = 0
+        for cell in col:
+            val_str = str(cell.value or '')
+            if len(val_str) > max_len:
+                max_len = len(val_str)
+        adjusted_width = min(max(max_len + 4, 12), 40)
+        ws.column_dimensions[col_letter].width = adjusted_width
+        
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output.getvalue()
+
 @app.get("/api/export")
-def export_csv():
+@app.get("/api/export/excel")
+def export_excel(state: Optional[str] = None, district: Optional[str] = None):
     schools = get_all_schools_raw()
+    if state:
+        schools = [s for s in schools if s.get("hierarchy", {}).get("state", "").lower() == state.strip().lower()]
+    if district:
+        schools = [s for s in schools if s.get("hierarchy", {}).get("district", "").lower() == district.strip().lower()]
+        
+    excel_bytes = build_schools_excel(schools)
+    
+    filename = "skila_schools_intelligence.xlsx"
+    if district:
+        clean_dist = district.lower().replace(" ", "_")
+        filename = f"skila_schools_{clean_dist}.xlsx"
+        
+    return Response(
+        content=excel_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
+    )
+
+@app.get("/api/export/csv")
+def export_csv(state: Optional[str] = None, district: Optional[str] = None):
+    schools = get_all_schools_raw()
+    if state:
+        schools = [s for s in schools if s.get("hierarchy", {}).get("state", "").lower() == state.strip().lower()]
+    if district:
+        schools = [s for s in schools if s.get("hierarchy", {}).get("district", "").lower() == district.strip().lower()]
     output = io.StringIO()
     writer = csv.writer(output)
     

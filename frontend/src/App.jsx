@@ -209,8 +209,14 @@ export default function App() {
     setSelectedSchool(savedSchool);
   };
 
-  const handleExportCsv = () => {
-    window.open('/api/export', '_blank');
+  const handleExportExcel = () => {
+    let url = '/api/export/excel';
+    const params = new URLSearchParams();
+    if (selectedHierarchy.state) params.append('state', selectedHierarchy.state);
+    if (selectedHierarchy.district) params.append('district', selectedHierarchy.district);
+    const q = params.toString();
+    if (q) url += `?${q}`;
+    window.open(url, '_blank');
   };
 
   const handleRunSchoolDetails = async (schoolId) => {
@@ -263,7 +269,7 @@ export default function App() {
       <Header
         statusInfo={statusInfo}
         onOpenAddModal={handleOpenAddModal}
-        onExportCsv={handleExportCsv}
+        onExportExcel={handleExportExcel}
         theme={theme}
         onToggleTheme={toggleTheme}
       />
