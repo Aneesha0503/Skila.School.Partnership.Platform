@@ -44,6 +44,26 @@ export default function App() {
   const [addEditModalOpen, setAddEditModalOpen] = useState(false);
   const [editingSchool, setEditingSchool] = useState(null);
 
+  // Light / Dark Theme State
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('skila_theme');
+    if (saved) return saved;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('skila_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
   // Fetch initial status and metadata
   useEffect(() => {
     fetchStatus();
@@ -238,13 +258,15 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
       {/* Top Header */}
       <Header
         statusInfo={statusInfo}
         onOpenAddModal={handleOpenAddModal}
         onOpenMistralScraper={() => setMistralModalOpen(true)}
         onExportCsv={handleExportCsv}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       {/* Main Content Area */}
@@ -280,19 +302,19 @@ export default function App() {
 
         {/* Schools Listing */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-slate-200 shadow-xs">
-            <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin mb-3" />
-            <p className="text-sm font-semibold text-slate-700">Loading school details...</p>
+          <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <RefreshCw className="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-spin mb-3" />
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Loading school details...</p>
           </div>
         ) : schools.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300 p-8 shadow-xs">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-100 to-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 mx-auto mb-3 shadow-xs">
+          <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 shadow-xs">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-100 to-indigo-100 dark:from-slate-800 dark:to-indigo-950 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-700 dark:text-indigo-400 mx-auto mb-3 shadow-xs">
               <School className="w-7 h-7" />
             </div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
               No Schools Loaded
             </h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-4">
               Select a State and District above and click Discover Schools to load regional directory records.
             </p>
             {selectedHierarchy.district && (
@@ -301,7 +323,7 @@ export default function App() {
                   handleResetHierarchy();
                   setFilters({ search: '', tier: 'All', board: 'All', lead_status: 'All', skila_ai_potential: 'All', technology_adoption_level: 'All' });
                 }}
-                className="text-xs font-semibold px-4 py-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition cursor-pointer"
+                className="text-xs font-semibold px-4 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-transparent dark:border-indigo-800 transition cursor-pointer"
               >
                 Clear District Selection
               </button>

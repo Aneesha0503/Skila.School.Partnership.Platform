@@ -53,13 +53,13 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
   return (
     <div 
       onClick={() => onSelectSchool(school)}
-      className="bg-white rounded-xl border border-slate-200 hover:border-indigo-400 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col p-4 group relative"
+      className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col p-4 group relative"
     >
       {/* Tier Category Indicator */}
       <div className="flex items-center justify-between gap-2 mb-2.5">
         <div className="flex items-center gap-1.5 flex-wrap">
           {index !== undefined && (
-            <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+            <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
               #{index + 1}
             </span>
           )}
@@ -71,12 +71,12 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
         </div>
 
         {details_fetched ? (
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
-            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> 49 Fields Ready
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
+            <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> 49 Fields Ready
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
-            <Zap className="w-3 h-3 text-amber-600" /> Pending Run
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0">
+            <Zap className="w-3 h-3 text-amber-600 dark:text-amber-400" /> Pending Run
           </span>
         )}
       </div>
@@ -85,26 +85,26 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1">
           <div className="flex items-center gap-1.5 flex-wrap mb-1">
-            <span className="text-[11px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">
+            <span className="text-[11px] px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-100 dark:border-indigo-800">
               {info?.board}
             </span>
-            <span className="text-[11px] px-2 py-0.5 rounded bg-slate-50 text-slate-600 border border-slate-200">
+            <span className="text-[11px] px-2 py-0.5 rounded bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
               {info?.school_category}
             </span>
             {info?.udise_code && details_fetched && (
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium border border-slate-200 dark:border-slate-700">
                 UDISE: {info?.udise_code}
               </span>
             )}
           </div>
-          <h3 className="font-bold text-slate-900 text-base group-hover:text-indigo-600 transition leading-snug">
+          <h3 className="font-bold text-slate-900 dark:text-white text-base group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition leading-snug">
             {info?.school_name}
           </h3>
         </div>
       </div>
 
       {/* Location Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-3">
+      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mb-3">
         <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
         <span className="truncate">
           {hierarchy?.village_locality_ward}, {hierarchy?.mandal} Mdl, {hierarchy?.district}
@@ -112,17 +112,17 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-2 gap-2 bg-slate-50 rounded-lg p-2.5 mb-3 text-xs">
+      <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/60 rounded-lg p-2.5 mb-3 text-xs border border-slate-100 dark:border-slate-800">
         <div>
-          <span className="text-slate-400 block text-[10px] uppercase font-semibold">Student Strength</span>
-          <span className="font-bold text-slate-800 text-sm">
+          <span className="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-semibold">Student Strength</span>
+          <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">
             {info?.student_strength?.toLocaleString()}
           </span>
-          <span className="text-[10px] text-slate-500 ml-1">students</span>
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 ml-1">students</span>
         </div>
         <div>
-          <span className="text-slate-400 block text-[10px] uppercase font-semibold">Management</span>
-          <span className="font-medium text-slate-700 text-xs truncate block">
+          <span className="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-semibold">Management</span>
+          <span className="font-medium text-slate-700 dark:text-slate-300 text-xs truncate block">
             {info?.management_type || 'Private'}
           </span>
         </div>
@@ -132,25 +132,25 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
       {details_fetched ? (
         <div className="flex items-center gap-1.5 flex-wrap mb-3 text-[11px]">
           {technology?.erp_used === 'Yes' && (
-            <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">ERP: {technology?.erp_vendor || 'Yes'}</span>
+            <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium border border-slate-200 dark:border-slate-700">ERP: {technology?.erp_vendor || 'Yes'}</span>
           )}
           {technology?.lms_used === 'Yes' && (
-            <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">LMS</span>
+            <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium border border-slate-200 dark:border-slate-700">LMS</span>
           )}
           {technology?.coding_used === 'Yes' && (
-            <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 font-medium">Coding</span>
+            <span className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800 font-medium">Coding</span>
           )}
           {technology?.atl_lab === 'Yes' && (
-            <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100 font-semibold">ATL Lab</span>
+            <span className="px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800 font-semibold">ATL Lab</span>
           )}
           {technology?.smart_classroom === 'Yes' && (
-            <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 font-medium">
+            <span className="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-100 dark:border-amber-800 font-medium">
               Smart ({technology?.smart_classroom_count})
             </span>
           )}
         </div>
       ) : (
-        <div className="mb-3 p-2 rounded-lg bg-amber-50/70 border border-amber-100 text-[11px] text-amber-900 flex items-center justify-between gap-2">
+        <div className="mb-3 p-2 rounded-lg bg-amber-50/70 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 flex items-center justify-between gap-2">
           <span>Click to run Mistral AI 49-field profile</span>
           <button
             type="button"
@@ -174,18 +174,18 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
       )}
 
       {/* Footer CRM Info & CTA */}
-      <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+      <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
         <div className="truncate">
           {details_fetched && sales?.decision_maker ? (
             <>
-              <span className="text-slate-400">DM: </span>
-              <span className="font-medium text-slate-700">{sales?.decision_maker}</span>
+              <span className="text-slate-400 dark:text-slate-500">DM: </span>
+              <span className="font-medium text-slate-700 dark:text-slate-300">{sales?.decision_maker}</span>
             </>
           ) : (
-            <span className="text-slate-400 italic">Details ready on click</span>
+            <span className="text-slate-400 dark:text-slate-500 italic">Details ready on click</span>
           )}
         </div>
-        <div className="flex items-center text-indigo-600 font-semibold group-hover:translate-x-0.5 transition-transform shrink-0">
+        <div className="flex items-center text-indigo-600 dark:text-indigo-400 font-semibold group-hover:translate-x-0.5 transition-transform shrink-0">
           {details_fetched ? 'View 49 Fields' : 'Open School'} <ChevronRight className="w-4 h-4 ml-0.5" />
         </div>
       </div>

@@ -72,14 +72,14 @@ export default function StatsBar({ stats, schools }) {
         return (
           <div
             key={idx}
-            className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3"
+            className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3 transition-colors"
           >
-            <div className={`w-10 h-10 rounded-lg ${it.bg} ${it.border} border flex items-center justify-center shrink-0`}>
+            <div className={`w-10 h-10 rounded-lg ${it.bg} dark:bg-slate-800/80 ${it.border} dark:border-slate-700/60 border flex items-center justify-center shrink-0`}>
               <Icon className={`w-5 h-5 ${it.color}`} />
             </div>
             <div>
-              <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">{it.label}</p>
-              <p className="text-lg font-bold text-slate-900">{it.value}</p>
+              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{it.label}</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-white">{it.value}</p>
             </div>
           </div>
         );
