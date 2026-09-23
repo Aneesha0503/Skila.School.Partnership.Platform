@@ -57,6 +57,7 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-[10px] font-bold tracking-wider">
+              <th className="py-3 px-3 w-12 text-center text-slate-500 font-mono">#</th>
               <th className="py-3 px-4">Tier (High to Low)</th>
               <th className="py-3 px-4">School Name</th>
               <th className="py-3 px-4">Administrative Location</th>
@@ -66,7 +67,7 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-slate-700">
-            {schools.map((school) => {
+            {schools.map((school, index) => {
               const { hierarchy, info, technology, sales, tier, details_fetched } = school;
               const tierBadge = getTierBadge(tier);
               const isRunning = runningId === school.id;
@@ -77,6 +78,9 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
                   onClick={() => onSelectSchool(school)}
                   className="hover:bg-indigo-50/40 transition cursor-pointer"
                 >
+                  <td className="py-3 px-3 text-center font-mono font-bold text-slate-400 text-xs">
+                    {index + 1}
+                  </td>
                   <td className="py-3 px-4 whitespace-nowrap">
                     <span className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-bold border ${tierBadge.className}`}>
                       {tierBadge.label}

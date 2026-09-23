@@ -4,7 +4,7 @@ import {
   Sparkles, Calendar, ChevronRight, Phone, Award, ShieldCheck, Layers, Play, RefreshCw, CheckCircle2, Zap 
 } from 'lucide-react';
 
-export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails }) {
+export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails, index }) {
   const { hierarchy, info, technology, sales, tier, details_fetched } = school;
   const [isRunning, setIsRunning] = useState(false);
 
@@ -57,11 +57,18 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails 
     >
       {/* Tier Category Indicator */}
       <div className="flex items-center justify-between gap-2 mb-2.5">
-        {tierBadge ? (
-          <span className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full border shadow-2xs ${tierBadge.className}`}>
-            {tierBadge.label}
-          </span>
-        ) : <div />}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {index !== undefined && (
+            <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+              #{index + 1}
+            </span>
+          )}
+          {tierBadge && (
+            <span className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full border shadow-2xs ${tierBadge.className}`}>
+              {tierBadge.label}
+            </span>
+          )}
+        </div>
 
         {details_fetched ? (
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">

@@ -309,10 +309,11 @@ export default function App() {
           </div>
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {schools.map((school) => (
+            {schools.map((school, idx) => (
               <SchoolCard
                 key={school.id}
                 school={school}
+                index={idx}
                 onSelectSchool={setSelectedSchool}
                 onRunSchoolDetails={handleRunSchoolDetails}
               />
