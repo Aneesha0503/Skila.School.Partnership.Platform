@@ -140,15 +140,19 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
         </div>
 
         {/* Header Actions */}
-        <div className="flex items-center gap-3 self-start md:self-center">
-          <label className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-slate-300 cursor-pointer">
+        <div className="flex items-center gap-3 self-start md:self-center flex-wrap">
+          <label 
+            className="inline-flex items-center gap-2 text-xs text-slate-300 hover:text-white cursor-pointer bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-700/80 transition"
+            title="Checks live websites again instead of loading schools already saved in the database"
+          >
             <input
               type="checkbox"
               checked={forceScrape}
               onChange={(e) => setForceScrape(e.target.checked)}
-              className="rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-0 w-3.5 h-3.5"
+              className="rounded border-slate-600 bg-slate-900 text-indigo-500 focus:ring-0 w-3.5 h-3.5"
             />
-            <span>Bypass cache</span>
+            <span className="font-medium text-slate-200">Fresh search from web</span>
+            <span className="text-[10px] text-slate-400 hidden sm:inline">(ignore saved list)</span>
           </label>
 
           {totalSchoolsLoaded > 0 && (
@@ -156,17 +160,19 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
               type="button"
               onClick={(e) => handleRunDistrict(e, true)}
               disabled={isRunning || isScrapingMore}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-200 text-xs font-medium border border-indigo-500/40 transition disabled:opacity-50 cursor-pointer shadow-xs"
+              title="Crawls other mandals and rural areas in this district to find 25 new schools without duplicates"
             >
               {isScrapingMore ? (
                 <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-slate-400" />
-                  <span>Loading...</span>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-300" />
+                  <span>Searching other mandals...</span>
                 </>
               ) : (
                 <>
                   <Plus className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Load More</span>
+                  <span>+ Find 25 More Schools</span>
+                  <span className="text-[10px] text-indigo-300/70 hidden sm:inline">(other mandals)</span>
                 </>
               )}
             </button>
