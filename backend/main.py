@@ -229,51 +229,40 @@ def delete_school(school_id: str):
     return {"message": "School successfully deleted", "id": school_id}
 
 @app.get("/api/stats")
-def get_stats():
+def get_stats(state: Optional[str] = None, district: Optional[str] = None):
     schools = get_all_schools_raw()
+    if state:
+        schools = [s for s in schools if s.get("hierarchy", {}).get("state", "").lower() == state.strip().lower()]
+    if district:
+        schools = [s for s in schools if s.get("hierarchy", {}).get("district", "").lower() == district.strip().lower()]
+        
     total = len(schools)
     
-    lead_stages = {}
-    adoption_levels = {}
-    high_potential = 0
-    demos_done = 0
-    proposals_shared = 0
-    pilots_started = 0
-    total_students = 0
-    total_teachers = 0
+    high_range = sum(1 for s in schools if s.get("tier", {}).get("tier") == "High Range")
+    state_high = sum(1 for s in schools if s.get("tier", {}).get("tier") == "State Board - High Strength")
+    state_mid = sum(1 for s in schools if s.get("tier", {}).get("tier") == "State Board - Mid Strength")
+    state_low = sum(1 for s in schools if s.get("tier", {}).get("tier") == "State Board - Low Strength")
     
-    for s in schools:
-        sales = s.get("sales", {})
-        info = s.get("info", {})
-        
-        status = sales.get("lead_status", "New")
-        lead_stages[status] = lead_stages.get(status, 0) + 1
-        
-        adopt = sales.get("technology_adoption_level", "Medium")
-        adoption_levels[adopt] = adoption_levels.get(adopt, 0) + 1
-        
-        if sales.get("skila_ai_potential") == "High":
-            high_potential += 1
-        if sales.get("demo_done") == "Yes":
-            demos_done += 1
-        if sales.get("proposal_shared") == "Yes":
-            proposals_shared += 1
-        if sales.get("pilot_started") == "Yes":
-            pilots_started += 1
-            
-        total_students += int(info.get("student_strength") or 0)
-        total_teachers += int(info.get("teacher_strength") or 0)
-        
+    total_students = sum(int(s.get("info", {}).get("student_strength") or 0) for s in schools)
+    total_teachers = sum(int(s.get("info", {}).get("teacher_strength") or 0) for s in schools)
+    
+    high_potential = sum(1 for s in schools if s.get("sales", {}).get("skila_ai_potential") == "High")
+    demos_done = sum(1 for s in schools if s.get("sales", {}).get("demo_done") == "Yes")
+    proposals_shared = sum(1 for s in schools if s.get("sales", {}).get("proposal_shared") == "Yes")
+    pilots_started = sum(1 for s in schools if s.get("sales", {}).get("pilot_started") == "Yes")
+    
     return {
         "total_schools": total,
+        "high_range": high_range,
+        "state_high": state_high,
+        "state_mid": state_mid,
+        "state_low": state_low,
+        "total_students": total_students,
+        "total_teachers": total_teachers,
         "high_ai_potential": high_potential,
         "demos_done": demos_done,
         "proposals_shared": proposals_shared,
-        "pilots_started": pilots_started,
-        "total_students": total_students,
-        "total_teachers": total_teachers,
-        "lead_stages": lead_stages,
-        "adoption_levels": adoption_levels
+        "pilots_started": pilots_started
     }
 
 @app.get("/api/export")

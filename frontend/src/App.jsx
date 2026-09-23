@@ -251,7 +251,7 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
         
         {/* KPI Summary Cards */}
-        <StatsBar stats={stats} />
+        <StatsBar stats={stats} schools={schools} />
 
         {/* Automated District Discovery & AI Scraper */}
         <DistrictRunner
