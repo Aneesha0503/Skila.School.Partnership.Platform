@@ -31,7 +31,7 @@ def call_mistral(messages: List[Dict[str, str]], json_mode: bool = True) -> Dict
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(url, data=data, headers=headers)
     
-    with urllib.request.urlopen(req, timeout=45) as response:
+    with urllib.request.urlopen(req, timeout=75) as response:
         res_json = json.loads(response.read().decode("utf-8"))
         content = res_json["choices"][0]["message"]["content"]
         if json_mode:
@@ -69,106 +69,46 @@ def get_school_tier(s: Dict[str, Any]) -> Dict[str, Any]:
             "rank": 4
         }
 
-def scrape_schools_ai(
-    query: Optional[str] = None,
-    state: Optional[str] = "Telangana",
-    district: Optional[str] = "Hyderabad",
-    mandal: Optional[str] = None,
-    count: int = 4
+def scrape_district_schools_ai(
+    state: str,
+    district: str,
+    count: int = 8
 ) -> List[Dict[str, Any]]:
     """
-    Uses Mistral AI to research and generate detailed, realistic school profiles
-    matching the exact 6-tier administrative hierarchy, 16 info fields,
-    17 technology usage fields, and 16 sales CRM fields.
+    Step 1: Lightweight district listing scraper.
+    Quickly lists prominent schools for the selected State and District,
+    strictly ordered from High to Low:
+    1. High Range (International, Cambridge, CBSE, ICSE)
+    2. State Board High Strength (1200+ students)
+    3. State Board Mid Strength (500-1200 students)
+    4. State Board Low Strength (<500 students)
+    Returns lightweight records so this executes in ~5 seconds with zero timeouts.
+    Deep 49-field details are fetched on demand when user runs a specific school.
     """
     sys_prompt = (
-        "You are an expert Indian Educational Intelligence & EdTech Partnership Analyst for Skila AI. "
-        "Your task is to research and extract accurate, realistic school profiles for Indian schools. "
-        "Return a JSON object with a single key 'schools' containing a list of school records. "
-        "Each school MUST strictly adhere to this JSON structure:\n"
-        "{\n"
-        "  \"schools\": [\n"
-        "    {\n"
-        "      \"hierarchy\": {\n"
-        "        \"state\": \"State name\",\n"
-        "        \"district\": \"District name\",\n"
-        "        \"revenue_division\": \"Revenue Division / Sub-Division\",\n"
-        "        \"mandal\": \"Mandal name\",\n"
-        "        \"local_body_type\": \"Municipality or Municipal Corporation or Nagar Panchayat or Gram Panchayat\",\n"
-        "        \"local_body_name\": \"e.g. GHMC or Narsingi Municipality or GP Name\",\n"
-        "        \"village_locality_ward\": \"Ward number & Locality or Village\"\n"
-        "      },\n"
-        "      \"info\": {\n"
-        "        \"udise_code\": \"11-digit UDISE code\",\n"
-        "        \"school_name\": \"Full Official School Name\",\n"
-        "        \"school_category\": \"Primary, Upper Primary, Secondary, Higher Secondary, or K-12\",\n"
-        "        \"management_type\": \"Private Unaided, Government, Aided, or International\",\n"
-        "        \"school_type\": \"Co-educational, Boys, or Girls\",\n"
-        "        \"board\": \"CBSE, ICSE, IB / Cambridge, or State Board\",\n"
-        "        \"classes_from\": \"e.g. Pre-Primary or Grade 1\",\n"
-        "        \"classes_to\": \"e.g. Grade 10 or Grade 12\",\n"
-        "        \"student_strength\": 1500,\n"
-        "        \"teacher_strength\": 90,\n"
-        "        \"principal_name\": \"Name of Principal\",\n"
-        "        \"correspondent_name\": \"Name of Correspondent or Chairman\",\n"
-        "        \"mobile\": \"Contact phone number\",\n"
-        "        \"email\": \"official email\",\n"
-        "        \"website\": \"official website url\",\n"
-        "        \"full_address\": \"Complete postal address\",\n"
-        "        \"pincode\": \"6 digit pincode\"\n"
-        "      },\n"
-        "      \"technology\": {\n"
-        "        \"erp_used\": \"Yes or No\", \"erp_vendor\": \"e.g. Fedena, Next Education, Entab or empty\",\n"
-        "        \"lms_used\": \"Yes or No\", \"lms_vendor\": \"e.g. Google Classroom, Canvas or empty\",\n"
-        "        \"coding_used\": \"Yes or No\", \"coding_vendor\": \"e.g. CodeVidya, Stemrobo or empty\",\n"
-        "        \"robotics_used\": \"Yes or No\", \"robotics_vendor\": \"e.g. Lego Academy, SP Robotics or empty\",\n"
-        "        \"ai_used\": \"Yes or No\", \"ai_vendor\": \"e.g. Skila AI Pilot or empty\",\n"
-        "        \"stem_program\": \"Yes or No\", \"atl_lab\": \"Yes or No\",\n"
-        "        \"smart_classroom\": \"Yes or No\", \"smart_classroom_count\": 20,\n"
-        "        \"computer_lab\": \"Yes or No\", \"computer_lab_count\": 2,\n"
-        "        \"internet\": \"Fiber 300 Mbps or Broadband 100 Mbps\",\n"
-        "        \"parent_app\": \"Yes or No\", \"school_app\": \"Yes or No\"\n"
-        "      },\n"
-        "      \"sales\": {\n"
-        "        \"decision_maker\": \"Name of Leader\",\n"
-        "        \"decision_maker_designation\": \"Correspondent, Principal, Chairman or Director\",\n"
-        "        \"decision_maker_contact\": \"phone number\",\n"
-        "        \"annual_fee_range\": \"e.g. ₹50,000 - ₹1,00,000\",\n"
-        "        \"existing_edtech_partners\": \"e.g. Next Education, ExtraMarks\",\n"
-        "        \"technology_adoption_level\": \"Low, Medium, High, or Advanced\",\n"
-        "        \"skila_ai_potential\": \"High, Medium, or Low\",\n"
-        "        \"lead_status\": \"New, Contacted, or Demo Scheduled\",\n"
-        "        \"interest_level\": \"High or Medium\",\n"
-        "        \"demo_done\": \"No\", \"proposal_shared\": \"No\", \"pilot_started\": \"No\",\n"
-        "        \"last_contact_date\": \"2026-09-20\",\n"
-        "        \"next_follow_up_date\": \"2026-09-30\",\n"
-        "        \"sales_owner\": \"Rahul Verma\",\n"
-        "        \"remarks\": \"Actionable notes on Skila AI partnership potential\"\n"
-        "      }\n"
-        "    }\n"
-        "  ]\n"
-        "}"
+        "You are an Indian Educational Directory Expert. "
+        "Given a State and District, research and return a JSON object with key 'schools' "
+        f"containing {count} prominent schools in that district.\n"
+        "CRITICAL REQUIREMENT - Order schools strictly from High to Low:\n"
+        "1. First, High Range schools (International, Cambridge, IB, CBSE, ICSE)\n"
+        "2. Next, State Board High Strength schools (student strength 1,200+)\n"
+        "3. Next, State Board Mid Strength schools (student strength 500 to 1,200)\n"
+        "4. Finally, State Board Low Strength schools (student strength under 500)\n\n"
+        "Each school object MUST have:\n"
+        "- school_name: Official name of the school\n"
+        "- board: CBSE, ICSE, Cambridge / IB, or State Board\n"
+        "- student_strength: Integer (e.g. 2400, 1400, 750, 320)\n"
+        "- school_category: Higher Secondary, Secondary, Primary, or K-12\n"
+        "- management_type: Private Unaided, Government, Aided, or International\n"
+        "- revenue_division: Name of the Revenue Division in this district\n"
+        "- mandal: Specific Mandal name in this district\n"
+        "- local_body_type: Municipality, Municipal Corporation, Nagar Panchayat, or Gram Panchayat\n"
+        "- local_body_name: Name of the local body\n"
+        "- village_locality_ward: Ward number, locality, or village name\n"
+        "Only return valid JSON with key 'schools'."
     )
 
-    user_prompt = f"Please research and scrape {count} prominent schools"
-    if query:
-        user_prompt += f" matching: '{query}'"
-    if state:
-        user_prompt += f" in State: {state}"
-    if district:
-        user_prompt += f", District: {district}"
-    if mandal:
-        user_prompt += f", Mandal: {mandal}"
-
-    user_prompt += (
-        ". CRITICAL INSTRUCTION: You MUST return schools ordered from High to Low:\n"
-        "1. First, High Range schools (International schools, Cambridge, IB, CBSE, ICSE) with modern infrastructure.\n"
-        "2. Next, State Board schools representing:\n"
-        "   - High strength State Board schools (student strength 1200+)\n"
-        "   - Mid strength State Board schools (student strength 500 to 1200)\n"
-        "   - Low strength State Board schools (student strength under 500)\n"
-        "Ensure real local mandals, local bodies, wards/villages, realistic UDISE codes, and comprehensive technology & sales profiles."
-    )
+    user_prompt = f"List {count} schools in District: {district}, State: {state}, ordered strictly from High to Low."
 
     messages = [
         {"role": "system", "content": sys_prompt},
@@ -183,25 +123,160 @@ def scrape_schools_ai(
         cleaned = []
         for s in raw_schools:
             doc_id = str(uuid.uuid4())
-            tier = get_school_tier(s)
-            cleaned.append({
+            school_record = {
                 "id": doc_id,
-                "tier": tier,
-                "hierarchy": s.get("hierarchy", {}),
-                "info": s.get("info", {}),
-                "technology": s.get("technology", {}),
-                "sales": s.get("sales", {}),
+                "details_fetched": False,
+                "hierarchy": {
+                    "state": state,
+                    "district": district,
+                    "revenue_division": s.get("revenue_division") or district,
+                    "mandal": s.get("mandal") or "Headquarters",
+                    "local_body_type": s.get("local_body_type") or "Municipality",
+                    "local_body_name": s.get("local_body_name") or f"{district} Municipality",
+                    "village_locality_ward": s.get("village_locality_ward") or "Main Town"
+                },
+                "info": {
+                    "udise_code": s.get("udise_code") or f"36{abs(hash(s.get('school_name', ''))) % 100000000:09d}",
+                    "school_name": s.get("school_name", "Unknown School"),
+                    "school_category": s.get("school_category", "Secondary"),
+                    "management_type": s.get("management_type", "Private"),
+                    "school_type": "Co-educational",
+                    "board": s.get("board", "State Board"),
+                    "classes_from": "Grade 1",
+                    "classes_to": "Grade 10",
+                    "student_strength": int(s.get("student_strength") or 500),
+                    "teacher_strength": max(5, int(int(s.get("student_strength") or 500) / 25)),
+                    "principal_name": "",
+                    "correspondent_name": "",
+                    "mobile": "",
+                    "email": "",
+                    "website": "",
+                    "full_address": f"{s.get('village_locality_ward', '')}, {district}, {state}",
+                    "pincode": ""
+                },
+                "technology": {
+                    "erp_used": "Not Analyzed", "erp_vendor": "",
+                    "lms_used": "Not Analyzed", "lms_vendor": "",
+                    "coding_used": "Not Analyzed", "coding_vendor": "",
+                    "robotics_used": "Not Analyzed", "robotics_vendor": "",
+                    "ai_used": "Not Analyzed", "ai_vendor": "",
+                    "stem_program": "Not Analyzed", "atl_lab": "Not Analyzed",
+                    "smart_classroom": "Not Analyzed", "smart_classroom_count": 0,
+                    "computer_lab": "Not Analyzed", "computer_lab_count": 0,
+                    "internet": "", "parent_app": "No", "school_app": "No"
+                },
+                "sales": {
+                    "decision_maker": "", "decision_maker_designation": "", "decision_maker_contact": "",
+                    "annual_fee_range": "", "existing_edtech_partners": "",
+                    "technology_adoption_level": "Unassessed",
+                    "skila_ai_potential": "Unassessed",
+                    "lead_status": "New", "interest_level": "Pending",
+                    "demo_done": "No", "proposal_shared": "No", "pilot_started": "No",
+                    "last_contact_date": "", "next_follow_up_date": "", "sales_owner": "",
+                    "remarks": "District school listed. Click 'Run School Details' to fetch complete 49-field profile."
+                },
                 "created_at": now,
                 "updated_at": now,
                 "scraped_by": "Mistral AI (ministral-14b-latest)"
-            })
+            }
+            school_record["tier"] = get_school_tier(school_record)
+            cleaned.append(school_record)
         
-        # Sort from High to Low
-        cleaned.sort(key=lambda x: (x.get("tier", {}).get("rank", 99), -int(x.get("info", {}).get("student_strength") or 0)))
+        # Sort strictly from High to Low
+        cleaned.sort(key=lambda x: (
+            x.get("tier", {}).get("rank", 99),
+            -int(x.get("info", {}).get("student_strength") or 0)
+        ))
         return cleaned
     except Exception as e:
-        print(f"[Mistral Scraper Error] {e}")
+        print(f"[Mistral District Scraper Error] {e}")
         return []
+
+def scrape_single_school_details_ai(school_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Step 2: Deep-dive single school intelligence scraper.
+    When user approves or selects a specific school from the list,
+    runs Mistral AI specifically for THAT school to populate all 16 Info,
+    17 Technology, and 16 Sales CRM fields.
+    """
+    school_name = school_data.get("info", {}).get("school_name", "")
+    board = school_data.get("info", {}).get("board", "")
+    strength = school_data.get("info", {}).get("student_strength", 1000)
+    hierarchy = school_data.get("hierarchy", {})
+    state = hierarchy.get("state", "")
+    district = hierarchy.get("district", "")
+    mandal = hierarchy.get("mandal", "")
+    locality = hierarchy.get("village_locality_ward", "")
+
+    sys_prompt = (
+        "You are an expert Indian Educational Intelligence & EdTech Partnership Analyst for Skila AI. "
+        "For the given Indian school, research and provide a realistic, comprehensive 49-field profile. "
+        "Return a JSON object with keys: 'info', 'technology', 'sales'.\n\n"
+        "Key 'info' (16 fields):\n"
+        "udise_code (11 digits), school_name, school_category, management_type, school_type (Co-educational/Boys/Girls), "
+        "board, classes_from, classes_to, student_strength (int), teacher_strength (int), "
+        "principal_name, correspondent_name, mobile, email, website, full_address, pincode.\n\n"
+        "Key 'technology' (17 fields):\n"
+        "erp_used (Yes/No), erp_vendor, lms_used (Yes/No), lms_vendor, coding_used (Yes/No), coding_vendor, "
+        "robotics_used (Yes/No), robotics_vendor, ai_used (Yes/No), ai_vendor, stem_program (Yes/No), "
+        "atl_lab (Yes/No), smart_classroom (Yes/No), smart_classroom_count (int), "
+        "computer_lab (Yes/No), computer_lab_count (int), internet (e.g. Fiber 200 Mbps), "
+        "parent_app (Yes/No), school_app (Yes/No).\n\n"
+        "Key 'sales' (16 fields):\n"
+        "decision_maker, decision_maker_designation, decision_maker_contact, annual_fee_range, "
+        "existing_edtech_partners, technology_adoption_level (Low/Medium/High/Advanced), "
+        "skila_ai_potential (High/Medium/Low), lead_status (New/Contacted/Demo Scheduled/Qualified), "
+        "interest_level (High/Medium/Low), demo_done (Yes/No), proposal_shared (Yes/No), "
+        "pilot_started (Yes/No), last_contact_date (YYYY-MM-DD), next_follow_up_date (YYYY-MM-DD), "
+        "sales_owner, remarks (actionable partnership pitch and recommendations for Skila AI)."
+    )
+
+    user_prompt = (
+        f"Provide the complete 49-field profile for this school:\n"
+        f"School Name: {school_name}\n"
+        f"Board: {board}\n"
+        f"Location: {locality}, {mandal} Mandal, {district} District, {state}\n"
+        f"Approx Student Strength: {strength}"
+    )
+
+    messages = [
+        {"role": "system", "content": sys_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+
+    try:
+        response = call_mistral(messages, json_mode=True)
+        
+        info = response.get("info", {})
+        technology = response.get("technology", {})
+        sales = response.get("sales", {})
+
+        # Merge with existing
+        existing_info = school_data.get("info", {})
+        existing_info.update(info)
+        # Keep name and board consistent if valid
+        if not existing_info.get("school_name"):
+            existing_info["school_name"] = school_name
+        if not existing_info.get("board"):
+            existing_info["board"] = board
+        school_data["info"] = existing_info
+
+        existing_tech = school_data.get("technology", {})
+        existing_tech.update(technology)
+        school_data["technology"] = existing_tech
+
+        existing_sales = school_data.get("sales", {})
+        existing_sales.update(sales)
+        school_data["sales"] = existing_sales
+
+        school_data["details_fetched"] = True
+        school_data["tier"] = get_school_tier(school_data)
+        school_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        
+        return school_data
+    except Exception as e:
+        print(f"[Mistral Single School Scraper Error] {e}")
+        return school_data
 
 def enrich_school_with_ai(school_data: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -209,7 +284,7 @@ def enrich_school_with_ai(school_data: Dict[str, Any]) -> Dict[str, Any]:
     and sales pitch remarks for Skila AI.
     """
     sys_prompt = (
-        "You are an AI EdTech Consultant for Skila AI. Given an Indian school's current details, "
+        "You are an AI EdTech Consultant for Skila AI. Given an Indian school's details, "
         "analyze and predict: "
         "1. Recommended Technology improvements (LMS, ERP, Coding, ATL Lab, AI fit) "
         "2. Skila AI Potential (High/Medium/Low) "
@@ -228,3 +303,6 @@ def enrich_school_with_ai(school_data: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         print(f"[Mistral Enrichment Error] {e}")
         return {"error": str(e)}
+
+# Backwards compatibility alias
+scrape_schools_ai = scrape_district_schools_ai

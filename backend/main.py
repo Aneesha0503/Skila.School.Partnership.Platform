@@ -306,7 +306,7 @@ def export_csv():
         headers={"Content-Disposition": "attachment; filename=skila_schools.csv"}
     )
 
-from mistral_scraper import scrape_schools_ai, enrich_school_with_ai
+from mistral_scraper import scrape_schools_ai, scrape_district_schools_ai, scrape_single_school_details_ai, enrich_school_with_ai
 
 class AIScrapeRequest(BaseModel):
     query: Optional[str] = None
@@ -387,17 +387,19 @@ def api_enrich_school(school_id: str):
 class RunDistrictRequest(BaseModel):
     state: str
     district: str
-    count: int = 5
+    count: int = 8
     force_scrape: bool = False
 
 @app.post("/api/run-district")
 def api_run_district(req: RunDistrictRequest):
     """
-    Runs automated school discovery & scraping for a selected State and District.
-    If schools already exist for this district, returns them. If fewer than 3 exist or
-    force_scrape=True, triggers Mistral AI to research and scrape new schools with
-    their full administrative hierarchy (Divisions, Mandals, Local Bodies, Wards)
-    and all 16 Info, 17 Tech, and 16 Sales fields.
+    Step 1: Runs district school discovery for selected State and District.
+    Returns schools strictly sorted High to Low:
+    1. High Range (International, Cambridge, CBSE, ICSE)
+    2. State Board High Strength (1200+)
+    3. State Board Mid Strength (500-1200)
+    4. State Board Low Strength (<500)
+    Lightweight and fast (~5s). Deep 49-field details are fetched on demand when user runs a specific school.
     """
     state_clean = req.state.strip()
     district_clean = req.district.strip()
@@ -423,13 +425,11 @@ def api_run_district(req: RunDistrictRequest):
             "scraped_new": 0
         }
         
-    # Run Mistral AI to scrape prominent schools across the district
-    scraped = scrape_schools_ai(
-        query=f"Prominent schools across revenue divisions, mandals, municipalities, and gram panchayats in {district_clean}, {state_clean}",
+    # Run lightweight Step 1 district scraper
+    scraped = scrape_district_schools_ai(
         state=state_clean,
         district=district_clean,
-        mandal=None,
-        count=req.count
+        count=req.count or 8
     )
     
     col = db.collection("schools")
@@ -454,5 +454,24 @@ def api_run_district(req: RunDistrictRequest):
         "district": district_clean,
         "scraped_new": len(scraped)
     }
+
+@app.post("/api/schools/{school_id}/run-details")
+def api_run_school_details(school_id: str):
+    """
+    Step 2: On-demand single school intelligence runner.
+    When user approves or selects a specific school from the district list,
+    runs Mistral AI specifically for that school to populate all 16 Info,
+    17 Technology, and 16 Sales CRM fields.
+    """
+    doc_ref = db.collection("schools").document(school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+    school_data = doc.to_dict()
+    school_data["id"] = school_id
+    
+    enriched = scrape_single_school_details_ai(school_data)
+    doc_ref.set(enriched)
+    return enriched
 
 

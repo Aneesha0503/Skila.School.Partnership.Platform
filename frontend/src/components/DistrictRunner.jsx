@@ -91,7 +91,7 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
       if (res.ok) {
         const data = await res.json();
         const sourceLabel = data.source === 'mistral_ai' ? 'Mistral AI Live Scraped' : 'Loaded from Stored Database';
-        setRunMessage(`Loaded ${data.count} schools in ${activeDistrict} (${sourceLabel})! Sorted High to Low.`);
+        setRunMessage(`Loaded ${data.count} schools in ${activeDistrict} (${sourceLabel})! Sorted High to Low. Click 'Run Details' on any school below to fetch its 49 fields.`);
         
         onDistrictRunComplete({
           state: selectedState,
@@ -99,7 +99,7 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
           schools: data.schools
         });
 
-        setTimeout(() => setRunMessage(''), 5000);
+        setTimeout(() => setRunMessage(''), 7000);
       } else {
         alert('Failed to run district scraper. Please verify backend connection.');
         setRunMessage('');

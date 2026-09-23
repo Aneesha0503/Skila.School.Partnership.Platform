@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   X, Building2, Cpu, DollarSign, MapPin, Phone, Mail, 
-  Globe, User, CheckCircle2, XCircle, Edit3, Save, Sparkles, ExternalLink 
+  Globe, User, CheckCircle2, XCircle, Edit3, Save, Sparkles, ExternalLink,
+  Play, RefreshCw, Zap, Layers
 } from 'lucide-react';
 
 export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onOpenEditModal }) {
@@ -12,10 +13,33 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isEnriching, setIsEnriching] = useState(false);
   const [enrichSuccess, setEnrichSuccess] = useState(false);
+  const [isRunningDetails, setIsRunningDetails] = useState(false);
+  const [runDetailsError, setRunDetailsError] = useState('');
 
   if (!school) return null;
 
-  const { hierarchy, info, technology, sales } = school;
+  const { hierarchy, info, technology, sales, details_fetched } = school;
+
+  const handleRunSchoolDetails = async () => {
+    setIsRunningDetails(true);
+    setRunDetailsError('');
+    try {
+      const res = await fetch(`/api/schools/${school.id}/run-details`, { method: 'POST' });
+      if (res.ok) {
+        const enriched = await res.json();
+        onUpdateSchool(enriched);
+        if (enriched?.sales?.remarks) setRemarks(enriched.sales.remarks);
+        if (enriched?.sales?.lead_status) setLeadStatus(enriched.sales.lead_status);
+      } else {
+        setRunDetailsError('Failed to fetch school details. Please try again.');
+      }
+    } catch (err) {
+      console.error('Run school details error:', err);
+      setRunDetailsError('Network error while running school details.');
+    } finally {
+      setIsRunningDetails(false);
+    }
+  };
 
   const handleAiEnrich = async () => {
     setIsEnriching(true);
@@ -112,15 +136,28 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
                     {tierBadge.label}
                   </span>
                 )}
-                <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                  UDISE: {info?.udise_code}
-                </span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-medium">
-                  {info?.board}
-                </span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
-                  {sales?.skila_ai_potential} AI Potential
-                </span>
+                {details_fetched ? (
+                  <>
+                    <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                      UDISE: {info?.udise_code}
+                    </span>
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-medium">
+                      {info?.board}
+                    </span>
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold inline-flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> 49 Fields Ready
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-medium">
+                      {info?.board}
+                    </span>
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold inline-flex items-center gap-1">
+                      <Zap className="w-3 h-3 text-amber-400" /> Details Pending Run
+                    </span>
+                  </>
+                )}
               </div>
               <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white mb-1">
                 {info?.school_name}
@@ -178,9 +215,54 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto flex-1 bg-slate-50">
-          
-          {/* TAB 1: SCHOOL INFORMATION */}
-          {activeTab === 'info' && (
+          {!details_fetched ? (
+            <div className="py-10 px-6 flex flex-col items-center justify-center text-center max-w-xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-xs my-auto">
+              <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 mb-4 shadow-xs">
+                <Zap className="w-8 h-8 fill-amber-500 text-amber-600" />
+              </div>
+
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold mb-2 border border-amber-200">
+                ⚡ Step 2: On-Demand School Intelligence
+              </div>
+
+              <h3 className="text-xl font-bold text-slate-900 mb-2">
+                Run Deep Intelligence for {info?.school_name}
+              </h3>
+
+              <p className="text-xs text-slate-600 mb-5 leading-relaxed">
+                This school was discovered during your district run ({info?.board}, ~{info?.student_strength} students). 
+                Click below to trigger <strong>Mistral 14B</strong> to research and populate all <strong>16 School Information, 17 Technology Usage, and 16 Sales CRM fields</strong> specifically for this school.
+              </p>
+
+              {runDetailsError && (
+                <div className="mb-4 p-2.5 rounded-lg bg-rose-50 text-rose-700 text-xs border border-rose-200 w-full text-center">
+                  {runDetailsError}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleRunSchoolDetails}
+                disabled={isRunningDetails}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 text-sm font-bold shadow-lg shadow-amber-500/25 transition-all cursor-pointer disabled:opacity-60"
+              >
+                {isRunningDetails ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
+                    <span>Mistral 14B is Scraping 49 Fields... (~8-10s)</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>Run School Details (49 Fields)</span>
+                  </>
+                )}
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* TAB 1: SCHOOL INFORMATION */}
+              {activeTab === 'info' && (
             <div className="space-y-6">
               <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100 flex items-center gap-1.5">
@@ -588,7 +670,9 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
               </div>
             </div>
           )}
-        </div>
+        </>
+      )}
+    </div>
       </div>
     </div>
   );

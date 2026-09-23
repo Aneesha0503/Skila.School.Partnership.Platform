@@ -193,6 +193,24 @@ export default function App() {
     window.open('/api/export', '_blank');
   };
 
+  const handleRunSchoolDetails = async (schoolId) => {
+    try {
+      const res = await fetch(`/api/schools/${schoolId}/run-details`, { method: 'POST' });
+      if (res.ok) {
+        const enriched = await res.json();
+        setSchools((prev) => prev.map((s) => (s.id === schoolId ? enriched : s)));
+        if (selectedSchool && selectedSchool.id === schoolId) {
+          setSelectedSchool(enriched);
+        }
+        fetchStats();
+        return enriched;
+      }
+    } catch (err) {
+      console.error('Error running school details:', err);
+    }
+    return null;
+  };
+
   const handleDistrictRunComplete = ({ state, district, schools: returnedSchools }) => {
     setSelectedHierarchy({
       state: state,
@@ -201,6 +219,14 @@ export default function App() {
       mandal: '',
       local_body_name: '',
       village_locality_ward: ''
+    });
+    setFilters({
+      search: '',
+      tier: 'All',
+      board: 'All',
+      lead_status: 'All',
+      skila_ai_potential: 'All',
+      technology_adoption_level: 'All'
     });
     if (returnedSchools && returnedSchools.length > 0) {
       setSchools(returnedSchools);
@@ -283,6 +309,7 @@ export default function App() {
                 key={school.id}
                 school={school}
                 onSelectSchool={setSelectedSchool}
+                onRunSchoolDetails={handleRunSchoolDetails}
               />
             ))}
           </div>
@@ -290,6 +317,7 @@ export default function App() {
           <SchoolTable
             schools={schools}
             onSelectSchool={setSelectedSchool}
+            onRunSchoolDetails={handleRunSchoolDetails}
           />
         )}
       </main>

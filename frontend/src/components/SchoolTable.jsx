@@ -1,7 +1,9 @@
-import React from 'react';
-import { Sparkles, ChevronRight, MapPin, Award, Layers } from 'lucide-react';
+import React, { useState } from 'react';
+import { Sparkles, ChevronRight, MapPin, Award, Layers, Zap, RefreshCw, CheckCircle2 } from 'lucide-react';
 
-export default function SchoolTable({ schools, onSelectSchool }) {
+export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetails }) {
+  const [runningId, setRunningId] = useState(null);
+
   const getTierBadge = (tierObj) => {
     const t = tierObj?.tier || '';
     if (t === 'High Range') {
@@ -36,31 +38,16 @@ export default function SchoolTable({ schools, onSelectSchool }) {
     };
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'Closed Won':
-        return 'bg-emerald-100 text-emerald-800';
-      case 'Pilot Started':
-        return 'bg-purple-100 text-purple-800';
-      case 'Proposal Shared':
-        return 'bg-indigo-100 text-indigo-800';
-      case 'Demo Scheduled':
-        return 'bg-amber-100 text-amber-800';
-      case 'Contacted':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-slate-100 text-slate-700';
-    }
-  };
-
-  const getPotentialBadge = (pot) => {
-    switch (pot) {
-      case 'High':
-        return 'bg-rose-50 text-rose-700 border-rose-200';
-      case 'Medium':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
-      default:
-        return 'bg-slate-50 text-slate-600 border-slate-200';
+  const handleRunDetailsClick = async (e, schoolId) => {
+    e.stopPropagation();
+    if (runningId) return;
+    setRunningId(schoolId);
+    try {
+      if (onRunSchoolDetails) {
+        await onRunSchoolDetails(schoolId);
+      }
+    } finally {
+      setRunningId(null);
     }
   };
 
@@ -71,20 +58,18 @@ export default function SchoolTable({ schools, onSelectSchool }) {
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-[10px] font-bold tracking-wider">
               <th className="py-3 px-4">Tier (High to Low)</th>
-              <th className="py-3 px-4">School & UDISE</th>
+              <th className="py-3 px-4">School Name</th>
               <th className="py-3 px-4">Administrative Location</th>
               <th className="py-3 px-4">Board & Strength</th>
-              <th className="py-3 px-4">Technology Stack</th>
-              <th className="py-3 px-4">Lead Status</th>
-              <th className="py-3 px-4">AI Potential</th>
-              <th className="py-3 px-4">Decision Maker</th>
+              <th className="py-3 px-4">Details Status</th>
               <th className="py-3 px-4 text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-slate-700">
             {schools.map((school) => {
-              const { hierarchy, info, technology, sales, tier } = school;
+              const { hierarchy, info, technology, sales, tier, details_fetched } = school;
               const tierBadge = getTierBadge(tier);
+              const isRunning = runningId === school.id;
 
               return (
                 <tr
@@ -104,7 +89,9 @@ export default function SchoolTable({ schools, onSelectSchool }) {
                   </td>
                   <td className="py-3 px-4">
                     <div className="font-semibold text-slate-900">{info?.school_name}</div>
-                    <div className="text-[11px] font-mono text-slate-500">UDISE: {info?.udise_code}</div>
+                    <div className="text-[11px] text-slate-500 font-medium">
+                      {info?.school_category} • {info?.management_type}
+                    </div>
                   </td>
                   <td className="py-3 px-4">
                     <div className="font-medium text-slate-800">{hierarchy?.village_locality_ward}</div>
@@ -113,49 +100,49 @@ export default function SchoolTable({ schools, onSelectSchool }) {
                     </div>
                   </td>
                   <td className="py-3 px-4">
-                    <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 font-medium text-slate-800 mb-0.5">
+                    <span className="inline-block px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold mb-0.5 border border-indigo-100">
                       {info?.board}
                     </span>
-                    <div className="text-[11px] text-slate-500">
+                    <div className="text-[11px] font-semibold text-slate-700">
                       {info?.student_strength?.toLocaleString()} students
                     </div>
                   </td>
                   <td className="py-3 px-4">
-                    <div className="flex items-center gap-1 flex-wrap">
-                      <span className="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-medium text-[10px]">
-                        {sales?.technology_adoption_level}
+                    {details_fetched ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" /> 49 Fields Ready
                       </span>
-                      {technology?.atl_lab === 'Yes' && (
-                        <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold text-[10px]">
-                          ATL
-                        </span>
-                      )}
-                      {technology?.smart_classroom === 'Yes' && (
-                        <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-medium text-[10px]">
-                          Smart ({technology?.smart_classroom_count})
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`px-2 py-0.5 rounded-full font-semibold text-[11px] ${getStatusBadge(sales?.lead_status)}`}>
-                      {sales?.lead_status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`px-2 py-0.5 rounded border font-semibold text-[10px] inline-flex items-center gap-1 ${getPotentialBadge(sales?.skila_ai_potential)}`}>
-                      <Sparkles className="w-2.5 h-2.5" />
-                      {sales?.skila_ai_potential}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="font-medium text-slate-800">{sales?.decision_maker || '—'}</div>
-                    <div className="text-[11px] text-slate-500">{sales?.decision_maker_designation || 'Leader'}</div>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-semibold">
+                        <Zap className="w-3 h-3 text-amber-600" /> Ready to Run
+                      </span>
+                    )}
                   </td>
                   <td className="py-3 px-4 text-right">
-                    <button className="text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center text-xs">
-                      View <ChevronRight className="w-4 h-4 ml-0.5" />
-                    </button>
+                    {details_fetched ? (
+                      <button className="text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center text-xs">
+                        View 49 Fields <ChevronRight className="w-4 h-4 ml-0.5" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => handleRunDetailsClick(e, school.id)}
+                        disabled={isRunning}
+                        className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-xs inline-flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+                      >
+                        {isRunning ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin text-slate-950" />
+                            <span>Running...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="w-3.5 h-3.5 fill-current" />
+                            <span>Run Details</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </td>
                 </tr>
               );

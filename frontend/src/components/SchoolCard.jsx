@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Building, MapPin, Users, GraduationCap, Laptop, 
-  Sparkles, Calendar, ChevronRight, Phone, Award, ShieldCheck, Layers 
+  Sparkles, Calendar, ChevronRight, Phone, Award, ShieldCheck, Layers, Play, RefreshCw, CheckCircle2, Zap 
 } from 'lucide-react';
 
-export default function SchoolCard({ school, onSelectSchool }) {
-  const { hierarchy, info, technology, sales, tier } = school;
+export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails }) {
+  const { hierarchy, info, technology, sales, tier, details_fetched } = school;
+  const [isRunning, setIsRunning] = useState(false);
 
   // Tier Badge Styling
   const getTierBadge = (tierObj) => {
@@ -36,72 +37,62 @@ export default function SchoolCard({ school, onSelectSchool }) {
 
   const tierBadge = getTierBadge(tier);
 
-  // Status badge styling
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'Closed Won':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'Pilot Started':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'Proposal Shared':
-        return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-      case 'Demo Scheduled':
-        return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'Contacted':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      default:
-        return 'bg-slate-100 text-slate-700 border-slate-200';
-    }
-  };
-
-  const getPotentialBadge = (pot) => {
-    switch (pot) {
-      case 'High':
-        return 'bg-rose-50 text-rose-700 border-rose-200';
-      case 'Medium':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
-      default:
-        return 'bg-slate-50 text-slate-600 border-slate-200';
+  const handleRunDetailsClick = async (e) => {
+    e.stopPropagation();
+    if (isRunning) return;
+    setIsRunning(true);
+    try {
+      if (onRunSchoolDetails) {
+        await onRunSchoolDetails(school.id);
+      }
+    } finally {
+      setIsRunning(false);
     }
   };
 
   return (
     <div 
       onClick={() => onSelectSchool(school)}
-      className="bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col p-4 group"
+      className="bg-white rounded-xl border border-slate-200 hover:border-indigo-400 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col p-4 group relative"
     >
       {/* Tier Category Indicator */}
-      {tierBadge && (
-        <div className="mb-2.5">
+      <div className="flex items-center justify-between gap-2 mb-2.5">
+        {tierBadge ? (
           <span className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full border shadow-2xs ${tierBadge.className}`}>
             {tierBadge.label}
           </span>
-        </div>
-      )}
+        ) : <div />}
 
-      {/* Top row: Name & UDISE */}
+        {details_fetched ? (
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> 49 Fields Ready
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
+            <Zap className="w-3 h-3 text-amber-600" /> Pending Run
+          </span>
+        )}
+      </div>
+
+      {/* Top row: Name & Board */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1">
           <div className="flex items-center gap-1.5 flex-wrap mb-1">
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold border border-slate-200">
-              UDISE: {info?.udise_code}
-            </span>
-            <span className="text-[11px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-medium border border-indigo-100">
+            <span className="text-[11px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">
               {info?.board}
             </span>
             <span className="text-[11px] px-2 py-0.5 rounded bg-slate-50 text-slate-600 border border-slate-200">
               {info?.school_category}
             </span>
+            {info?.udise_code && details_fetched && (
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">
+                UDISE: {info?.udise_code}
+              </span>
+            )}
           </div>
           <h3 className="font-bold text-slate-900 text-base group-hover:text-indigo-600 transition leading-snug">
             {info?.school_name}
           </h3>
-        </div>
-
-        {/* AI Potential Badge */}
-        <div className={`px-2 py-1 rounded-md border text-[11px] font-bold flex items-center gap-1 shrink-0 ${getPotentialBadge(sales?.skila_ai_potential)}`}>
-          <Sparkles className="w-3 h-3" />
-          <span>{sales?.skila_ai_potential} Potential</span>
         </div>
       </div>
 
@@ -116,54 +107,79 @@ export default function SchoolCard({ school, onSelectSchool }) {
       {/* Key Metrics */}
       <div className="grid grid-cols-2 gap-2 bg-slate-50 rounded-lg p-2.5 mb-3 text-xs">
         <div>
-          <span className="text-slate-400 block text-[10px] uppercase font-semibold">Students / Teachers</span>
-          <span className="font-semibold text-slate-800">
-            {info?.student_strength?.toLocaleString()} / {info?.teacher_strength}
+          <span className="text-slate-400 block text-[10px] uppercase font-semibold">Student Strength</span>
+          <span className="font-bold text-slate-800 text-sm">
+            {info?.student_strength?.toLocaleString()}
           </span>
+          <span className="text-[10px] text-slate-500 ml-1">students</span>
         </div>
         <div>
-          <span className="text-slate-400 block text-[10px] uppercase font-semibold">Lead Status</span>
-          <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold border ${getStatusBadge(sales?.lead_status)}`}>
-            {sales?.lead_status}
+          <span className="text-slate-400 block text-[10px] uppercase font-semibold">Management</span>
+          <span className="font-medium text-slate-700 text-xs truncate block">
+            {info?.management_type || 'Private'}
           </span>
         </div>
       </div>
 
-      {/* Technology Pills */}
-      <div className="flex items-center gap-1.5 flex-wrap mb-3 text-[11px]">
-        {technology?.erp_used === 'Yes' && (
-          <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">ERP: {technology?.erp_vendor || 'Yes'}</span>
-        )}
-        {technology?.lms_used === 'Yes' && (
-          <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">LMS</span>
-        )}
-        {technology?.coding_used === 'Yes' && (
-          <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 font-medium">Coding</span>
-        )}
-        {technology?.robotics_used === 'Yes' && (
-          <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-100 font-medium">Robotics</span>
-        )}
-        {technology?.atl_lab === 'Yes' && (
-          <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100 font-semibold">ATL Lab</span>
-        )}
-        {technology?.smart_classroom === 'Yes' && (
-          <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 font-medium">
-            Smart Class ({technology?.smart_classroom_count})
-          </span>
-        )}
-      </div>
+      {/* Technology / Status info */}
+      {details_fetched ? (
+        <div className="flex items-center gap-1.5 flex-wrap mb-3 text-[11px]">
+          {technology?.erp_used === 'Yes' && (
+            <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">ERP: {technology?.erp_vendor || 'Yes'}</span>
+          )}
+          {technology?.lms_used === 'Yes' && (
+            <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">LMS</span>
+          )}
+          {technology?.coding_used === 'Yes' && (
+            <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 font-medium">Coding</span>
+          )}
+          {technology?.atl_lab === 'Yes' && (
+            <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100 font-semibold">ATL Lab</span>
+          )}
+          {technology?.smart_classroom === 'Yes' && (
+            <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 font-medium">
+              Smart ({technology?.smart_classroom_count})
+            </span>
+          )}
+        </div>
+      ) : (
+        <div className="mb-3 p-2 rounded-lg bg-amber-50/70 border border-amber-100 text-[11px] text-amber-900 flex items-center justify-between gap-2">
+          <span>Click to run Mistral AI 49-field profile</span>
+          <button
+            type="button"
+            onClick={handleRunDetailsClick}
+            disabled={isRunning}
+            className="px-2.5 py-1 rounded-md bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-[11px] inline-flex items-center gap-1 shrink-0 shadow-xs cursor-pointer disabled:opacity-50"
+          >
+            {isRunning ? (
+              <>
+                <RefreshCw className="w-3 h-3 animate-spin text-slate-950" />
+                <span>Running...</span>
+              </>
+            ) : (
+              <>
+                <Zap className="w-3 h-3 fill-current" />
+                <span>Run Details</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Footer CRM Info & CTA */}
       <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
         <div className="truncate">
-          <span className="text-slate-400">DM: </span>
-          <span className="font-medium text-slate-700">{sales?.decision_maker || 'Not specified'}</span>
-          {sales?.decision_maker_designation && (
-            <span className="text-slate-400"> ({sales?.decision_maker_designation})</span>
+          {details_fetched && sales?.decision_maker ? (
+            <>
+              <span className="text-slate-400">DM: </span>
+              <span className="font-medium text-slate-700">{sales?.decision_maker}</span>
+            </>
+          ) : (
+            <span className="text-slate-400 italic">Details ready on click</span>
           )}
         </div>
         <div className="flex items-center text-indigo-600 font-semibold group-hover:translate-x-0.5 transition-transform shrink-0">
-          Details <ChevronRight className="w-4 h-4 ml-0.5" />
+          {details_fetched ? 'View 49 Fields' : 'Open School'} <ChevronRight className="w-4 h-4 ml-0.5" />
         </div>
       </div>
     </div>
