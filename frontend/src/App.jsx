@@ -263,7 +263,6 @@ export default function App() {
       <Header
         statusInfo={statusInfo}
         onOpenAddModal={handleOpenAddModal}
-        onOpenMistralScraper={() => setMistralModalOpen(true)}
         onExportCsv={handleExportCsv}
         theme={theme}
         onToggleTheme={toggleTheme}
