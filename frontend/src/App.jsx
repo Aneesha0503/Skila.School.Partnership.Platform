@@ -9,6 +9,7 @@ import SchoolDetailModal from './components/SchoolDetailModal';
 import AddEditSchoolModal from './components/AddEditSchoolModal';
 import MistralScraperModal from './components/MistralScraperModal';
 import DistrictRunner from './components/DistrictRunner';
+import IndiaMapHero from './components/IndiaMapHero';
 import { School, RefreshCw } from 'lucide-react';
 
 export default function App() {
@@ -263,6 +264,17 @@ export default function App() {
     fetchStats();
   };
 
+  const handleSelectState = (stateName) => {
+    setSelectedHierarchy({
+      state: stateName,
+      district: '',
+      revenue_division: '',
+      mandal: '',
+      local_body_name: '',
+      village_locality_ward: ''
+    });
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
       {/* Top Header */}
@@ -277,6 +289,12 @@ export default function App() {
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
         
+        {/* Pan-India Vision & Interactive Vector Map Hero */}
+        <IndiaMapHero
+          onSelectState={handleSelectState}
+          selectedState={selectedHierarchy.state}
+        />
+
         {/* KPI Summary Cards */}
         <StatsBar stats={stats} schools={schools} />
 

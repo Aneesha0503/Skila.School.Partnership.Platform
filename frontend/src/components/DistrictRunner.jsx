@@ -122,7 +122,7 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
   };
 
   return (
-    <div className="bg-slate-900 text-white rounded-xl p-5 mb-6 shadow-sm border border-slate-800">
+    <div id="district-runner-section" className="bg-slate-900 text-white rounded-xl p-5 mb-6 shadow-sm border border-slate-800 scroll-mt-6">
       {/* Header bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">

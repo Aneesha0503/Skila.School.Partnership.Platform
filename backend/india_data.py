@@ -1,4 +1,4 @@
-﻿INDIAN_STATES_DISTRICTS = {
+INDIAN_STATES_DISTRICTS = {
     "Telangana": [
         "Hyderabad", "Rangareddy", "Medchal-Malkajgiri", "Sangareddy", "Warangal", "Hanamkonda",
         "Karimnagar", "Nizamabad", "Khammam", "Nalgonda", "Mahabubnagar", "Bhadradri Kothagudem",
@@ -94,6 +94,39 @@
     ],
     "Jharkhand": [
         "Ranchi", "East Singhbhum (Jamshedpur)", "Dhanbad", "Bokaro", "Hazaribagh"
+    ],
+    "Arunachal Pradesh": [
+        "Itanagar", "Papum Pare", "Changlang", "West Kameng", "East Siang"
+    ],
+    "Manipur": [
+        "Imphal West", "Imphal East", "Thoubal", "Bishnupur", "Churachandpur"
+    ],
+    "Meghalaya": [
+        "East Khasi Hills (Shillong)", "West Garo Hills", "Ri-Bhoi", "West Jaintia Hills"
+    ],
+    "Mizoram": [
+        "Aizawl", "Lunglei", "Champhai", "Kolasib"
+    ],
+    "Nagaland": [
+        "Kohima", "Dimapur", "Mokokchung", "Tuensang"
+    ],
+    "Sikkim": [
+        "East Sikkim (Gangtok)", "West Sikkim", "South Sikkim", "North Sikkim"
+    ],
+    "Tripura": [
+        "West Tripura (Agartala)", "Gomati", "South Tripura", "North Tripura"
+    ],
+    "Ladakh": [
+        "Leh", "Kargil"
+    ],
+    "Andaman & Nicobar": [
+        "South Andaman (Port Blair)", "North and Middle Andaman", "Nicobar"
+    ],
+    "Dadra and Nagar Haveli": [
+        "Daman", "Diu", "Silvassa"
+    ],
+    "Lakshadweep": [
+        "Kavaratti", "Agatti", "Amini", "Andrott"
     ]
 }
 
