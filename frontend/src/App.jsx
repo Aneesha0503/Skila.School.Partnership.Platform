@@ -289,11 +289,11 @@ export default function App() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-100 to-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 mx-auto mb-3 shadow-xs">
               <School className="w-7 h-7" />
             </div>
-            <h3 className="text-base font-bold text-slate-900 mb-1">
-              Database is Clean — Ready for Discovery
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">
+              No Schools Loaded
             </h3>
-            <p className="text-xs text-slate-500 max-w-md mx-auto mb-4 leading-relaxed">
-              All dummy data has been removed. Select any <strong>State</strong> and <strong>District</strong> in the Automated Discovery box above, then click <strong>"Run District Schools"</strong> to scrape and list schools strictly from High to Low.
+            <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
+              Select a State and District above and click Discover Schools to load regional directory records.
             </p>
             {selectedHierarchy.district && (
               <button
