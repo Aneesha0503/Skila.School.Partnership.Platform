@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Sparkles, ChevronRight, MapPin, Award, Layers, Zap, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Sparkles, ChevronRight, MapPin, Award, Layers, Zap, RefreshCw, CheckCircle2, Lock } from 'lucide-react';
 
-export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetails }) {
+export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetails, userRole = 'admin' }) {
   const [runningId, setRunningId] = useState(null);
 
   const getTierBadge = (tierObj) => {
@@ -127,7 +127,7 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
                       <button className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-semibold inline-flex items-center text-xs">
                         View 49 Fields <ChevronRight className="w-4 h-4 ml-0.5" />
                       </button>
-                    ) : (
+                    ) : userRole === 'admin' ? (
                       <button
                         type="button"
                         onClick={(e) => handleRunDetailsClick(e, school.id)}
@@ -146,6 +146,14 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
                           </>
                         )}
                       </button>
+                    ) : (
+                      <span 
+                        title="Single school AI research requires Administrator role"
+                        className="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold text-[11px] inline-flex items-center gap-1 border border-slate-300 dark:border-slate-700"
+                      >
+                        <Lock className="w-3 h-3 text-amber-500" />
+                        <span>Admin Only</span>
+                      </span>
                     )}
                   </td>
                 </tr>

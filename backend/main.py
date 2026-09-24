@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import FastAPI, HTTPException, Query, Response, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import openpyxl
@@ -28,6 +28,69 @@ from india_data import get_states_and_districts
 from mistral_scraper import get_school_tier
 
 db = get_db()
+
+# ==========================================
+# ROLE-BASED ACCESS CONTROL (RBAC) HELPERS
+# ==========================================
+def get_current_role(x_user_role: Optional[str] = Header(None)) -> str:
+    """Extracts and validates user role from X-User-Role header. Defaults to 'admin'."""
+    if not x_user_role:
+        return "admin"
+    role = x_user_role.strip().lower()
+    if role not in ("admin", "agent"):
+        return "admin"
+    return role
+
+def require_admin(role: str = Depends(get_current_role)) -> str:
+    """Enforces that only users with 'admin' role can access the route."""
+    if role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Access Denied: Administrator role required to perform this action."
+        )
+    return role
+
+@app.get("/api/auth/roles")
+def get_roles_matrix(role: str = Depends(get_current_role)):
+    """Returns available roles and full permissions matrix."""
+    return {
+        "active_role": role,
+        "roles": {
+            "admin": {
+                "name": "Administrator",
+                "badge": "Admin Level",
+                "tag": "👑 Super Admin",
+                "description": "Full unconstrained administrative authority across data scraping, AI models, deletion, and system configuration.",
+                "permissions": {
+                    "can_run_district_discovery": True,
+                    "can_run_single_school_ai": True,
+                    "can_add_school": True,
+                    "can_edit_core_info": True,
+                    "can_delete_school": True,
+                    "can_clear_database": True,
+                    "can_export_excel": True,
+                    "can_update_crm": True
+                }
+            },
+            "agent": {
+                "name": "Field Agent",
+                "badge": "Agent Level",
+                "tag": "💼 Partnership Agent",
+                "description": "Field intelligence access: browse directory, research institutional profiles, and update CRM lead milestones.",
+                "permissions": {
+                    "can_run_district_discovery": False,
+                    "can_run_single_school_ai": False,
+                    "can_add_school": False,
+                    "can_edit_core_info": False,
+                    "can_delete_school": False,
+                    "can_clear_database": False,
+                    "can_export_excel": True,
+                    "can_update_crm": True
+                }
+            }
+        }
+    }
+
 
 def get_all_schools_raw() -> List[Dict[str, Any]]:
     col = db.collection("schools")
@@ -177,7 +240,8 @@ def get_school(school_id: str):
     return data
 
 @app.post("/api/schools")
-def create_school(payload: SchoolCreateUpdate):
+def create_school(payload: SchoolCreateUpdate, role: str = Depends(require_admin)):
+    """Admin only: Create new school."""
     school_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     record = {
@@ -187,34 +251,58 @@ def create_school(payload: SchoolCreateUpdate):
         "technology": payload.technology.model_dump(),
         "sales": payload.sales.model_dump(),
         "created_at": now,
-        "updated_at": now
+        "updated_at": now,
+        "created_by_role": role
     }
     db.collection("schools").document(school_id).set(record)
     return record
 
 @app.put("/api/schools/{school_id}")
-def update_school(school_id: str, payload: SchoolCreateUpdate):
+def update_school(school_id: str, payload: SchoolCreateUpdate, role: str = Depends(get_current_role)):
+    """
+    Update school:
+    - Admin: full update across hierarchy, school info, tech, and sales.
+    - Agent: updates CRM sales milestones and remarks, preserving core hierarchy and UDISE.
+    """
     doc_ref = db.collection("schools").document(school_id)
     doc = doc_ref.get()
     if not doc.exists:
         raise HTTPException(status_code=404, detail="School not found")
     
+    existing = doc.to_dict()
     now = datetime.now(timezone.utc).isoformat()
-    record = {
-        "id": school_id,
-        "hierarchy": payload.hierarchy.model_dump(),
-        "info": payload.info.model_dump(),
-        "technology": payload.technology.model_dump(),
-        "sales": payload.sales.model_dump(),
-        "created_at": doc.to_dict().get("created_at", now),
-        "updated_at": now
-    }
+    
+    if role == "agent":
+        # Agent level: allow updating sales milestones, notes, technology observations,
+        # but preserve official administrative hierarchy and verified UDISE code
+        record = {
+            **existing,
+            "id": school_id,
+            "sales": payload.sales.model_dump(),
+            "technology": payload.technology.model_dump(),
+            "updated_at": now,
+            "last_updated_by_role": "agent"
+        }
+    else:
+        # Admin level: unconstrained update
+        record = {
+            **existing,
+            "id": school_id,
+            "hierarchy": payload.hierarchy.model_dump(),
+            "info": payload.info.model_dump(),
+            "technology": payload.technology.model_dump(),
+            "sales": payload.sales.model_dump(),
+            "created_at": existing.get("created_at", now),
+            "updated_at": now,
+            "last_updated_by_role": "admin"
+        }
+        
     doc_ref.set(record)
     return record
 
 @app.delete("/api/schools/clear-all")
-def clear_all_schools():
-    """Clears all schools from the database."""
+def clear_all_schools(role: str = Depends(require_admin)):
+    """Admin only: Clears all schools from the database."""
     col = db.collection("schools")
     docs = list(col.stream())
     count = len(docs)
@@ -223,7 +311,8 @@ def clear_all_schools():
     return {"message": f"Successfully deleted {count} schools", "deleted_count": count}
 
 @app.delete("/api/schools/{school_id}")
-def delete_school(school_id: str):
+def delete_school(school_id: str, role: str = Depends(require_admin)):
+    """Admin only: Delete single school."""
     doc_ref = db.collection("schools").document(school_id)
     doc = doc_ref.get()
     if not doc.exists:
@@ -648,9 +737,10 @@ class RunDistrictRequest(BaseModel):
     scrape_more: bool = False
 
 @app.post("/api/run-district")
-def api_run_district(req: RunDistrictRequest):
+def api_run_district(req: RunDistrictRequest, role: str = Depends(require_admin)):
     """
     Step 1: Runs district school discovery for selected State and District.
+    Restricted to Administrator role.
     Returns schools strictly sorted High to Low:
     1. High Range (International, Cambridge, CBSE, ICSE)
     2. State Board High Strength (1200+)
@@ -723,9 +813,10 @@ def api_run_district(req: RunDistrictRequest):
     }
 
 @app.post("/api/schools/{school_id}/run-details")
-def api_run_school_details(school_id: str):
+def api_run_school_details(school_id: str, role: str = Depends(require_admin)):
     """
     Step 2: On-demand single school intelligence runner.
+    Restricted to Administrator role.
     When user approves or selects a specific school from the district list,
     runs Mistral AI specifically for that school to populate all 16 Info,
     17 Technology, and 16 Sales CRM fields.

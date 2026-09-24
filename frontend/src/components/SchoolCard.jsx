@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { 
   Building, MapPin, Users, GraduationCap, Laptop, 
-  Sparkles, Calendar, ChevronRight, Phone, Award, ShieldCheck, Layers, Play, RefreshCw, CheckCircle2, Zap 
+  Sparkles, Calendar, ChevronRight, Phone, Award, ShieldCheck, Layers, Play, RefreshCw, CheckCircle2, Zap, Lock 
 } from 'lucide-react';
 
-export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails, index }) {
+export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails, index, userRole = 'admin' }) {
   const { hierarchy, info, technology, sales, tier, details_fetched } = school;
   const [isRunning, setIsRunning] = useState(false);
 
@@ -152,24 +152,34 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
       ) : (
         <div className="mb-3 p-2 rounded-lg bg-amber-50/70 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 flex items-center justify-between gap-2">
           <span>Click to run Mistral AI 49-field profile</span>
-          <button
-            type="button"
-            onClick={handleRunDetailsClick}
-            disabled={isRunning}
-            className="px-2.5 py-1 rounded-md bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-[11px] inline-flex items-center gap-1 shrink-0 shadow-xs cursor-pointer disabled:opacity-50"
-          >
-            {isRunning ? (
-              <>
-                <RefreshCw className="w-3 h-3 animate-spin text-slate-950" />
-                <span>Running...</span>
-              </>
-            ) : (
-              <>
-                <Zap className="w-3 h-3 fill-current" />
-                <span>Run Details</span>
-              </>
-            )}
-          </button>
+          {userRole === 'admin' ? (
+            <button
+              type="button"
+              onClick={handleRunDetailsClick}
+              disabled={isRunning}
+              className="px-2.5 py-1 rounded-md bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-[11px] inline-flex items-center gap-1 shrink-0 shadow-xs cursor-pointer disabled:opacity-50"
+            >
+              {isRunning ? (
+                <>
+                  <RefreshCw className="w-3 h-3 animate-spin text-slate-950" />
+                  <span>Running...</span>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-3 h-3 fill-current" />
+                  <span>Run Details</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <span 
+              title="Single school AI research requires Administrator role"
+              className="px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold text-[10px] inline-flex items-center gap-1 shrink-0 border border-slate-300 dark:border-slate-700"
+            >
+              <Lock className="w-3 h-3 text-amber-500" />
+              <span>Admin Scraper</span>
+            </span>
+          )}
         </div>
       )}
 

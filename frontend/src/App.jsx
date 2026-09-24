@@ -10,6 +10,7 @@ import AddEditSchoolModal from './components/AddEditSchoolModal';
 import MistralScraperModal from './components/MistralScraperModal';
 import DistrictRunner from './components/DistrictRunner';
 import IndiaMapHero from './components/IndiaMapHero';
+import AccessControlModal from './components/AccessControlModal';
 import { School, RefreshCw } from 'lucide-react';
 
 export default function App() {
@@ -19,6 +20,12 @@ export default function App() {
   const [hierarchyData, setHierarchyData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mistralModalOpen, setMistralModalOpen] = useState(false);
+
+  // Role-Based Access Control State (Admin vs Agent)
+  const [userRole, setUserRole] = useState(() => {
+    return localStorage.getItem('skila_user_role') || 'admin';
+  });
+  const [accessModalOpen, setAccessModalOpen] = useState(false);
 
   // Administrative Hierarchy State
   const [selectedHierarchy, setSelectedHierarchy] = useState({
@@ -65,21 +72,36 @@ export default function App() {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
+  useEffect(() => {
+    localStorage.setItem('skila_user_role', userRole);
+  }, [userRole]);
+
+  // Authenticated fetch wrapper passing active role header
+  const fetchWithRole = (url, options = {}) => {
+    return fetch(url, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        'X-User-Role': userRole
+      }
+    });
+  };
+
   // Fetch initial status and metadata
   useEffect(() => {
     fetchStatus();
     fetchStats();
-  }, []);
+  }, [userRole]);
 
   // Fetch hierarchy options when administrative selection changes
   useEffect(() => {
     fetchHierarchyOptions();
     fetchSchools();
-  }, [selectedHierarchy, filters]);
+  }, [selectedHierarchy, filters, userRole]);
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch('/api/status');
+      const res = await fetchWithRole('/api/status');
       if (res.ok) {
         const data = await res.json();
         setStatusInfo(data);
@@ -91,7 +113,7 @@ export default function App() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('/api/stats');
+      const res = await fetchWithRole('/api/stats');
       if (res.ok) {
         const data = await res.json();
         setStats(data);
@@ -110,7 +132,7 @@ export default function App() {
       if (selectedHierarchy.mandal) params.append('mandal', selectedHierarchy.mandal);
       if (selectedHierarchy.local_body_name) params.append('local_body_name', selectedHierarchy.local_body_name);
 
-      const res = await fetch(`/api/hierarchy?${params.toString()}`);
+      const res = await fetchWithRole(`/api/hierarchy?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setHierarchyData(data);
@@ -138,7 +160,7 @@ export default function App() {
       if (filters.skila_ai_potential !== 'All') params.append('skila_ai_potential', filters.skila_ai_potential);
       if (filters.technology_adoption_level !== 'All') params.append('technology_adoption_level', filters.technology_adoption_level);
 
-      const res = await fetch(`/api/schools?${params.toString()}`);
+      const res = await fetchWithRole(`/api/schools?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setSchools(data);
@@ -194,11 +216,19 @@ export default function App() {
   };
 
   const handleOpenAddModal = () => {
+    if (userRole !== 'admin') {
+      setAccessModalOpen(true);
+      return;
+    }
     setEditingSchool(null);
     setAddEditModalOpen(true);
   };
 
   const handleOpenEditModal = (school) => {
+    if (userRole !== 'admin') {
+      setAccessModalOpen(true);
+      return;
+    }
     setSelectedSchool(null);
     setEditingSchool(school);
     setAddEditModalOpen(true);
@@ -221,8 +251,12 @@ export default function App() {
   };
 
   const handleRunSchoolDetails = async (schoolId) => {
+    if (userRole !== 'admin') {
+      setAccessModalOpen(true);
+      return null;
+    }
     try {
-      const res = await fetch(`/api/schools/${schoolId}/run-details`, { method: 'POST' });
+      const res = await fetchWithRole(`/api/schools/${schoolId}/run-details`, { method: 'POST' });
       if (res.ok) {
         const enriched = await res.json();
         setSchools((prev) => prev.map((s) => (s.id === schoolId ? enriched : s)));
@@ -231,6 +265,9 @@ export default function App() {
         }
         fetchStats();
         return enriched;
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.detail || 'Failed to run school details.');
       }
     } catch (err) {
       console.error('Error running school details:', err);
@@ -284,6 +321,9 @@ export default function App() {
         onExportExcel={handleExportExcel}
         theme={theme}
         onToggleTheme={toggleTheme}
+        userRole={userRole}
+        onRoleChange={setUserRole}
+        onOpenAccessModal={() => setAccessModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -304,6 +344,7 @@ export default function App() {
           currentState={selectedHierarchy.state}
           currentDistrict={selectedHierarchy.district}
           totalSchoolsLoaded={schools.length}
+          userRole={userRole}
         />
 
         {/* Administrative Hierarchy Cascading Drill-Down */}
@@ -361,6 +402,7 @@ export default function App() {
                 index={idx}
                 onSelectSchool={setSelectedSchool}
                 onRunSchoolDetails={handleRunSchoolDetails}
+                userRole={userRole}
               />
             ))}
           </div>
@@ -369,6 +411,7 @@ export default function App() {
             schools={schools}
             onSelectSchool={setSelectedSchool}
             onRunSchoolDetails={handleRunSchoolDetails}
+            userRole={userRole}
           />
         )}
       </main>
@@ -384,11 +427,12 @@ export default function App() {
             fetchStats();
           }}
           onOpenEditModal={handleOpenEditModal}
+          userRole={userRole}
         />
       )}
 
-      {/* Add / Edit School Modal */}
-      {addEditModalOpen && (
+      {/* Add / Edit School Modal - Admin Only */}
+      {addEditModalOpen && userRole === 'admin' && (
         <AddEditSchoolModal
           initialData={editingSchool}
           onClose={() => {
@@ -410,6 +454,14 @@ export default function App() {
           }}
         />
       )}
+
+      {/* Role-Based Access Control Matrix Modal */}
+      <AccessControlModal
+        isOpen={accessModalOpen}
+        onClose={() => setAccessModalOpen(false)}
+        currentRole={userRole}
+        onSelectRole={setUserRole}
+      />
     </div>
   );
 }

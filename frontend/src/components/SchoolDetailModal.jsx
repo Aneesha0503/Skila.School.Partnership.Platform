@@ -2,10 +2,16 @@ import React, { useState } from 'react';
 import { 
   X, Building2, Cpu, DollarSign, MapPin, Phone, Mail, 
   Globe, User, CheckCircle2, XCircle, Edit3, Save, Sparkles, ExternalLink,
-  Play, RefreshCw, Zap, Layers
+  Play, RefreshCw, Zap, Layers, Lock, ShieldCheck, UserCheck
 } from 'lucide-react';
 
-export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onOpenEditModal }) {
+export default function SchoolDetailModal({ 
+  school, 
+  onClose, 
+  onUpdateSchool, 
+  onOpenEditModal,
+  userRole = 'admin'
+}) {
   const formatRemarks = (val) => {
     if (!val) return '';
     if (typeof val === 'string') return val;
@@ -25,6 +31,9 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
 
   const [activeTab, setActiveTab] = useState('info'); // 'info' | 'tech' | 'sales'
   const [leadStatus, setLeadStatus] = useState(school?.sales?.lead_status || 'New');
+  const [interestLevel, setInterestLevel] = useState(school?.sales?.interest_level || 'Medium');
+  const [nextFollowUpDate, setNextFollowUpDate] = useState(school?.sales?.next_follow_up_date || '');
+  const [salesOwner, setSalesOwner] = useState(school?.sales?.sales_owner || '');
   const [remarks, setRemarks] = useState(() => formatRemarks(school?.sales?.remarks));
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -41,14 +50,21 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
     setIsRunningDetails(true);
     setRunDetailsError('');
     try {
-      const res = await fetch(`/api/schools/${school.id}/run-details`, { method: 'POST' });
+      const res = await fetch(`/api/schools/${school.id}/run-details`, { 
+        method: 'POST',
+        headers: { 'X-User-Role': userRole }
+      });
       if (res.ok) {
         const enriched = await res.json();
         onUpdateSchool(enriched);
         if (enriched?.sales?.remarks) setRemarks(formatRemarks(enriched.sales.remarks));
         if (enriched?.sales?.lead_status) setLeadStatus(enriched.sales.lead_status);
+        if (enriched?.sales?.interest_level) setInterestLevel(enriched.sales.interest_level);
+        if (enriched?.sales?.next_follow_up_date) setNextFollowUpDate(enriched.sales.next_follow_up_date);
+        if (enriched?.sales?.sales_owner) setSalesOwner(enriched.sales.sales_owner);
       } else {
-        setRunDetailsError('Failed to fetch school details. Please try again.');
+        const err = await res.json().catch(() => ({}));
+        setRunDetailsError(err.detail || 'Failed to fetch school details. Please try again.');
       }
     } catch (err) {
       console.error('Run school details error:', err);
@@ -88,13 +104,19 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
         sales: {
           ...school.sales,
           lead_status: leadStatus,
+          interest_level: interestLevel,
+          next_follow_up_date: nextFollowUpDate,
+          sales_owner: salesOwner,
           remarks: remarks
         }
       };
 
       const res = await fetch(`/api/schools/${school.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-User-Role': userRole
+        },
         body: JSON.stringify(updatedPayload)
       });
 
@@ -103,6 +125,9 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
         onUpdateSchool(saved);
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.detail || 'Failed to save CRM updates.');
       }
     } catch (err) {
       console.error('Error saving sales update:', err);
@@ -188,16 +213,26 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => onOpenEditModal(school)}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                Edit School
-              </button>
+              {userRole === 'admin' ? (
+                <button
+                  onClick={() => onOpenEditModal(school)}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition cursor-pointer"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  Edit School
+                </button>
+              ) : (
+                <div 
+                  title="Only Administrators can edit verified institutional attributes"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-400 text-xs font-medium"
+                >
+                  <Lock className="w-3 h-3 text-amber-400" />
+                  <span>Admin Edit Only</span>
+                </div>
+              )}
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -257,24 +292,33 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
                 </div>
               )}
 
-              <button
-                type="button"
-                onClick={handleRunSchoolDetails}
-                disabled={isRunningDetails}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 text-sm font-bold shadow-lg shadow-amber-500/25 transition-all cursor-pointer disabled:opacity-60"
-              >
-                {isRunningDetails ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
-                    <span>Mistral 14B is Scraping 49 Fields... (~8-10s)</span>
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 fill-current" />
-                    <span>Run School Details (49 Fields)</span>
-                  </>
-                )}
-              </button>
+              {userRole === 'admin' ? (
+                <button
+                  type="button"
+                  onClick={handleRunSchoolDetails}
+                  disabled={isRunningDetails}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 text-sm font-bold shadow-lg shadow-amber-500/25 transition-all cursor-pointer disabled:opacity-60"
+                >
+                  {isRunningDetails ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
+                      <span>Mistral 14B is Scraping 49 Fields... (~8-10s)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 fill-current" />
+                      <span>Run School Details (49 Fields)</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <div className="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs flex items-center gap-2.5">
+                  <Lock className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>
+                    <strong>Agent Mode:</strong> Deep telemetry AI scraping requires Administrator approval.
+                  </span>
+                </div>
+              )}
             </div>
           ) : (
             <>
@@ -661,22 +705,106 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
                 </div>
               </div>
 
-              {/* Remarks & Quick Save */}
+              {/* Field Operations & CRM Console */}
               <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs">
-                <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    Field Operations & CRM Telemetry Console
+                  </h3>
+                  {userRole === 'agent' ? (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-semibold inline-flex items-center gap-1">
+                      <UserCheck className="w-3 h-3" /> Agent CRM Active
+                    </span>
+                  ) : (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 font-semibold inline-flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3" /> Admin Mode
+                    </span>
+                  )}
+                </div>
+
+                {/* Direct Field Controls */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  {/* Lead Status */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Lead Status
+                    </label>
+                    <select
+                      value={leadStatus}
+                      onChange={(e) => setLeadStatus(e.target.value)}
+                      className="w-full text-xs p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                    >
+                      <option value="New">New</option>
+                      <option value="Contacted">Contacted</option>
+                      <option value="Meeting Scheduled">Meeting Scheduled</option>
+                      <option value="Demo Completed">Demo Completed</option>
+                      <option value="Proposal Shared">Proposal Shared</option>
+                      <option value="Pilot Running">Pilot Running</option>
+                      <option value="Closed Won">Closed Won</option>
+                      <option value="Not Interested">Not Interested</option>
+                    </select>
+                  </div>
+
+                  {/* Interest Level */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Interest Level
+                    </label>
+                    <select
+                      value={interestLevel}
+                      onChange={(e) => setInterestLevel(e.target.value)}
+                      className="w-full text-xs p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                    >
+                      <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
+                    </select>
+                  </div>
+
+                  {/* Next Follow-up Date */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Next Follow-up Date
+                    </label>
+                    <input
+                      type="date"
+                      value={nextFollowUpDate}
+                      onChange={(e) => setNextFollowUpDate(e.target.value)}
+                      className="w-full text-xs p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  {/* Assigned Sales Owner */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Field Representative
+                    </label>
+                    <input
+                      type="text"
+                      value={salesOwner}
+                      onChange={(e) => setSalesOwner(e.target.value)}
+                      placeholder="e.g. Rahul Sharma"
+                      className="w-full text-xs p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Remarks & Notes */}
+                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Interaction Remarks & Strategy Notes
-                </h3>
+                </label>
                 <textarea
                   rows="3"
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
-                  placeholder="Add meeting notes, customer feedback, next steps..."
+                  placeholder="Record meeting outcomes, principal/correspondent feedback, budget constraints, next steps..."
                   className="w-full text-xs p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition mb-3"
                 />
+
                 <div className="flex items-center justify-between">
                   {saveSuccess && (
                     <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 className="w-4 h-4" /> Updates saved successfully!
+                      <CheckCircle2 className="w-4 h-4" /> Updates saved successfully to database!
                     </span>
                   )}
                   <button
@@ -685,7 +813,7 @@ export default function SchoolDetailModal({ school, onClose, onUpdateSchool, onO
                     className="ml-auto inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50"
                   >
                     <Save className="w-3.5 h-3.5" />
-                    {isSaving ? 'Saving...' : 'Save CRM Updates'}
+                    {isSaving ? 'Saving...' : userRole === 'agent' ? 'Save Field CRM Updates' : 'Save CRM Updates'}
                   </button>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, RefreshCw, CheckCircle2, Search, Plus } from 'lucide-react';
+import { Building2, RefreshCw, CheckCircle2, Search, Plus, Lock, ShieldAlert } from 'lucide-react';
 
 const FALLBACK_STATES_DISTRICTS = {
   'Telangana': ['Hyderabad', 'Rangareddy', 'Medchal-Malkajgiri', 'Sangareddy', 'Warangal', 'Nizamabad', 'Karimnagar', 'Khammam', 'Siddipet'],
@@ -10,7 +10,13 @@ const FALLBACK_STATES_DISTRICTS = {
   'Delhi': ['New Delhi', 'South Delhi', 'North Delhi', 'West Delhi', 'South West Delhi']
 };
 
-export default function DistrictRunner({ onDistrictRunComplete, currentDistrict, currentState, totalSchoolsLoaded }) {
+export default function DistrictRunner({ 
+  onDistrictRunComplete, 
+  currentDistrict, 
+  currentState, 
+  totalSchoolsLoaded,
+  userRole = 'admin'
+}) {
   const [statesList, setStatesList] = useState(Object.keys(FALLBACK_STATES_DISTRICTS));
   const [districtsMap, setDistrictsMap] = useState(FALLBACK_STATES_DISTRICTS);
   
@@ -86,7 +92,10 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
     try {
       const res = await fetch('/api/run-district', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-User-Role': userRole
+        },
         body: JSON.stringify({
           state: selectedState,
           district: activeDistrict,
@@ -108,7 +117,8 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
 
         setTimeout(() => setRunMessage(''), 5000);
       } else {
-        alert('Discovery request failed. Please check server status.');
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.detail || 'Discovery request failed. Please check server status.');
         setRunMessage('');
       }
     } catch (err) {
@@ -123,6 +133,21 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
 
   return (
     <div id="district-runner-section" className="bg-slate-900 text-white rounded-xl p-5 mb-6 shadow-sm border border-slate-800 scroll-mt-6">
+      {/* Agent Access Banner */}
+      {userRole === 'agent' && (
+        <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>
+              <strong>Agent Level Access:</strong> Automated multi-mandal scraping is restricted to Administrators to prevent duplicate queries. You can browse, filter, and review existing database records for this district.
+            </span>
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30 shrink-0">
+            View Only
+          </span>
+        </div>
+      )}
+
       {/* Header bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
@@ -141,41 +166,50 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
 
         {/* Header Actions */}
         <div className="flex items-center gap-3 self-start md:self-center flex-wrap">
-          <label 
-            className="inline-flex items-center gap-2 text-xs text-slate-300 hover:text-white cursor-pointer bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-700/80 transition"
-            title="Checks live websites again instead of loading schools already saved in the database"
-          >
-            <input
-              type="checkbox"
-              checked={forceScrape}
-              onChange={(e) => setForceScrape(e.target.checked)}
-              className="rounded border-slate-600 bg-slate-900 text-indigo-500 focus:ring-0 w-3.5 h-3.5"
-            />
-            <span className="font-medium text-slate-200">Fresh search from web</span>
-            <span className="text-[10px] text-slate-400 hidden sm:inline">(ignore saved list)</span>
-          </label>
+          {userRole === 'admin' ? (
+            <>
+              <label 
+                className="inline-flex items-center gap-2 text-xs text-slate-300 hover:text-white cursor-pointer bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-700/80 transition"
+                title="Checks live websites again instead of loading schools already saved in the database"
+              >
+                <input
+                  type="checkbox"
+                  checked={forceScrape}
+                  onChange={(e) => setForceScrape(e.target.checked)}
+                  className="rounded border-slate-600 bg-slate-900 text-indigo-500 focus:ring-0 w-3.5 h-3.5"
+                />
+                <span className="font-medium text-slate-200">Fresh search from web</span>
+                <span className="text-[10px] text-slate-400 hidden sm:inline">(ignore saved list)</span>
+              </label>
 
-          {totalSchoolsLoaded > 0 && (
-            <button
-              type="button"
-              onClick={(e) => handleRunDistrict(e, true)}
-              disabled={isRunning || isScrapingMore}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-200 text-xs font-medium border border-indigo-500/40 transition disabled:opacity-50 cursor-pointer shadow-xs"
-              title="Crawls other mandals and rural areas in this district to find 25 new schools without duplicates"
-            >
-              {isScrapingMore ? (
-                <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-300" />
-                  <span>Searching other mandals...</span>
-                </>
-              ) : (
-                <>
-                  <Plus className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>+ Find 25 More Schools</span>
-                  <span className="text-[10px] text-indigo-300/70 hidden sm:inline">(other mandals)</span>
-                </>
+              {totalSchoolsLoaded > 0 && (
+                <button
+                  type="button"
+                  onClick={(e) => handleRunDistrict(e, true)}
+                  disabled={isRunning || isScrapingMore}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-200 text-xs font-medium border border-indigo-500/40 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                  title="Crawls other mandals and rural areas in this district to find 25 new schools without duplicates"
+                >
+                  {isScrapingMore ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-300" />
+                      <span>Searching other mandals...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>+ Find 25 More Schools</span>
+                      <span className="text-[10px] text-indigo-300/70 hidden sm:inline">(other mandals)</span>
+                    </>
+                  )}
+                </button>
               )}
-            </button>
+            </>
+          ) : (
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-xs font-medium">
+              <Lock className="w-3 h-3 text-amber-400" />
+              <span>Scraper Controls (Admin Only)</span>
+            </div>
           )}
         </div>
       </div>
@@ -260,23 +294,35 @@ export default function DistrictRunner({ onDistrictRunComplete, currentDistrict,
 
         {/* Submit */}
         <div className="md:col-span-3">
-          <button
-            type="submit"
-            disabled={isRunning || isScrapingMore}
-            className="w-full h-[38px] inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition duration-150 disabled:opacity-50 cursor-pointer"
-          >
-            {isRunning ? (
-              <>
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Discovering...</span>
-              </>
-            ) : (
-              <>
-                <Search className="w-3.5 h-3.5" />
-                <span>Discover Schools</span>
-              </>
-            )}
-          </button>
+          {userRole === 'admin' ? (
+            <button
+              type="submit"
+              disabled={isRunning || isScrapingMore}
+              className="w-full h-[38px] inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition duration-150 disabled:opacity-50 cursor-pointer"
+            >
+              {isRunning ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Discovering...</span>
+                </>
+              ) : (
+                <>
+                  <Search className="w-3.5 h-3.5" />
+                  <span>Discover Schools</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled
+              title="Admin authorization required to run automated district scraper"
+              className="w-full h-[38px] inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-slate-800 text-slate-400 text-xs font-semibold border border-slate-700 cursor-not-allowed"
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-400" />
+              <span>Admin Scraper Locked</span>
+            </button>
+          )}
         </div>
       </form>
 
