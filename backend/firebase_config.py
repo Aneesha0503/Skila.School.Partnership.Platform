@@ -1,4 +1,4 @@
-﻿import os
+import os
 import json
 import uuid
 from typing import List, Dict, Any, Optional
@@ -13,20 +13,36 @@ try:
     import firebase_admin
     from firebase_admin import credentials, firestore
 
-    if os.path.exists(SERVICE_ACCOUNT_FILE):
-        cred = credentials.Certificate(SERVICE_ACCOUNT_FILE)
-        firebase_admin.initialize_app(cred)
-        db = firestore.client()
-        FIREBASE_ACTIVE = True
-        print(f"[Firebase] Successfully initialized live Firebase Firestore from {SERVICE_ACCOUNT_FILE}")
-    elif "GOOGLE_APPLICATION_CREDENTIALS" in os.environ and os.path.exists(os.environ["GOOGLE_APPLICATION_CREDENTIALS"]):
-        cred = credentials.Certificate(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
-        firebase_admin.initialize_app(cred)
-        db = firestore.client()
-        FIREBASE_ACTIVE = True
-        print(f"[Firebase] Successfully initialized live Firebase Firestore from GOOGLE_APPLICATION_CREDENTIALS")
+    if not firebase_admin._apps:
+        if os.path.exists(SERVICE_ACCOUNT_FILE):
+            cred = credentials.Certificate(SERVICE_ACCOUNT_FILE)
+            firebase_admin.initialize_app(cred)
+            db = firestore.client()
+            FIREBASE_ACTIVE = True
+            print(f"[Firebase] Successfully initialized live Firebase Firestore from {SERVICE_ACCOUNT_FILE}")
+        elif "FIREBASE_SERVICE_ACCOUNT" in os.environ and os.environ["FIREBASE_SERVICE_ACCOUNT"].strip():
+            raw_val = os.environ["FIREBASE_SERVICE_ACCOUNT"].strip()
+            try:
+                key_dict = json.loads(raw_val)
+            except Exception:
+                import base64
+                key_dict = json.loads(base64.b64decode(raw_val).decode("utf-8"))
+            cred = credentials.Certificate(key_dict)
+            firebase_admin.initialize_app(cred)
+            db = firestore.client()
+            FIREBASE_ACTIVE = True
+            print("[Firebase] Successfully initialized live Firebase Firestore from FIREBASE_SERVICE_ACCOUNT env var")
+        elif "GOOGLE_APPLICATION_CREDENTIALS" in os.environ and os.path.exists(os.environ["GOOGLE_APPLICATION_CREDENTIALS"]):
+            cred = credentials.Certificate(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
+            firebase_admin.initialize_app(cred)
+            db = firestore.client()
+            FIREBASE_ACTIVE = True
+            print(f"[Firebase] Successfully initialized live Firebase Firestore from GOOGLE_APPLICATION_CREDENTIALS")
+        else:
+            print("[Firebase] serviceAccountKey.json not found. Operating in Local Firestore-compatible mode.")
     else:
-        print("[Firebase] serviceAccountKey.json not found. Operating in Local Firestore-compatible mode.")
+        db = firestore.client()
+        FIREBASE_ACTIVE = True
 except Exception as e:
     print(f"[Firebase] Live Firebase initialization failed ({e}). Falling back to Local Firestore-compatible mode.")
 

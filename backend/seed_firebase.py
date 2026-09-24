@@ -53,4 +53,4 @@ for s in schools_to_upload:
         col.document(doc_id).set(s)
         uploaded += 1
 
-print(f"✅ Successfully seeded {uploaded} schools to live Firebase Firestore!")
+print(f"[SUCCESS] Successfully seeded {uploaded} schools to live Firebase Firestore!")
