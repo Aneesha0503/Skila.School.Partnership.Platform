@@ -16,6 +16,8 @@ export default function CustomDropdown({
   variant = 'dark', // 'dark' | 'auto'
   className = '',
   buttonClassName = '',
+  dropdownClassName = '',
+  alignRight = false,
   emptyText = 'No options available'
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -162,7 +164,7 @@ export default function CustomDropdown({
       {/* Downward-Opening Dropdown Menu */}
       {isOpen && (
         <div
-          className={`absolute left-0 top-full mt-1.5 w-full rounded-xl z-50 overflow-hidden flex flex-col max-h-64 ${menuClasses}`}
+          className={`absolute ${alignRight ? 'right-0' : 'left-0'} top-full mt-1.5 w-full min-w-full rounded-xl z-50 overflow-hidden flex flex-col max-h-64 ${menuClasses} ${dropdownClassName}`}
           style={{ transformOrigin: 'top' }}
         >
           {/* Quick search filter for long option lists */}
@@ -209,6 +211,7 @@ export default function CustomDropdown({
                   <button
                     key={String(opt.value)}
                     type="button"
+                    title={opt.label}
                     onClick={() => handleSelect(opt.value)}
                     className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors cursor-pointer ${
                       isSelected ? optionSelectedClasses : optionHoverClasses

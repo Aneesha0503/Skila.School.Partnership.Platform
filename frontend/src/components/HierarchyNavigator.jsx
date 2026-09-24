@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { MapPin, ChevronRight, RotateCcw, Layers } from 'lucide-react';
+import CustomDropdown from './CustomDropdown';
 
 export default function HierarchyNavigator({
   hierarchyData,
@@ -11,6 +12,39 @@ export default function HierarchyNavigator({
   const { state, district, revenue_division, mandal, local_body_name, village_locality_ward } = selectedHierarchy;
 
   const hasAnyFilter = Boolean(state || district || revenue_division || mandal || local_body_name || village_locality_ward);
+
+  const stateOptions = useMemo(() => [
+    { value: '', label: 'All States' },
+    ...(hierarchyData?.states || []).map((s) => ({ value: s, label: s }))
+  ], [hierarchyData?.states]);
+
+  const districtOptions = useMemo(() => [
+    { value: '', label: 'All Districts' },
+    ...(hierarchyData?.districts || []).map((d) => ({ value: d, label: d }))
+  ], [hierarchyData?.districts]);
+
+  const divisionOptions = useMemo(() => [
+    { value: '', label: 'All Divisions' },
+    ...(hierarchyData?.revenue_divisions || []).map((rd) => ({ value: rd, label: rd }))
+  ], [hierarchyData?.revenue_divisions]);
+
+  const mandalOptions = useMemo(() => [
+    { value: '', label: 'All Mandals' },
+    ...(hierarchyData?.mandals || []).map((m) => ({ value: m, label: m }))
+  ], [hierarchyData?.mandals]);
+
+  const localBodyOptions = useMemo(() => [
+    { value: '', label: 'All Local Bodies' },
+    ...(hierarchyData?.local_bodies || []).map((lb) => ({
+      value: lb.name,
+      label: `${lb.name} (${lb.type === 'Gram Panchayat' ? 'GP' : 'Urban'})`
+    }))
+  ], [hierarchyData?.local_bodies]);
+
+  const wardOptions = useMemo(() => [
+    { value: '', label: 'All Wards & Villages' },
+    ...(hierarchyData?.wards_villages || []).map((w) => ({ value: w, label: w }))
+  ], [hierarchyData?.wards_villages]);
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs p-4 mb-6 transition-colors">
@@ -48,16 +82,14 @@ export default function HierarchyNavigator({
           <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">
             1. State
           </label>
-          <select
+          <CustomDropdown
             value={state}
-            onChange={(e) => onHierarchyChange('state', e.target.value)}
-            className="w-full text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 p-2 text-slate-800 dark:text-slate-200 font-medium cursor-pointer"
-          >
-            <option value="">All States</option>
-            {hierarchyData?.states?.map((st) => (
-              <option key={st} value={st} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{st}</option>
-            ))}
-          </select>
+            onChange={(val) => onHierarchyChange('state', val)}
+            options={stateOptions}
+            placeholder="All States"
+            variant="auto"
+            searchable={true}
+          />
         </div>
 
         {/* 2. District */}
@@ -65,16 +97,14 @@ export default function HierarchyNavigator({
           <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">
             2. District
           </label>
-          <select
+          <CustomDropdown
             value={district}
-            onChange={(e) => onHierarchyChange('district', e.target.value)}
-            className="w-full text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 p-2 text-slate-800 dark:text-slate-200 font-medium cursor-pointer"
-          >
-            <option value="">All Districts</option>
-            {hierarchyData?.districts?.map((d) => (
-              <option key={d} value={d} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{d}</option>
-            ))}
-          </select>
+            onChange={(val) => onHierarchyChange('district', val)}
+            options={districtOptions}
+            placeholder="All Districts"
+            variant="auto"
+            searchable={true}
+          />
         </div>
 
         {/* 3. Revenue Division / Sub-Division */}
@@ -82,16 +112,14 @@ export default function HierarchyNavigator({
           <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">
             3. Division / Sub-Div
           </label>
-          <select
+          <CustomDropdown
             value={revenue_division}
-            onChange={(e) => onHierarchyChange('revenue_division', e.target.value)}
-            className="w-full text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 p-2 text-slate-800 dark:text-slate-200 font-medium cursor-pointer"
-          >
-            <option value="">All Divisions</option>
-            {hierarchyData?.revenue_divisions?.map((rd) => (
-              <option key={rd} value={rd} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{rd}</option>
-            ))}
-          </select>
+            onChange={(val) => onHierarchyChange('revenue_division', val)}
+            options={divisionOptions}
+            placeholder="All Divisions"
+            variant="auto"
+            searchable={true}
+          />
         </div>
 
         {/* 4. Mandal */}
@@ -99,16 +127,14 @@ export default function HierarchyNavigator({
           <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">
             4. Mandal
           </label>
-          <select
+          <CustomDropdown
             value={mandal}
-            onChange={(e) => onHierarchyChange('mandal', e.target.value)}
-            className="w-full text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 p-2 text-slate-800 dark:text-slate-200 font-medium cursor-pointer"
-          >
-            <option value="">All Mandals</option>
-            {hierarchyData?.mandals?.map((m) => (
-              <option key={m} value={m} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{m}</option>
-            ))}
-          </select>
+            onChange={(val) => onHierarchyChange('mandal', val)}
+            options={mandalOptions}
+            placeholder="All Mandals"
+            variant="auto"
+            searchable={true}
+          />
         </div>
 
         {/* 5. Municipality / Gram Panchayat */}
@@ -116,18 +142,14 @@ export default function HierarchyNavigator({
           <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">
             5. Local Body (Munc/GP)
           </label>
-          <select
+          <CustomDropdown
             value={local_body_name}
-            onChange={(e) => onHierarchyChange('local_body_name', e.target.value)}
-            className="w-full text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 p-2 text-slate-800 dark:text-slate-200 font-medium cursor-pointer"
-          >
-            <option value="">All Local Bodies</option>
-            {hierarchyData?.local_bodies?.map((lb, i) => (
-              <option key={i} value={lb.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                {lb.name} ({lb.type === 'Gram Panchayat' ? 'GP' : 'Urban'})
-              </option>
-            ))}
-          </select>
+            onChange={(val) => onHierarchyChange('local_body_name', val)}
+            options={localBodyOptions}
+            placeholder="All Local Bodies"
+            variant="auto"
+            searchable={true}
+          />
         </div>
 
         {/* 6. Village / Locality / Ward */}
@@ -135,16 +157,15 @@ export default function HierarchyNavigator({
           <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">
             6. Ward / Village
           </label>
-          <select
+          <CustomDropdown
             value={village_locality_ward}
-            onChange={(e) => onHierarchyChange('village_locality_ward', e.target.value)}
-            className="w-full text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 p-2 text-slate-800 dark:text-slate-200 font-medium cursor-pointer"
-          >
-            <option value="">All Wards & Villages</option>
-            {hierarchyData?.wards_villages?.map((w) => (
-              <option key={w} value={w} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{w}</option>
-            ))}
-          </select>
+            onChange={(val) => onHierarchyChange('village_locality_ward', val)}
+            options={wardOptions}
+            placeholder="All Wards & Villages"
+            variant="auto"
+            alignRight={true}
+            searchable={true}
+          />
         </div>
       </div>
 
