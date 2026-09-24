@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, RefreshCw, CheckCircle2, Search, Plus, Lock, ShieldAlert } from 'lucide-react';
+import CustomDropdown from './CustomDropdown';
 
 const FALLBACK_STATES_DISTRICTS = {
   'Telangana': ['Hyderabad', 'Rangareddy', 'Medchal-Malkajgiri', 'Sangareddy', 'Warangal', 'Nizamabad', 'Karimnagar', 'Khammam', 'Siddipet'],
@@ -219,16 +220,14 @@ export default function DistrictRunner({
           <label className="block text-xs font-medium text-slate-300 mb-1.5">
             State
           </label>
-          <select
+          <CustomDropdown
             value={selectedState}
-            onChange={(e) => handleStateChange(e.target.value)}
+            onChange={handleStateChange}
+            options={statesList}
             disabled={isRunning || isScrapingMore}
-            className="w-full text-xs rounded-lg bg-slate-800/90 border border-slate-700 text-white p-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer"
-          >
-            {statesList.map((st) => (
-              <option key={st} value={st} className="bg-slate-900 text-white">{st}</option>
-            ))}
-          </select>
+            placeholder="Select State"
+            searchable={true}
+          />
         </div>
 
         {/* District */}
@@ -256,20 +255,15 @@ export default function DistrictRunner({
               className="w-full text-xs rounded-lg bg-slate-800/90 border border-slate-700 text-white p-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-slate-500"
             />
           ) : (
-            <select
+            <CustomDropdown
               value={selectedDistrict}
-              onChange={(e) => setSelectedDistrict(e.target.value)}
+              onChange={setSelectedDistrict}
+              options={districtList}
               disabled={isRunning || isScrapingMore || districtList.length === 0}
-              className="w-full text-xs rounded-lg bg-slate-800/90 border border-slate-700 text-white p-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer"
-            >
-              {districtList.length === 0 ? (
-                <option value="" className="bg-slate-900 text-white">No predefined districts</option>
-              ) : (
-                districtList.map((d) => (
-                  <option key={d} value={d} className="bg-slate-900 text-white">{d}</option>
-                ))
-              )}
-            </select>
+              placeholder={districtList.length === 0 ? 'No predefined districts' : 'Select District'}
+              emptyText="No districts found"
+              searchable={true}
+            />
           )}
         </div>
 
@@ -278,16 +272,17 @@ export default function DistrictRunner({
           <label className="block text-xs font-medium text-slate-300 mb-1.5">
             Batch Size
           </label>
-          <select
+          <CustomDropdown
             value={scanCount}
-            onChange={(e) => setScanCount(Number(e.target.value))}
+            onChange={(val) => setScanCount(Number(val))}
+            options={[
+              { value: 25, label: '25 Schools' },
+              { value: 50, label: '50 Schools' },
+              { value: 100, label: '100 Schools' }
+            ]}
             disabled={isRunning || isScrapingMore}
-            className="w-full text-xs rounded-lg bg-slate-800/90 border border-slate-700 text-white p-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer"
-          >
-            <option value={25} className="bg-slate-900 text-white">25 Schools</option>
-            <option value={50} className="bg-slate-900 text-white">50 Schools</option>
-            <option value={100} className="bg-slate-900 text-white">100 Schools</option>
-          </select>
+            searchable={false}
+          />
         </div>
 
         {/* Submit */}
