@@ -840,6 +840,41 @@ class SendEmailRequest(BaseModel):
     recipient_name: Optional[str] = ""
     subject: str
     body: str
+    sender_type: Optional[str] = "company"  # "company" | "personal"
+
+@app.get("/api/email-config")
+def api_get_email_config():
+    """
+    Returns the configured sender profiles (Company vs Personal)
+    so the frontend dropdown can display active sender names and email addresses.
+    """
+    company_name = os.getenv("COMPANY_EMAIL_NAME", "Skila AI Partnerships")
+    company_email = os.getenv("COMPANY_EMAIL_ADDRESS", os.getenv("SMTP_USER", "partnerships@skila.ai"))
+    company_configured = bool(
+        (os.getenv("COMPANY_SMTP_USER") and os.getenv("COMPANY_SMTP_PASSWORD")) or
+        (os.getenv("SMTP_USER") and os.getenv("SMTP_PASSWORD"))
+    )
+
+    personal_name = os.getenv("PERSONAL_EMAIL_NAME", "Personal Representative")
+    personal_email = os.getenv("PERSONAL_EMAIL_ADDRESS", os.getenv("PERSONAL_SMTP_USER", "personal@gmail.com"))
+    personal_configured = bool(os.getenv("PERSONAL_SMTP_USER") and os.getenv("PERSONAL_SMTP_PASSWORD"))
+
+    return {
+        "company": {
+            "id": "company",
+            "name": company_name,
+            "email": company_email,
+            "is_configured": company_configured,
+            "label": f"🏢 Company: {company_name} ({company_email})"
+        },
+        "personal": {
+            "id": "personal",
+            "name": personal_name,
+            "email": personal_email,
+            "is_configured": personal_configured,
+            "label": f"👤 Personal: {personal_name} ({personal_email})"
+        }
+    }
 
 @app.post("/api/schools/{school_id}/generate-email")
 def api_generate_school_email(school_id: str):
@@ -861,9 +896,7 @@ def api_generate_school_email(school_id: str):
 def api_send_school_email(school_id: str, req: SendEmailRequest):
     """
     Dispatches a contextual partnership email to the school or principal.
-    If SMTP environment variables are configured, sends real email via SMTP.
-    In all cases, automatically records the dispatch in Firestore,
-    updates lead_status to 'Contacted', and logs the interaction.
+    Supports routing through Company Account or Personal Account.
     """
     doc_ref = db.collection("schools").document(school_id)
     doc = doc_ref.get()
@@ -876,12 +909,22 @@ def api_send_school_email(school_id: str, req: SendEmailRequest):
     if not recipient:
         raise HTTPException(status_code=400, detail="Recipient email address is required")
 
-    # Check for SMTP configuration
-    smtp_host = os.getenv("SMTP_HOST")
-    smtp_port = int(os.getenv("SMTP_PORT", 587))
-    smtp_user = os.getenv("SMTP_USER")
-    smtp_password = os.getenv("SMTP_PASSWORD")
-    smtp_from = os.getenv("SMTP_FROM", smtp_user or "partnerships@skila.ai")
+    sender_type = (req.sender_type or "company").lower()
+
+    if sender_type == "personal":
+        smtp_host = os.getenv("PERSONAL_SMTP_HOST", os.getenv("SMTP_HOST", "smtp.gmail.com"))
+        smtp_port = int(os.getenv("PERSONAL_SMTP_PORT", os.getenv("SMTP_PORT", 587)))
+        smtp_user = os.getenv("PERSONAL_SMTP_USER")
+        smtp_password = os.getenv("PERSONAL_SMTP_PASSWORD")
+        smtp_from = os.getenv("PERSONAL_EMAIL_ADDRESS", smtp_user or "personal@gmail.com")
+        sender_label = os.getenv("PERSONAL_EMAIL_NAME", "Personal Representative")
+    else:
+        smtp_host = os.getenv("COMPANY_SMTP_HOST", os.getenv("SMTP_HOST", "smtp.gmail.com"))
+        smtp_port = int(os.getenv("COMPANY_SMTP_PORT", os.getenv("SMTP_PORT", 587)))
+        smtp_user = os.getenv("COMPANY_SMTP_USER", os.getenv("SMTP_USER"))
+        smtp_password = os.getenv("COMPANY_SMTP_PASSWORD", os.getenv("SMTP_PASSWORD"))
+        smtp_from = os.getenv("COMPANY_EMAIL_ADDRESS", smtp_user or "partnerships@skila.ai")
+        sender_label = os.getenv("COMPANY_EMAIL_NAME", "Skila AI Partnerships")
 
     smtp_sent = False
     smtp_error = None
@@ -890,7 +933,7 @@ def api_send_school_email(school_id: str, req: SendEmailRequest):
         try:
             msg = EmailMessage()
             msg["Subject"] = req.subject
-            msg["From"] = smtp_from
+            msg["From"] = f"{sender_label} <{smtp_from}>"
             msg["To"] = recipient
             msg.set_content(req.body)
 
@@ -900,7 +943,7 @@ def api_send_school_email(school_id: str, req: SendEmailRequest):
                 server.send_message(msg)
             smtp_sent = True
         except Exception as e:
-            print(f"[SMTP Send Error] {e}")
+            print(f"[SMTP Send Error - {sender_type}] {e}")
             smtp_error = str(e)
 
     # Automatically record engagement in CRM pipeline
@@ -912,13 +955,16 @@ def api_send_school_email(school_id: str, req: SendEmailRequest):
     sales["last_contact_date"] = today_str
 
     current_remarks = sales.get("remarks", "")
-    log_entry = f"[Email Dispatched to {recipient} on {timestamp_str}]: {req.subject}"
+    log_entry = f"[Email Sent from {sender_label} ({smtp_from}) to {recipient} on {timestamp_str}]: {req.subject}"
     sales["remarks"] = f"{current_remarks}\n\n{log_entry}".strip()
 
     # Track in sent emails log array
     sent_list = sales.setdefault("sent_emails", [])
     sent_list.append({
         "timestamp": timestamp_str,
+        "sender_type": sender_type,
+        "sender_email": smtp_from,
+        "sender_name": sender_label,
         "recipient_email": recipient,
         "recipient_name": req.recipient_name,
         "subject": req.subject,
@@ -929,13 +975,16 @@ def api_send_school_email(school_id: str, req: SendEmailRequest):
     doc_ref.set(school_data)
 
     status_message = (
-        f"Email successfully delivered to {recipient} via SMTP!"
+        f"Email successfully delivered to {recipient} from {sender_label} ({smtp_from})!"
         if smtp_sent
-        else f"Partnership email dispatched and recorded in CRM for {recipient}."
+        else f"Partnership email dispatched and recorded in CRM for {recipient} (Sent as {sender_label})."
     )
 
     return {
         "status": "success",
+        "sender_type": sender_type,
+        "sender_email": smtp_from,
+        "sender_name": sender_label,
         "smtp_sent": smtp_sent,
         "smtp_error": smtp_error,
         "recipient": recipient,

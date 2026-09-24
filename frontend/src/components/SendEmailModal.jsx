@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { 
   X, Mail, Send, Sparkles, CheckCircle2, Copy, Check, ExternalLink, 
-  User, Building2, AlertCircle, RefreshCw 
+  User, Building2, AlertCircle, RefreshCw, ChevronDown, ChevronUp, Key, HelpCircle
 } from 'lucide-react';
 
 export default function SendEmailModal({ school, isOpen, onClose, onUpdateSchool }) {
@@ -42,6 +42,8 @@ Strategic Partnerships Team
 Skila AI Educational Technologies
 Email: partnerships@skila.ai | Website: https://skila.ai`;
 
+  const [senderType, setSenderType] = useState('company'); // 'company' | 'personal'
+  const [emailConfig, setEmailConfig] = useState(null);
   const [recipientEmail, setRecipientEmail] = useState(initialEmail);
   const [recipientName, setRecipientName] = useState(principalName || 'Principal');
   const [subject, setSubject] = useState(defaultSubject);
@@ -52,6 +54,15 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
   const [sendSuccess, setSendSuccess] = useState(false);
   const [sendError, setSendError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [showConfigHelp, setShowConfigHelp] = useState(false);
+
+  // Fetch available sender configurations on mount
+  useEffect(() => {
+    fetch('/api/email-config')
+      .then(res => res.json())
+      .then(data => setEmailConfig(data))
+      .catch(err => console.error('Failed to load email config:', err));
+  }, []);
 
   // Close on Escape key
   useEffect(() => {
@@ -61,6 +72,31 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
+
+  const getSignature = (type) => {
+    if (type === 'personal') {
+      const pName = emailConfig?.personal?.name || 'Partner Representative';
+      const pEmail = emailConfig?.personal?.email || 'personal@gmail.com';
+      return `Warm regards,\n\n${pName}\nEducational Partnership Lead, Skila AI\nEmail: ${pEmail}`;
+    } else {
+      const cName = emailConfig?.company?.name || 'Strategic Partnerships Team';
+      const cEmail = emailConfig?.company?.email || 'partnerships@skila.ai';
+      return `Warm regards,\n\n${cName}\nSkila AI Educational Technologies\nEmail: ${cEmail} | Website: https://skila.ai`;
+    }
+  };
+
+  const handleSenderChange = (newType) => {
+    const oldSig = getSignature(senderType);
+    const newSig = getSignature(newType);
+    setSenderType(newType);
+
+    if (body.includes(oldSig)) {
+      setBody(body.replace(oldSig, newSig));
+    } else if (body.includes('Warm regards,')) {
+      const parts = body.split('Warm regards,');
+      setBody(parts[0].trim() + '\n\n' + newSig);
+    }
+  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(`Subject: ${subject}\n\n${body}`);
@@ -100,7 +136,8 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
         recipient_email: recipientEmail.trim(),
         recipient_name: recipientName.trim(),
         subject: subject.trim(),
-        body: body.trim()
+        body: body.trim(),
+        sender_type: senderType
       };
 
       const res = await fetch(`/api/schools/${school.id}/send-email`, {
@@ -144,7 +181,8 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
           recipient_email: recipientEmail || 'School Mail Client',
           recipient_name: recipientName,
           subject: subject,
-          body: '[Dispatched via Local Mail Client]\n' + body
+          body: `[Dispatched via Local Mail Client as ${senderType === 'personal' ? 'Personal' : 'Company'}]\n` + body,
+          sender_type: senderType
         })
       }).then(r => r.json()).then(data => {
         if (onUpdateSchool && data.school) onUpdateSchool(data.school);
@@ -173,7 +211,7 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
               Send Contextual Proposal to {schoolName}
             </h3>
             <p className="text-xs text-slate-300/80 mt-0.5">
-              Automatically customized with leadership name, board alignment, and technology curriculum.
+              Select your sending account and dispatch customized institutional outreach.
             </p>
           </div>
 
@@ -191,7 +229,7 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
           {sendSuccess && (
             <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Proposal email successfully dispatched to {recipientEmail} and logged in CRM!</span>
+              <span>Proposal email successfully dispatched to {recipientEmail} from your {senderType === 'personal' ? 'Personal' : 'Company'} account and logged in CRM!</span>
             </div>
           )}
 
@@ -201,6 +239,61 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
               <span>{sendError}</span>
             </div>
           )}
+
+          {/* SENDER ACCOUNT SELECTOR DROPDOWN */}
+          <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 space-y-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <label className="text-[11px] font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Send From (Sender Account):</span>
+              </label>
+              
+              <button
+                type="button"
+                onClick={() => setShowConfigHelp(!showConfigHelp)}
+                className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <HelpCircle className="w-3 h-3" />
+                <span>Automation Setup Guide</span>
+                {showConfigHelp ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+            </div>
+
+            <select
+              value={senderType}
+              onChange={(e) => handleSenderChange(e.target.value)}
+              className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-xs"
+            >
+              <option value="company">
+                🏢 Company Account: {emailConfig?.company?.name || 'Skila AI Partnerships'} ({emailConfig?.company?.email || 'partnerships@skila.ai'})
+              </option>
+              <option value="personal">
+                👤 Personal Account: {emailConfig?.personal?.name || 'Personal Representative'} ({emailConfig?.personal?.email || 'personal@gmail.com'})
+              </option>
+            </select>
+
+            {/* Collapsible Automation Setup Instructions */}
+            {showConfigHelp && (
+              <div className="mt-2.5 p-3 rounded-lg bg-indigo-50/70 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 text-[11px] text-slate-700 dark:text-slate-300 space-y-1.5 animate-in fade-in">
+                <div className="font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  <span>How to enable 1-Click Background Automation for your Gmail or Company Email:</span>
+                </div>
+                <p>
+                  1. <strong>Personal Gmail:</strong> Go to Google Account → Security → App Passwords → Generate a 16-character App Password.
+                </p>
+                <p>
+                  2. <strong>Company Email:</strong> Use your Google Workspace App Password, or an SMTP key from Resend/SendGrid.
+                </p>
+                <p>
+                  3. Paste into <code className="px-1 py-0.5 bg-white dark:bg-slate-900 rounded font-mono text-[10px]">backend/.env</code> under <code className="px-1 py-0.5 bg-white dark:bg-slate-900 rounded font-mono text-[10px]">PERSONAL_SMTP_PASSWORD</code> or <code className="px-1 py-0.5 bg-white dark:bg-slate-900 rounded font-mono text-[10px]">COMPANY_SMTP_PASSWORD</code>.
+                </p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 italic">
+                  Tip: You can always click "Open in Mail Client" below to send right now from either account with zero setup!
+                </p>
+              </div>
+            )}
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {/* Recipient Email */}
@@ -280,7 +373,7 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
               </div>
             </div>
             <textarea
-              rows="10"
+              rows="9"
               value={body}
               onChange={(e) => setBody(e.target.value)}
               className="w-full text-xs p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono text-[11px] leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-slate-900 resize-y"
