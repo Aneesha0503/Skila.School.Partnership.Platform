@@ -182,28 +182,26 @@ export default function DistrictRunner({
                 <span className="text-[10px] text-slate-400 hidden sm:inline">(ignore saved list)</span>
               </label>
 
-              {totalSchoolsLoaded > 0 && (
-                <button
-                  type="button"
-                  onClick={(e) => handleRunDistrict(e, true)}
-                  disabled={isRunning || isScrapingMore}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-200 text-xs font-medium border border-indigo-500/40 transition disabled:opacity-50 cursor-pointer shadow-xs"
-                  title="Crawls other mandals and rural areas in this district to find 25 new schools without duplicates"
-                >
-                  {isScrapingMore ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-300" />
-                      <span>Searching other mandals...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-3.5 h-3.5 text-indigo-400" />
-                      <span>+ Find 25 More Schools</span>
-                      <span className="text-[10px] text-indigo-300/70 hidden sm:inline">(other mandals)</span>
-                    </>
-                  )}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={(e) => handleRunDistrict(e, true)}
+                disabled={isRunning || isScrapingMore}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600/30 to-violet-600/30 hover:from-indigo-600/50 hover:to-violet-600/50 text-indigo-100 text-xs font-semibold border border-indigo-400/40 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                title="Crawls other mandals and rural areas in this district to find 25 new schools without duplicates"
+              >
+                {isScrapingMore ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-300" />
+                    <span>Searching other mandals...</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-3.5 h-3.5 text-indigo-300" />
+                    <span>+ Find 25 More Schools</span>
+                    <span className="text-[10px] text-indigo-300/80 hidden sm:inline">(other mandals)</span>
+                  </>
+                )}
+              </button>
             </>
           ) : (
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-xs font-medium">
