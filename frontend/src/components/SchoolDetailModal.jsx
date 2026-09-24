@@ -214,7 +214,7 @@ export default function SchoolDetailModal({
                       {info?.board}
                     </span>
                     <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold inline-flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> 49 Fields Verified
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Full 49-Field Profile Verified
                     </span>
                   </>
                 ) : (
@@ -223,7 +223,7 @@ export default function SchoolDetailModal({
                       {info?.board}
                     </span>
                     <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold inline-flex items-center gap-1.5">
-                      <Zap className="w-3.5 h-3.5 text-amber-400" /> Details Pending Run
+                      <Zap className="w-3.5 h-3.5 text-amber-400" /> Basic Info Only (Full Profile Pending)
                     </span>
                   </>
                 )}
@@ -264,10 +264,13 @@ export default function SchoolDetailModal({
               <button
                 onClick={handleAiEnrich}
                 disabled={isEnriching}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-semibold shadow-md shadow-indigo-500/20 transition cursor-pointer disabled:opacity-50"
+                title="Use Skila AI to evaluate school data, determine tech adoption score, and draft a high-converting sales pitch"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-indigo-700 hover:from-purple-500 hover:to-indigo-600 text-white text-xs font-bold shadow-md shadow-indigo-500/20 transition cursor-pointer disabled:opacity-50"
               >
                 <Sparkles className={`w-3.5 h-3.5 ${isEnriching ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">{isEnriching ? 'Enriching...' : 'Skila AI Enrich'}</span>
+                <span className="hidden sm:inline">
+                  {isEnriching ? 'Generating AI Pitch...' : enrichSuccess ? '✓ Sales Pitch Ready!' : '✨ Generate AI Sales Pitch'}
+                </span>
               </button>
 
               <button
@@ -351,17 +354,17 @@ export default function SchoolDetailModal({
                 <Zap className="w-8 h-8 fill-amber-500 text-amber-600 dark:text-amber-400" />
               </div>
 
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 text-xs font-semibold mb-2 border border-amber-200 dark:border-amber-800">
-                ⚡ Step 2: On-Demand School Intelligence
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 text-xs font-bold mb-3 border border-amber-200 dark:border-amber-800">
+                ⚡ Step 2: Fetch Complete School Profile
               </div>
 
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-                Run Deep Intelligence for {info?.school_name}
+              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mb-2">
+                Extract 49 Institutional & Tech Fields for {info?.school_name}
               </h3>
 
-              <p className="text-xs text-slate-600 dark:text-slate-300 mb-5 leading-relaxed">
-                This school was discovered during your district run ({info?.board}, ~{info?.student_strength} students). 
-                Click below to trigger <strong>Skila AI Engine</strong> to research and populate all <strong>16 School Information, 17 Technology Usage, and 16 Sales CRM fields</strong> specifically for this school.
+              <p className="text-xs text-slate-600 dark:text-slate-300 mb-6 leading-relaxed max-w-lg">
+                This school was discovered during district exploration with basic name and board. 
+                Click below to fetch the <strong>complete 49-field profile</strong>: Principal & Correspondent contacts, direct phone numbers, verified email, official website, ERP/LMS software stack, smart classrooms, robotics labs, and decision-maker details.
               </p>
 
               {runDetailsError && (
@@ -375,17 +378,17 @@ export default function SchoolDetailModal({
                   type="button"
                   onClick={handleRunSchoolDetails}
                   disabled={isRunningDetails}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 text-sm font-bold shadow-lg shadow-amber-500/25 transition-all cursor-pointer disabled:opacity-60"
+                  className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 text-sm font-extrabold shadow-lg shadow-amber-500/25 transition-all cursor-pointer disabled:opacity-60"
                 >
                   {isRunningDetails ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
-                      <span>Skila AI is Extracting 49 Fields... (~8-10s)</span>
+                      <span>Extracting Contacts, Tech Stack & 49 Fields... (~8-10s)</span>
                     </>
                   ) : (
                     <>
                       <Play className="w-4 h-4 fill-current" />
-                      <span>Run School Details (49 Fields)</span>
+                      <span>Fetch Full 49-Field Profile (Contacts & Tech)</span>
                     </>
                   )}
                 </button>
@@ -393,7 +396,7 @@ export default function SchoolDetailModal({
                 <div className="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs flex items-center gap-2.5">
                   <Lock className="w-4 h-4 text-amber-500 shrink-0" />
                   <span>
-                    <strong>Agent Mode:</strong> Deep telemetry AI scraping requires Administrator approval.
+                    <strong>Agent Mode:</strong> Complete profile extraction requires Administrator role. Contact your Admin to fetch this school.
                   </span>
                 </div>
               )}
@@ -758,11 +761,11 @@ export default function SchoolDetailModal({
                     <button
                       onClick={handleAiEnrich}
                       disabled={isEnriching}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold text-xs shadow-xs transition disabled:opacity-50 cursor-pointer"
-                      title="Analyze with Skila AI"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-indigo-700 hover:from-purple-500 hover:to-indigo-600 text-white font-bold text-xs shadow-xs transition disabled:opacity-50 cursor-pointer"
+                      title="Analyze this school and write a customized sales pitch"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                      {isEnriching ? 'AI Analyzing...' : 'AI Pitch & Tech Insights'}
+                      {isEnriching ? 'Generating AI Pitch...' : '✨ Generate AI Sales Pitch'}
                     </button>
 
                     <div className="flex items-center gap-1.5 bg-indigo-50/80 dark:bg-indigo-950/50 px-2.5 py-1 rounded-xl border border-indigo-200 dark:border-indigo-800">

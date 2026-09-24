@@ -192,11 +192,11 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
               <span className="font-medium text-slate-700 dark:text-slate-300">{sales?.decision_maker}</span>
             </>
           ) : (
-            <span className="text-slate-400 dark:text-slate-500 italic">Details ready on click</span>
+            <span className="text-slate-400 dark:text-slate-500 italic">Full profile pending</span>
           )}
         </div>
         <div className="flex items-center text-indigo-600 dark:text-indigo-400 font-semibold group-hover:translate-x-0.5 transition-transform shrink-0">
-          {details_fetched ? 'View 49 Fields' : 'Open School'} <ChevronRight className="w-4 h-4 ml-0.5" />
+          {details_fetched ? 'View Full Profile' : 'Open School'} <ChevronRight className="w-4 h-4 ml-0.5" />
         </div>
       </div>
     </div>

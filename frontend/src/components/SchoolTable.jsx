@@ -114,18 +114,18 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
                   <td className="py-3 px-4">
                     {details_fetched ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-semibold">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> 49 Fields Ready
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Full Profile Verified
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[11px] font-semibold">
-                        <Zap className="w-3 h-3 text-amber-600 dark:text-amber-400" /> Ready to Run
+                        <Zap className="w-3 h-3 text-amber-600 dark:text-amber-400" /> Profile Pending
                       </span>
                     )}
                   </td>
                   <td className="py-3 px-4 text-right">
                     {details_fetched ? (
                       <button className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-semibold inline-flex items-center text-xs">
-                        View 49 Fields <ChevronRight className="w-4 h-4 ml-0.5" />
+                        View Full Profile <ChevronRight className="w-4 h-4 ml-0.5" />
                       </button>
                     ) : userRole === 'admin' ? (
                       <button
@@ -133,16 +133,17 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
                         onClick={(e) => handleRunDetailsClick(e, school.id)}
                         disabled={isRunning}
                         className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-xs inline-flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+                        title="Fetch verified 49-field profile for this school"
                       >
                         {isRunning ? (
                           <>
                             <RefreshCw className="w-3.5 h-3.5 animate-spin text-slate-950" />
-                            <span>Running...</span>
+                            <span>Fetching...</span>
                           </>
                         ) : (
                           <>
                             <Zap className="w-3.5 h-3.5 fill-current" />
-                            <span>Run Details</span>
+                            <span>Fetch Profile</span>
                           </>
                         )}
                       </button>
