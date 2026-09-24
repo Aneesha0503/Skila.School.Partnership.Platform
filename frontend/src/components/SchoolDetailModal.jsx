@@ -165,108 +165,141 @@ export default function SchoolDetailModal({
   const tierBadge = getTierBadge(school.tier);
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 lg:p-6 overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-[96vw] xl:max-w-[1360px] 2xl:max-w-[1500px] h-[93vh] flex flex-col overflow-hidden animate-in fade-in duration-200">
         
         {/* Modal Header */}
-        <div className="bg-slate-900 dark:bg-slate-950 text-white p-5 sm:p-6 shrink-0 relative border-b border-slate-800">
+        <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-5 sm:p-6 shrink-0 relative border-b border-slate-800">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 flex-wrap mb-2">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 {tierBadge && (
-                  <span className={`text-xs px-2.5 py-0.5 rounded-full border font-bold ${tierBadge.className}`}>
+                  <span className={`text-xs px-3 py-1 rounded-full border font-bold shadow-xs ${tierBadge.className}`}>
                     {tierBadge.label}
                   </span>
                 )}
                 {details_fetched ? (
                   <>
-                    <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                      UDISE: {info?.udise_code}
+                    <span className="font-mono text-xs px-2.5 py-1 rounded-full bg-slate-800/90 text-slate-300 border border-slate-700">
+                      UDISE: <span className="text-white font-bold">{info?.udise_code}</span>
                     </span>
-                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-medium">
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-semibold">
                       {info?.board}
                     </span>
-                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold inline-flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> 49 Fields Ready
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold inline-flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> 49 Fields Verified
                     </span>
                   </>
                 ) : (
                   <>
-                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-medium">
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-semibold">
                       {info?.board}
                     </span>
-                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold inline-flex items-center gap-1">
-                      <Zap className="w-3 h-3 text-amber-400" /> Details Pending Run
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold inline-flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-amber-400" /> Details Pending Run
                     </span>
                   </>
                 )}
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white mb-1">
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
                 {info?.school_name}
               </h2>
-              <div className="flex items-center gap-1.5 text-xs text-slate-300">
-                <MapPin className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+              <div className="flex items-center gap-2 text-xs text-slate-300/90 flex-wrap">
+                <MapPin className="w-4 h-4 text-indigo-400 shrink-0" />
                 <span>
                   {hierarchy?.village_locality_ward}, {hierarchy?.local_body_name}, {hierarchy?.mandal} Mandal, {hierarchy?.revenue_division} Division, {hierarchy?.district}, {hierarchy?.state}
                 </span>
+                {info?.pincode && (
+                  <span className="text-slate-400 font-mono">({info.pincode})</span>
+                )}
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5 shrink-0">
               {userRole === 'admin' ? (
                 <button
                   onClick={() => onOpenEditModal(school)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-100 text-xs font-semibold border border-slate-700/80 transition cursor-pointer shadow-xs"
                 >
-                  <Edit3 className="w-3.5 h-3.5" />
+                  <Edit3 className="w-3.5 h-3.5 text-indigo-400" />
                   Edit School
                 </button>
               ) : (
                 <div 
                   title="Only Administrators can edit verified institutional attributes"
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-400 text-xs font-medium"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-400 text-xs font-medium"
                 >
-                  <Lock className="w-3 h-3 text-amber-400" />
+                  <Lock className="w-3.5 h-3.5 text-amber-400" />
                   <span>Admin Edit Only</span>
                 </div>
               )}
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                aria-label="Close modal"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <div className="flex items-center gap-2 mt-6 border-b border-slate-800">
+          {/* Navigation Segment Tabs */}
+          <div className="flex items-center gap-2 mt-5 pt-3 border-t border-slate-800/80 overflow-x-auto pb-1 scrollbar-none">
             <button
               onClick={() => setActiveTab('info')}
-              className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${activeTab === 'info' ? 'border-indigo-400 text-white' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
+              className={`px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-2 transition cursor-pointer ${
+                activeTab === 'info'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
             >
               <Building2 className="w-4 h-4" />
-              School Information (16 Fields)
+              <span>School Information</span>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                activeTab === 'info' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+              }`}>
+                16 Fields
+              </span>
             </button>
+
             <button
               onClick={() => setActiveTab('tech')}
-              className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${activeTab === 'tech' ? 'border-indigo-400 text-white' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
+              className={`px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-2 transition cursor-pointer ${
+                activeTab === 'tech'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
             >
               <Cpu className="w-4 h-4" />
-              Technology Usage (17 Fields)
+              <span>Technology Usage</span>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                activeTab === 'tech' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+              }`}>
+                17 Fields
+              </span>
             </button>
+
             <button
               onClick={() => setActiveTab('sales')}
-              className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${activeTab === 'sales' ? 'border-indigo-400 text-white' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
+              className={`px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-2 transition cursor-pointer ${
+                activeTab === 'sales'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
             >
               <DollarSign className="w-4 h-4" />
-              Sales & CRM Pipeline (16 Fields)
+              <span>Sales & CRM Pipeline</span>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                activeTab === 'sales' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+              }`}>
+                16 Fields
+              </span>
             </button>
           </div>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto flex-1 bg-slate-50 dark:bg-slate-950">
+        <div className="p-5 sm:p-6 overflow-y-auto flex-1 bg-slate-50/70 dark:bg-slate-950">
           {!details_fetched ? (
             <div className="py-10 px-6 flex flex-col items-center justify-center text-center max-w-xl mx-auto bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs my-auto">
               <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-4 shadow-xs">
@@ -324,259 +357,342 @@ export default function SchoolDetailModal({
             <>
               {/* TAB 1: SCHOOL INFORMATION */}
               {activeTab === 'info' && (
-            <div className="space-y-6">
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs">
-                <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-1.5">
-                  <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> General & Academic Profile
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">UDISE Code</span>
-                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-sm">{info?.udise_code}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">School Category</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{info?.school_category}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Management Type</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{info?.management_type}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">School Type</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{info?.school_type}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Affiliated Board</span>
-                    <span className="font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-100 dark:border-indigo-800">
-                      {info?.board}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Classes Range</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{info?.classes_from} to {info?.classes_to}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Student Strength</span>
-                    <span className="font-bold text-slate-900 dark:text-white text-sm">{info?.student_strength?.toLocaleString()} Students</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Teacher Strength</span>
-                    <span className="font-bold text-slate-900 dark:text-white text-sm">{info?.teacher_strength} Teachers</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Student-Teacher Ratio</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {info?.teacher_strength ? (info.student_strength / info.teacher_strength).toFixed(1) : 'N/A'}:1
-                    </span>
-                  </div>
-                </div>
-              </div>
+                <div className="space-y-6">
+                  {/* General & Academic Profile */}
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
+                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+                      <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                        <span>General & Academic Institutional Profile</span>
+                      </h3>
+                      <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                        {info?.school_category} • {info?.management_type}
+                      </span>
+                    </div>
 
-              {/* Leadership & Contacts */}
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs">
-                <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-1.5">
-                  <User className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Leadership & Official Contacts
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Principal Name</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{info?.principal_name || '—'}</span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 text-xs">
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">UDISE Code</span>
+                        <span className="font-mono font-bold text-slate-900 dark:text-white text-sm">{info?.udise_code || '—'}</span>
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Affiliated Board</span>
+                        <span className="font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-0.5 rounded-lg border border-indigo-200 dark:border-indigo-800 text-xs inline-block">
+                          {info?.board || '—'}
+                        </span>
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Student Strength</span>
+                        <span className="font-bold text-slate-900 dark:text-white text-sm">
+                          {info?.student_strength ? Number(info.student_strength).toLocaleString() : '—'} <span className="text-xs font-normal text-slate-500">Students</span>
+                        </span>
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Teacher Strength</span>
+                        <span className="font-bold text-slate-900 dark:text-white text-sm">
+                          {info?.teacher_strength || '—'} <span className="text-xs font-normal text-slate-500">Teachers</span>
+                        </span>
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Student-Teacher Ratio</span>
+                        <span className="font-bold text-slate-900 dark:text-white text-sm">
+                          {info?.teacher_strength && info?.student_strength ? (info.student_strength / info.teacher_strength).toFixed(1) + ':1' : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">School Category</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">{info?.school_category || '—'}</span>
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Management Type</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">{info?.management_type || '—'}</span>
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">School Type</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">{info?.school_type || 'Co-Educational'}</span>
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Classes Offered</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">{info?.classes_from || '1'} to {info?.classes_to || '12'}</span>
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Pincode</span>
+                        <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{info?.pincode || '—'}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Correspondent Name</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{info?.correspondent_name || '—'}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Mobile Number</span>
-                    <a href={`tel:${info?.mobile}`} className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
-                      <Phone className="w-3 h-3" /> {info?.mobile || '—'}
-                    </a>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Official Email</span>
-                    <a href={`mailto:${info?.email}`} className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 truncate">
-                      <Mail className="w-3 h-3 shrink-0" /> {info?.email || '—'}
-                    </a>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Website</span>
-                    {info?.website ? (
-                      <a href={info?.website} target="_blank" rel="noreferrer" className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 truncate">
-                        <Globe className="w-3 h-3 shrink-0" /> {info?.website} <ExternalLink className="w-2.5 h-2.5" />
-                      </a>
-                    ) : '—'}
-                  </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Pincode</span>
-                    <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">{info?.pincode}</span>
-                  </div>
-                  <div className="sm:col-span-2 md:col-span-3">
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Full Address</span>
-                    <span className="font-medium text-slate-800 dark:text-slate-200">{info?.full_address}</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Administrative Boundary Drill-Down */}
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs">
-                <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Complete Administrative Geographic Hierarchy
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 text-xs">
-                  <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/60">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-semibold block">State</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{hierarchy?.state}</span>
+                  {/* Leadership & Official Contacts */}
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
+                    <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                      <User className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <span>Institutional Leadership & Contact Details</span>
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 text-xs">
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Principal Name</span>
+                        <span className="font-bold text-slate-900 dark:text-white text-sm">{info?.principal_name || '—'}</span>
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Correspondent Name</span>
+                        <span className="font-bold text-slate-900 dark:text-white text-sm">{info?.correspondent_name || '—'}</span>
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Official Mobile</span>
+                        <a href={`tel:${info?.mobile}`} className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1.5 text-sm">
+                          <Phone className="w-3.5 h-3.5" /> {info?.mobile || '—'}
+                        </a>
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Official Email</span>
+                        <a href={`mailto:${info?.email}`} className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1.5 truncate text-xs">
+                          <Mail className="w-3.5 h-3.5 shrink-0" /> {info?.email || '—'}
+                        </a>
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 sm:col-span-2">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Official Website</span>
+                        {info?.website ? (
+                          <a href={info?.website} target="_blank" rel="noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1.5 truncate">
+                            <Globe className="w-3.5 h-3.5 shrink-0" /> {info?.website} <ExternalLink className="w-3 h-3" />
+                          </a>
+                        ) : '—'}
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 sm:col-span-2">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Full Campus Address</span>
+                        <span className="font-medium text-slate-800 dark:text-slate-200">{info?.full_address || '—'}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/60">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-semibold block">District</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{hierarchy?.district}</span>
-                  </div>
-                  <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/60">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-semibold block">Revenue Div</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{hierarchy?.revenue_division}</span>
-                  </div>
-                  <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/60">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-semibold block">Mandal</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{hierarchy?.mandal}</span>
-                  </div>
-                  <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/60">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-semibold block">Local Body</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{hierarchy?.local_body_name}</span>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 block">{hierarchy?.local_body_type}</span>
-                  </div>
-                  <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/60">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-semibold block">Ward / Village</span>
-                    <span className="font-semibold text-indigo-700 dark:text-indigo-300">{hierarchy?.village_locality_ward}</span>
+
+                  {/* 6-Tier Administrative Geographic Hierarchy */}
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
+                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+                      <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                        <span>6-Tier Administrative Geographic Hierarchy</span>
+                      </h3>
+                      <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+                        Official Delimitation
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                      {/* Tier 1 State */}
+                      <div className="bg-slate-50/80 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700/60 relative overflow-hidden group hover:border-indigo-300 dark:hover:border-indigo-600 transition">
+                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+                          <span>Tier 1 • State</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                        </div>
+                        <div className="font-bold text-slate-900 dark:text-white text-sm">{hierarchy?.state || '—'}</div>
+                      </div>
+
+                      {/* Tier 2 District */}
+                      <div className="bg-slate-50/80 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700/60 relative overflow-hidden group hover:border-indigo-300 dark:hover:border-indigo-600 transition">
+                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+                          <span>Tier 2 • District</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                        </div>
+                        <div className="font-bold text-slate-900 dark:text-white text-sm">{hierarchy?.district || '—'}</div>
+                      </div>
+
+                      {/* Tier 3 Revenue Division */}
+                      <div className="bg-slate-50/80 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700/60 relative overflow-hidden group hover:border-indigo-300 dark:hover:border-indigo-600 transition">
+                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+                          <span>Tier 3 • Division</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                        </div>
+                        <div className="font-bold text-slate-900 dark:text-white text-sm">{hierarchy?.revenue_division || '—'}</div>
+                      </div>
+
+                      {/* Tier 4 Mandal */}
+                      <div className="bg-slate-50/80 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700/60 relative overflow-hidden group hover:border-indigo-300 dark:hover:border-indigo-600 transition">
+                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+                          <span>Tier 4 • Mandal</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                        </div>
+                        <div className="font-bold text-slate-900 dark:text-white text-sm">{hierarchy?.mandal || '—'}</div>
+                      </div>
+
+                      {/* Tier 5 Local Body */}
+                      <div className="bg-slate-50/80 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700/60 relative overflow-hidden group hover:border-indigo-300 dark:hover:border-indigo-600 transition">
+                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+                          <span>Tier 5 • Local Body</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                        </div>
+                        <div className="font-bold text-slate-900 dark:text-white text-sm">{hierarchy?.local_body_name || '—'}</div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400">{hierarchy?.local_body_type || 'Local Body'}</div>
+                      </div>
+
+                      {/* Tier 6 Ward / Locality */}
+                      <div className="bg-indigo-50/80 dark:bg-indigo-950/40 p-3.5 rounded-xl border border-indigo-200 dark:border-indigo-800 relative overflow-hidden group hover:border-indigo-400 transition">
+                        <div className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider mb-1 flex items-center justify-between">
+                          <span>Tier 6 • Ward / Village</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping"></span>
+                        </div>
+                        <div className="font-bold text-indigo-900 dark:text-indigo-200 text-sm truncate" title={hierarchy?.village_locality_ward}>
+                          {hierarchy?.village_locality_ward || '—'}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
+              )}
 
           {/* TAB 2: TECHNOLOGY USAGE */}
           {activeTab === 'tech' && (
             <div className="space-y-6">
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs">
-                <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-1.5">
-                  <Cpu className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Digital Infrastructure & Software Usage
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+              {/* Digital Infrastructure & Software Usage */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                    <Cpu className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <span>Digital Software & EdTech Platform Stack</span>
+                  </h3>
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    6 Core Software Verticals
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 text-xs">
                   {/* ERP */}
-                  <div className="p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">ERP Used</span>
+                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40 hover:border-indigo-300 dark:hover:border-indigo-700 transition">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-slate-900 dark:text-white text-xs">School ERP</span>
                       {technology?.erp_used === 'Yes' ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold text-[11px]"><CheckCircle2 className="w-3.5 h-3.5" /> Yes</span>
+                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded font-bold text-[10px]"><CheckCircle2 className="w-3 h-3" /> Active</span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 font-medium text-[11px]"><XCircle className="w-3.5 h-3.5" /> No</span>
+                        <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-medium text-[10px]"><XCircle className="w-3 h-3" /> None</span>
                       )}
                     </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Vendor: {technology?.erp_vendor || 'None specified'}</span>
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold block truncate" title={technology?.erp_vendor || 'Not configured'}>
+                      {technology?.erp_vendor || 'Not configured'}
+                    </span>
                   </div>
 
                   {/* LMS */}
-                  <div className="p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">LMS Used</span>
+                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40 hover:border-indigo-300 dark:hover:border-indigo-700 transition">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-slate-900 dark:text-white text-xs">Learning LMS</span>
                       {technology?.lms_used === 'Yes' ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold text-[11px]"><CheckCircle2 className="w-3.5 h-3.5" /> Yes</span>
+                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded font-bold text-[10px]"><CheckCircle2 className="w-3 h-3" /> Active</span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 font-medium text-[11px]"><XCircle className="w-3.5 h-3.5" /> No</span>
+                        <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-medium text-[10px]"><XCircle className="w-3 h-3" /> None</span>
                       )}
                     </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Vendor: {technology?.lms_vendor || 'None specified'}</span>
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold block truncate" title={technology?.lms_vendor || 'Not configured'}>
+                      {technology?.lms_vendor || 'Not configured'}
+                    </span>
                   </div>
 
                   {/* Coding */}
-                  <div className="p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">Coding Curriculum</span>
+                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40 hover:border-indigo-300 dark:hover:border-indigo-700 transition">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-slate-900 dark:text-white text-xs">Coding Curriculum</span>
                       {technology?.coding_used === 'Yes' ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold text-[11px]"><CheckCircle2 className="w-3.5 h-3.5" /> Yes</span>
+                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded font-bold text-[10px]"><CheckCircle2 className="w-3 h-3" /> Active</span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 font-medium text-[11px]"><XCircle className="w-3.5 h-3.5" /> No</span>
+                        <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-medium text-[10px]"><XCircle className="w-3 h-3" /> None</span>
                       )}
                     </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Vendor: {technology?.coding_vendor || 'None specified'}</span>
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold block truncate" title={technology?.coding_vendor || 'Not integrated'}>
+                      {technology?.coding_vendor || 'Not integrated'}
+                    </span>
                   </div>
 
                   {/* Robotics */}
-                  <div className="p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">Robotics Program</span>
+                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40 hover:border-indigo-300 dark:hover:border-indigo-700 transition">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-slate-900 dark:text-white text-xs">Robotics Lab</span>
                       {technology?.robotics_used === 'Yes' ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold text-[11px]"><CheckCircle2 className="w-3.5 h-3.5" /> Yes</span>
+                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded font-bold text-[10px]"><CheckCircle2 className="w-3 h-3" /> Active</span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 font-medium text-[11px]"><XCircle className="w-3.5 h-3.5" /> No</span>
+                        <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-medium text-[10px]"><XCircle className="w-3 h-3" /> None</span>
                       )}
                     </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Vendor: {technology?.robotics_vendor || 'None specified'}</span>
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold block truncate" title={technology?.robotics_vendor || 'Not installed'}>
+                      {technology?.robotics_vendor || 'Not installed'}
+                    </span>
                   </div>
 
-                  {/* AI Used */}
-                  <div className="p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">AI Used</span>
+                  {/* AI Curriculum */}
+                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40 hover:border-indigo-300 dark:hover:border-indigo-700 transition">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-slate-900 dark:text-white text-xs">AI & ML Fit</span>
                       {technology?.ai_used === 'Yes' ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold text-[11px]"><CheckCircle2 className="w-3.5 h-3.5" /> Yes</span>
+                        <span className="inline-flex items-center gap-1 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-1.5 py-0.5 rounded font-bold text-[10px]"><Sparkles className="w-3 h-3" /> In Use</span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 font-medium text-[11px]"><XCircle className="w-3.5 h-3.5" /> No</span>
+                        <span className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-1.5 py-0.5 rounded font-semibold text-[10px]">Open Pitches</span>
                       )}
                     </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Vendor: {technology?.ai_vendor || 'None'}</span>
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold block truncate" title={technology?.ai_vendor || 'Skila AI Candidate'}>
+                      {technology?.ai_vendor || 'Skila AI Candidate'}
+                    </span>
                   </div>
 
                   {/* STEM Program */}
-                  <div className="p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">STEM Program</span>
+                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40 hover:border-indigo-300 dark:hover:border-indigo-700 transition">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-slate-900 dark:text-white text-xs">STEM Curriculum</span>
                       {technology?.stem_program === 'Yes' ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold text-[11px]"><CheckCircle2 className="w-3.5 h-3.5" /> Active</span>
+                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded font-bold text-[10px]"><CheckCircle2 className="w-3 h-3" /> Active</span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 font-medium text-[11px]"><XCircle className="w-3.5 h-3.5" /> Inactive</span>
+                        <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-medium text-[10px]"><XCircle className="w-3 h-3" /> Inactive</span>
                       )}
                     </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Status: {technology?.stem_program === 'Yes' ? 'Integrated in timetable' : 'Not started'}</span>
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold block truncate">
+                      {technology?.stem_program === 'Yes' ? 'Integrated in timetable' : 'Not started'}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Hardware & Campus Labs */}
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs">
-                <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-1.5">
-                  Hardware & Lab Infrastructure
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-xs">
-                  <div className="p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
-                    <span className="text-slate-400 dark:text-slate-500 block mb-1">ATL Lab (NITI Aayog)</span>
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${technology?.atl_lab === 'Yes' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
+              {/* Hardware & Lab Infrastructure */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <span>Campus Hardware, Labs & Smart Classroom Infrastructure</span>
+                  </h3>
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    Physical Capabilities
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 text-xs">
+                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">ATL Lab (NITI Aayog)</span>
+                    <span className={`inline-block px-2.5 py-0.5 rounded-lg text-xs font-bold ${technology?.atl_lab === 'Yes' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
                       {technology?.atl_lab === 'Yes' ? 'Established' : 'Not Set Up'}
                     </span>
                   </div>
-                  <div className="p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
-                    <span className="text-slate-400 dark:text-slate-500 block mb-1">Smart Classrooms</span>
-                    <span className="font-bold text-slate-900 dark:text-white text-sm">
+
+                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Smart Classrooms</span>
+                    <span className="font-bold text-slate-900 dark:text-white text-sm block">
                       {technology?.smart_classroom === 'Yes' ? `${technology?.smart_classroom_count} Rooms` : 'None'}
                     </span>
                   </div>
-                  <div className="p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
-                    <span className="text-slate-400 dark:text-slate-500 block mb-1">Computer Labs</span>
-                    <span className="font-bold text-slate-900 dark:text-white text-sm">
+
+                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Computer Labs</span>
+                    <span className="font-bold text-slate-900 dark:text-white text-sm block">
                       {technology?.computer_lab === 'Yes' ? `${technology?.computer_lab_count} Labs` : 'None'}
                     </span>
                   </div>
-                  <div className="p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
-                    <span className="text-slate-400 dark:text-slate-500 block mb-1">Internet Connectivity</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{technology?.internet}</span>
+
+                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Internet Connectivity</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 block truncate">{technology?.internet || 'Available'}</span>
                   </div>
-                  <div className="p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
-                    <span className="text-slate-400 dark:text-slate-500 block mb-1">Parent App</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{technology?.parent_app === 'Yes' ? 'Available' : 'No App'}</span>
+
+                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Parent App</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 block">{technology?.parent_app === 'Yes' ? 'Active' : 'No App'}</span>
                   </div>
-                  <div className="p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
-                    <span className="text-slate-400 dark:text-slate-500 block mb-1">School Branded App</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{technology?.school_app === 'Yes' ? 'Available' : 'No App'}</span>
+
+                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">School Mobile App</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 block">{technology?.school_app === 'Yes' ? 'Live on Play Store' : 'No App'}</span>
                   </div>
                 </div>
               </div>
@@ -586,92 +702,96 @@ export default function SchoolDetailModal({
           {/* TAB 3: SALES & CRM PIPELINE */}
           {activeTab === 'sales' && (
             <div className="space-y-6">
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs">
-                <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                    <DollarSign className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Sales Opportunity & Decision Maker
+              {/* Sales Opportunity & Decision Maker Card */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex-wrap gap-3">
+                  <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <span>Commercial Opportunity & Decision Maker</span>
                   </h3>
                   <div className="flex items-center gap-2 flex-wrap">
                     <button
                       onClick={handleAiEnrich}
                       disabled={isEnriching}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold text-[11px] shadow-2xs transition disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold text-xs shadow-xs transition disabled:opacity-50 cursor-pointer"
                       title="Analyze with Skila AI"
                     >
-                      <Sparkles className="w-3 h-3 text-amber-300" />
+                      <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                       {isEnriching ? 'AI Analyzing...' : 'AI Pitch & Tech Insights'}
                     </button>
 
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Quick Status:</span>
-                    <select
-                      value={leadStatus}
-                      onChange={(e) => setLeadStatus(e.target.value)}
-                      className="text-xs font-semibold rounded-lg border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-900 dark:text-indigo-200 py-1 px-2.5 focus:ring-indigo-500"
-                    >
-                      <option value="New" className="dark:bg-slate-900 dark:text-slate-100">New</option>
-                      <option value="Contacted" className="dark:bg-slate-900 dark:text-slate-100">Contacted</option>
-                      <option value="Demo Scheduled" className="dark:bg-slate-900 dark:text-slate-100">Demo Scheduled</option>
-                      <option value="Proposal Shared" className="dark:bg-slate-900 dark:text-slate-100">Proposal Shared</option>
-                      <option value="Pilot Started" className="dark:bg-slate-900 dark:text-slate-100">Pilot Started</option>
-                      <option value="Closed Won" className="dark:bg-slate-900 dark:text-slate-100">Closed Won</option>
-                      <option value="Closed Lost" className="dark:bg-slate-900 dark:text-slate-100">Closed Lost</option>
-                    </select>
+                    <div className="flex items-center gap-1.5 bg-indigo-50/80 dark:bg-indigo-950/50 px-2.5 py-1 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                      <span className="text-[11px] font-bold text-indigo-900 dark:text-indigo-200">Status:</span>
+                      <select
+                        value={leadStatus}
+                        onChange={(e) => setLeadStatus(e.target.value)}
+                        className="text-xs font-bold bg-transparent text-indigo-900 dark:text-indigo-200 focus:outline-none cursor-pointer"
+                      >
+                        <option value="New" className="dark:bg-slate-900 dark:text-slate-100">New</option>
+                        <option value="Contacted" className="dark:bg-slate-900 dark:text-slate-100">Contacted</option>
+                        <option value="Demo Scheduled" className="dark:bg-slate-900 dark:text-slate-100">Demo Scheduled</option>
+                        <option value="Proposal Shared" className="dark:bg-slate-900 dark:text-slate-100">Proposal Shared</option>
+                        <option value="Pilot Started" className="dark:bg-slate-900 dark:text-slate-100">Pilot Started</option>
+                        <option value="Closed Won" className="dark:bg-slate-900 dark:text-slate-100">Closed Won</option>
+                        <option value="Closed Lost" className="dark:bg-slate-900 dark:text-slate-100">Closed Lost</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
                 {enrichSuccess && (
-                  <div className="mb-4 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-medium flex items-center gap-2">
+                  <div className="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-medium flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Skila AI analysis completed! Strategy notes and AI potential updated below.</span>
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Key Decision Maker</span>
-                    <span className="font-bold text-slate-900 dark:text-white text-sm">{sales?.decision_maker || 'Not specified'}</span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 text-xs">
+                  <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Key Decision Maker</span>
+                    <span className="font-bold text-slate-900 dark:text-white text-sm block truncate">{sales?.decision_maker || 'Not specified'}</span>
                   </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Designation</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{sales?.decision_maker_designation || 'Leader'}</span>
+                  <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Designation</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 block truncate">{sales?.decision_maker_designation || 'Leader / Trustee'}</span>
                   </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Decision Maker Contact</span>
-                    <a href={`tel:${sales?.decision_maker_contact}`} className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
-                      <Phone className="w-3 h-3" /> {sales?.decision_maker_contact || '—'}
+                  <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Direct Contact</span>
+                    <a href={`tel:${sales?.decision_maker_contact}`} className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1.5 text-sm">
+                      <Phone className="w-3.5 h-3.5" /> {sales?.decision_maker_contact || '—'}
                     </a>
                   </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Annual Fee Range</span>
-                    <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-100 dark:border-emerald-800">
-                      {sales?.annual_fee_range}
+                  <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Annual Fee Range</span>
+                    <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 text-xs inline-block">
+                      {sales?.annual_fee_range || 'Standard Tier'}
                     </span>
                   </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Tech Adoption Level</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{sales?.technology_adoption_level}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Skila AI Potential</span>
-                    <span className="font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-100 dark:border-indigo-800 inline-flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" /> {sales?.skila_ai_potential}
+                  <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Skila AI Potential</span>
+                    <span className="font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-0.5 rounded-lg border border-indigo-200 dark:border-indigo-800 inline-flex items-center gap-1 text-xs">
+                      <Sparkles className="w-3 h-3 text-amber-500" /> {sales?.skila_ai_potential || 'High'}
                     </span>
                   </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Assigned Sales Owner</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{sales?.sales_owner}</span>
+                  <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Tech Adoption Level</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{sales?.technology_adoption_level || 'Moderate'}</span>
                   </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Last Contact Date</span>
+                  <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Assigned Sales Owner</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 block truncate">{sales?.sales_owner || 'Regional Manager'}</span>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Last Contact Date</span>
                     <span className="font-medium text-slate-700 dark:text-slate-300">{sales?.last_contact_date || '—'}</span>
                   </div>
-                  <div>
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Next Follow-up Date</span>
-                    <span className="font-semibold text-indigo-700 dark:text-indigo-300">{sales?.next_follow_up_date || '—'}</span>
+                  <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Next Follow-up Date</span>
+                    <span className="font-bold text-indigo-700 dark:text-indigo-300">{sales?.next_follow_up_date || '—'}</span>
                   </div>
-                  <div className="sm:col-span-2 md:col-span-3">
-                    <span className="text-slate-400 dark:text-slate-500 block mb-0.5">Existing EdTech Partners</span>
-                    <span className="font-medium text-slate-800 dark:text-slate-200">
+                  <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">EdTech Partners</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-200 block truncate">
                       {Array.isArray(sales?.existing_edtech_partners) 
                         ? sales.existing_edtech_partners.join(', ') 
                         : (sales?.existing_edtech_partners || 'None known')}
@@ -681,49 +801,56 @@ export default function SchoolDetailModal({
               </div>
 
               {/* Deal Funnel Milestones */}
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs">
-                <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
-                  Partnership Milestones & Funnel Progress
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-                  <div className={`p-3 rounded-lg border ${sales?.interest_level === 'High' ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300'}`}>
-                    <span className="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-semibold mb-0.5">Interest Level</span>
-                    <span className="font-bold text-sm">{sales?.interest_level}</span>
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    Partnership Milestones & Funnel Progress
+                  </h3>
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    Stage Tracking
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 text-xs">
+                  <div className={`p-4 rounded-xl border ${sales?.interest_level === 'High' ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200' : 'bg-slate-50/80 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300'}`}>
+                    <span className="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-bold mb-1">Interest Level</span>
+                    <span className="font-extrabold text-base">{sales?.interest_level || 'Pending'}</span>
                   </div>
-                  <div className={`p-3 rounded-lg border ${sales?.demo_done === 'Yes' ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300'}`}>
-                    <span className="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-semibold mb-0.5">Demo Completed</span>
-                    <span className="font-bold text-sm">{sales?.demo_done === 'Yes' ? 'Done' : 'Pending'}</span>
+                  <div className={`p-4 rounded-xl border ${sales?.demo_done === 'Yes' ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200' : 'bg-slate-50/80 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300'}`}>
+                    <span className="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-bold mb-1">Demo Completed</span>
+                    <span className="font-extrabold text-base">{sales?.demo_done === 'Yes' ? 'Completed' : 'Pending'}</span>
                   </div>
-                  <div className={`p-3 rounded-lg border ${sales?.proposal_shared === 'Yes' ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300'}`}>
-                    <span className="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-semibold mb-0.5">Proposal Shared</span>
-                    <span className="font-bold text-sm">{sales?.proposal_shared === 'Yes' ? 'Sent' : 'Pending'}</span>
+                  <div className={`p-4 rounded-xl border ${sales?.proposal_shared === 'Yes' ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200' : 'bg-slate-50/80 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300'}`}>
+                    <span className="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-bold mb-1">Proposal Shared</span>
+                    <span className="font-extrabold text-base">{sales?.proposal_shared === 'Yes' ? 'Sent' : 'Pending'}</span>
                   </div>
-                  <div className={`p-3 rounded-lg border ${sales?.pilot_started === 'Yes' ? 'bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-200' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300'}`}>
-                    <span className="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-semibold mb-0.5">Pilot Started</span>
-                    <span className="font-bold text-sm">{sales?.pilot_started === 'Yes' ? 'Active Pilot' : 'Not Started'}</span>
+                  <div className={`p-4 rounded-xl border ${sales?.pilot_started === 'Yes' ? 'bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-200' : 'bg-slate-50/80 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300'}`}>
+                    <span className="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-bold mb-1">Pilot Started</span>
+                    <span className="font-extrabold text-base">{sales?.pilot_started === 'Yes' ? 'Active Pilot' : 'Not Started'}</span>
                   </div>
                 </div>
               </div>
 
               {/* Field Operations & CRM Console */}
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
                 <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                    Field Operations & CRM Telemetry Console
+                  <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                    <UserCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <span>Field Operations & CRM Telemetry Console</span>
                   </h3>
                   {userRole === 'agent' ? (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-semibold inline-flex items-center gap-1">
-                      <UserCheck className="w-3 h-3" /> Agent CRM Active
+                    <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-bold inline-flex items-center gap-1">
+                      <UserCheck className="w-3.5 h-3.5" /> Agent CRM Console Active
                     </span>
                   ) : (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 font-semibold inline-flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3" /> Admin Mode
+                    <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 font-bold inline-flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5" /> Super Admin Mode
                     </span>
                   )}
                 </div>
 
                 {/* Direct Field Controls */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-4">
                   {/* Lead Status */}
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -732,7 +859,7 @@ export default function SchoolDetailModal({
                     <select
                       value={leadStatus}
                       onChange={(e) => setLeadStatus(e.target.value)}
-                      className="w-full text-xs p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                      className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                     >
                       <option value="New">New</option>
                       <option value="Contacted">Contacted</option>
@@ -753,7 +880,7 @@ export default function SchoolDetailModal({
                     <select
                       value={interestLevel}
                       onChange={(e) => setInterestLevel(e.target.value)}
-                      className="w-full text-xs p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                      className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                     >
                       <option value="High">High</option>
                       <option value="Medium">Medium</option>
@@ -770,7 +897,7 @@ export default function SchoolDetailModal({
                       type="date"
                       value={nextFollowUpDate}
                       onChange={(e) => setNextFollowUpDate(e.target.value)}
-                      className="w-full text-xs p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-1 focus:ring-indigo-500"
+                      className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
 
@@ -784,7 +911,7 @@ export default function SchoolDetailModal({
                       value={salesOwner}
                       onChange={(e) => setSalesOwner(e.target.value)}
                       placeholder="e.g. Rahul Sharma"
-                      className="w-full text-xs p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-1 focus:ring-indigo-500"
+                      className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
                 </div>
@@ -794,25 +921,25 @@ export default function SchoolDetailModal({
                   Interaction Remarks & Strategy Notes
                 </label>
                 <textarea
-                  rows="3"
+                  rows="4"
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
                   placeholder="Record meeting outcomes, principal/correspondent feedback, budget constraints, next steps..."
-                  className="w-full text-xs p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition mb-3"
+                  className="w-full text-xs p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition mb-4 font-mono text-[11px] leading-relaxed"
                 />
 
                 <div className="flex items-center justify-between">
                   {saveSuccess && (
-                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                       <CheckCircle2 className="w-4 h-4" /> Updates saved successfully to database!
                     </span>
                   )}
                   <button
                     onClick={handleQuickSave}
                     disabled={isSaving}
-                    className="ml-auto inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50"
+                    className="ml-auto inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition cursor-pointer disabled:opacity-50"
                   >
-                    <Save className="w-3.5 h-3.5" />
+                    <Save className="w-4 h-4" />
                     {isSaving ? 'Saving...' : userRole === 'agent' ? 'Save Field CRM Updates' : 'Save CRM Updates'}
                   </button>
                 </div>
