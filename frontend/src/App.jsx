@@ -47,7 +47,14 @@ export default function App() {
     technology_adoption_level: 'All'
   });
 
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState(() => {
+    return localStorage.getItem('skila_view_mode') || 'table';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('skila_view_mode', viewMode);
+  }, [viewMode]);
+
   const [selectedSchool, setSelectedSchool] = useState(null);
   const [addEditModalOpen, setAddEditModalOpen] = useState(false);
   const [editingSchool, setEditingSchool] = useState(null);
