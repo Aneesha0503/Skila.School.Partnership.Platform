@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, RefreshCw, CheckCircle2, Search, Plus, Lock, ShieldAlert } from 'lucide-react';
+import { Building2, RefreshCw, CheckCircle2, Search, Plus, Lock, ShieldAlert, Sparkles } from 'lucide-react';
 
 const FALLBACK_STATES_DISTRICTS = {
   'Telangana': ['Hyderabad', 'Rangareddy', 'Medchal-Malkajgiri', 'Sangareddy', 'Warangal', 'Nizamabad', 'Karimnagar', 'Khammam', 'Siddipet'],
@@ -132,7 +132,24 @@ export default function DistrictRunner({
   };
 
   return (
-    <div id="district-runner-section" className="bg-slate-900 text-white rounded-xl p-5 mb-6 shadow-sm border border-slate-800 scroll-mt-6">
+    <div 
+      id="district-runner-section" 
+      className="relative bg-gradient-to-br from-slate-900 via-slate-900/95 to-indigo-950/70 text-white rounded-2xl p-5 sm:p-6 mb-6 shadow-xl shadow-indigo-500/10 border-2 border-indigo-500/60 dark:border-indigo-500/70 ring-2 ring-indigo-500/20 scroll-mt-6 overflow-hidden transition-all hover:border-indigo-500/80"
+    >
+      {/* Decorative top accent glow bar */}
+      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500" />
+
+      {/* Primary Console Top Badge */}
+      <div className="flex items-center justify-between mb-3.5">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-indigo-500/20 border border-indigo-400/40 text-indigo-300 text-[11px] font-extrabold tracking-wide uppercase shadow-xs">
+          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+          <span>Primary Discovery Engine</span>
+        </span>
+        <span className="text-[11px] font-semibold text-slate-400 hidden sm:inline">
+          Live Search & Tier Ranking Console
+        </span>
+      </div>
+
       {/* Agent Access Banner */}
       {userRole === 'agent' && (
         <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-center justify-between gap-3">
@@ -149,16 +166,16 @@ export default function DistrictRunner({
       )}
 
       {/* Header bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
-            <Building2 className="w-5 h-5" />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-indigo-500/30 ring-2 ring-indigo-400/20">
+            <Building2 className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-white tracking-tight">
+            <h2 className="text-base sm:text-lg font-extrabold text-white tracking-tight flex items-center gap-2.5">
               District School Discovery
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-300/80">
               Discover and list institutions by geography, pre-ranked from High to Low tier.
             </p>
           </div>
@@ -169,16 +186,16 @@ export default function DistrictRunner({
           {userRole === 'admin' ? (
             <>
               <label 
-                className="inline-flex items-center gap-2 text-xs text-slate-300 hover:text-white cursor-pointer bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-700/80 transition"
+                className="inline-flex items-center gap-2 text-xs text-slate-200 hover:text-white cursor-pointer bg-slate-800/90 hover:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700/80 transition shadow-xs"
                 title="Checks live websites again instead of loading schools already saved in the database"
               >
                 <input
                   type="checkbox"
                   checked={forceScrape}
                   onChange={(e) => setForceScrape(e.target.checked)}
-                  className="rounded border-slate-600 bg-slate-900 text-indigo-500 focus:ring-0 w-3.5 h-3.5"
+                  className="rounded border-slate-600 bg-slate-900 text-indigo-500 focus:ring-0 w-3.5 h-3.5 cursor-pointer"
                 />
-                <span className="font-medium text-slate-200">Fresh search from web</span>
+                <span className="font-semibold text-slate-200">Fresh search from web</span>
                 <span className="text-[10px] text-slate-400 hidden sm:inline">(ignore saved list)</span>
               </label>
 
@@ -186,7 +203,7 @@ export default function DistrictRunner({
                 type="button"
                 onClick={(e) => handleRunDistrict(e, true)}
                 disabled={isRunning || isScrapingMore}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600/30 to-violet-600/30 hover:from-indigo-600/50 hover:to-violet-600/50 text-indigo-100 text-xs font-semibold border border-indigo-400/40 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600/30 via-purple-600/30 to-violet-600/30 hover:from-indigo-600/50 hover:to-violet-600/50 text-indigo-100 text-xs font-bold border border-indigo-400/40 transition disabled:opacity-50 cursor-pointer shadow-xs hover:border-indigo-400/60"
                 title="Crawls other mandals and rural areas in this district to find 25 new schools without duplicates"
               >
                 {isScrapingMore ? (
@@ -204,8 +221,8 @@ export default function DistrictRunner({
               </button>
             </>
           ) : (
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-xs font-medium">
-              <Lock className="w-3 h-3 text-amber-400" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-400 text-xs font-medium">
+              <Lock className="w-3.5 h-3.5 text-amber-400" />
               <span>Scraper Controls (Admin Only)</span>
             </div>
           )}
@@ -213,17 +230,17 @@ export default function DistrictRunner({
       </div>
 
       {/* Inputs Form */}
-      <form onSubmit={(e) => handleRunDistrict(e, false)} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 items-end">
+      <form onSubmit={(e) => handleRunDistrict(e, false)} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3.5 items-end">
         {/* State */}
         <div className="md:col-span-3">
-          <label className="block text-xs font-medium text-slate-300 mb-1.5">
+          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
             State
           </label>
           <select
             value={selectedState}
             onChange={(e) => handleStateChange(e.target.value)}
             disabled={isRunning || isScrapingMore}
-            className="w-full text-xs rounded-lg bg-slate-800/90 border border-slate-700 text-white p-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer"
+            className="w-full text-xs rounded-xl bg-slate-800/90 border border-slate-700 hover:border-indigo-500/50 text-white p-2.5 font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer transition"
           >
             {statesList.map((st) => (
               <option key={st} value={st} className="bg-slate-900 text-white">{st}</option>
@@ -234,13 +251,13 @@ export default function DistrictRunner({
         {/* District */}
         <div className="md:col-span-4">
           <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-medium text-slate-300">
+            <label className="text-xs font-semibold text-slate-300">
               District
             </label>
             <button
               type="button"
               onClick={() => setUseCustomDistrict(!useCustomDistrict)}
-              className="text-[11px] text-indigo-400 hover:text-indigo-300 font-medium"
+              className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold"
             >
               {useCustomDistrict ? 'Select from list' : '+ Custom District'}
             </button>
@@ -253,14 +270,14 @@ export default function DistrictRunner({
               onChange={(e) => setCustomDistrict(e.target.value)}
               placeholder="Enter district name..."
               disabled={isRunning || isScrapingMore}
-              className="w-full text-xs rounded-lg bg-slate-800/90 border border-slate-700 text-white p-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-slate-500"
+              className="w-full text-xs rounded-xl bg-slate-800/90 border border-slate-700 hover:border-indigo-500/50 text-white p-2.5 font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-slate-500 transition"
             />
           ) : (
             <select
               value={selectedDistrict}
               onChange={(e) => setSelectedDistrict(e.target.value)}
               disabled={isRunning || isScrapingMore || districtList.length === 0}
-              className="w-full text-xs rounded-lg bg-slate-800/90 border border-slate-700 text-white p-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer"
+              className="w-full text-xs rounded-xl bg-slate-800/90 border border-slate-700 hover:border-indigo-500/50 text-white p-2.5 font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer transition"
             >
               {districtList.length === 0 ? (
                 <option value="" className="bg-slate-900 text-white">No predefined districts</option>
@@ -275,14 +292,14 @@ export default function DistrictRunner({
 
         {/* Batch Size */}
         <div className="md:col-span-2">
-          <label className="block text-xs font-medium text-slate-300 mb-1.5">
+          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
             Batch Size
           </label>
           <select
             value={scanCount}
             onChange={(e) => setScanCount(Number(e.target.value))}
             disabled={isRunning || isScrapingMore}
-            className="w-full text-xs rounded-lg bg-slate-800/90 border border-slate-700 text-white p-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer"
+            className="w-full text-xs rounded-xl bg-slate-800/90 border border-slate-700 hover:border-indigo-500/50 text-white p-2.5 font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer transition"
           >
             <option value={25} className="bg-slate-900 text-white">25 Schools</option>
             <option value={50} className="bg-slate-900 text-white">50 Schools</option>
@@ -296,16 +313,16 @@ export default function DistrictRunner({
             <button
               type="submit"
               disabled={isRunning || isScrapingMore}
-              className="w-full h-[38px] inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition duration-150 disabled:opacity-50 cursor-pointer"
+              className="w-full h-[40px] inline-flex items-center justify-center gap-2 px-5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs sm:text-sm font-extrabold shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 transition duration-150 disabled:opacity-50 cursor-pointer active:scale-[0.99]"
             >
               {isRunning ? (
                 <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <RefreshCw className="w-4 h-4 animate-spin" />
                   <span>Discovering...</span>
                 </>
               ) : (
                 <>
-                  <Search className="w-3.5 h-3.5" />
+                  <Search className="w-4 h-4" />
                   <span>Discover Schools</span>
                 </>
               )}
@@ -315,7 +332,7 @@ export default function DistrictRunner({
               type="button"
               disabled
               title="Admin authorization required to run automated district scraper"
-              className="w-full h-[38px] inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-slate-800 text-slate-400 text-xs font-semibold border border-slate-700 cursor-not-allowed"
+              className="w-full h-[40px] inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-slate-800 text-slate-400 text-xs font-semibold border border-slate-700 cursor-not-allowed"
             >
               <Lock className="w-3.5 h-3.5 text-amber-400" />
               <span>Admin Scraper Locked</span>
@@ -326,15 +343,15 @@ export default function DistrictRunner({
 
       {/* Status Feedback */}
       {(isRunning || isScrapingMore) && (
-        <div className="mt-3 pt-3 border-t border-slate-800 flex items-center gap-2 text-xs text-indigo-300">
-          <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0 text-indigo-400" />
+        <div className="mt-4 pt-3.5 border-t border-indigo-900/40 flex items-center gap-2.5 text-xs text-indigo-300 font-medium">
+          <RefreshCw className="w-4 h-4 animate-spin shrink-0 text-indigo-400" />
           <span>{runMessage}</span>
         </div>
       )}
 
       {!isRunning && !isScrapingMore && runMessage && (
-        <div className="mt-3 pt-3 border-t border-slate-800 flex items-center gap-2 text-xs text-emerald-400">
-          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+        <div className="mt-4 pt-3.5 border-t border-indigo-900/40 flex items-center gap-2.5 text-xs text-emerald-400 font-medium">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
           <span>{runMessage}</span>
         </div>
       )}
