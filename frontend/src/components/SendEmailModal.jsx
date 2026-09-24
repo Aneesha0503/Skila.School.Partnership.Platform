@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, Mail, Send, Sparkles, CheckCircle2, Copy, Check, ExternalLink, 
   User, Building2, AlertCircle, RefreshCw, ChevronDown, ChevronUp, Key, HelpCircle
@@ -60,7 +60,22 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
   useEffect(() => {
     fetch('/api/email-config')
       .then(res => res.json())
-      .then(data => setEmailConfig(data))
+      .then(data => {
+        setEmailConfig(data);
+        if (data.personal?.is_configured) {
+          setSenderType('personal');
+          const pName = data.personal?.name || 'Skila AI';
+          const pEmail = data.personal?.email || 'skila.udaymerugu@gmail.com';
+          const pSig = `Warm regards,\n\n${pName}\nEducational Partnership Lead, Skila AI\nEmail: ${pEmail}`;
+          setBody(b => {
+            if (b.includes('Warm regards,')) {
+              const parts = b.split('Warm regards,');
+              return parts[0].trim() + '\n\n' + pSig;
+            }
+            return b;
+          });
+        }
+      })
       .catch(err => console.error('Failed to load email config:', err));
   }, []);
 
@@ -151,11 +166,21 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
         if (onUpdateSchool && data.school) {
           onUpdateSchool(data.school);
         }
-        setSendSuccess(true);
-        setTimeout(() => {
-          setSendSuccess(false);
-          onClose();
-        }, 2500);
+        if (data.smtp_sent) {
+          setSendSuccess(true);
+          setTimeout(() => {
+            setSendSuccess(false);
+            onClose();
+          }, 2500);
+        } else if (data.smtp_error) {
+          setSendError(`SMTP dispatch error: ${data.smtp_error}`);
+        } else {
+          setSendSuccess(true);
+          setTimeout(() => {
+            setSendSuccess(false);
+            onClose();
+          }, 2500);
+        }
       } else {
         const err = await res.json().catch(() => ({}));
         setSendError(err.detail || 'Failed to dispatch email. Please check address.');
@@ -264,11 +289,11 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
               onChange={(e) => handleSenderChange(e.target.value)}
               className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-xs"
             >
-              <option value="company">
-                🏢 Company Account: {emailConfig?.company?.name || 'Skila AI Partnerships'} ({emailConfig?.company?.email || 'partnerships@skila.ai'})
-              </option>
               <option value="personal">
-                👤 Personal Account: {emailConfig?.personal?.name || 'Personal Representative'} ({emailConfig?.personal?.email || 'personal@gmail.com'})
+                👤 Personal Account: {emailConfig?.personal?.name || 'Skila AI'} ({emailConfig?.personal?.email || 'skila.udaymerugu@gmail.com'}) {emailConfig?.personal?.is_configured ? '✓ [Ready for 1-Click Send]' : ''}
+              </option>
+              <option value="company">
+                🏢 Company Account: {emailConfig?.company?.name || 'Skila AI Partnerships'} ({emailConfig?.company?.email || 'partnerships@skila.ai'}) {emailConfig?.company?.is_configured ? '✓ [Ready]' : '(Not Configured)'}
               </option>
             </select>
 

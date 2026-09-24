@@ -926,6 +926,13 @@ def api_send_school_email(school_id: str, req: SendEmailRequest):
         smtp_from = os.getenv("COMPANY_EMAIL_ADDRESS", smtp_user or "partnerships@skila.ai")
         sender_label = os.getenv("COMPANY_EMAIL_NAME", "Skila AI Partnerships")
 
+    if smtp_user:
+        smtp_user = smtp_user.strip(' "\'')
+    if smtp_password:
+        smtp_password = smtp_password.replace(" ", "").strip(' "\'')
+    if smtp_from:
+        smtp_from = smtp_from.strip(' "\'')
+
     smtp_sent = False
     smtp_error = None
 
@@ -937,7 +944,7 @@ def api_send_school_email(school_id: str, req: SendEmailRequest):
             msg["To"] = recipient
             msg.set_content(req.body)
 
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=12) as server:
                 server.starttls()
                 server.login(smtp_user, smtp_password)
                 server.send_message(msg)
