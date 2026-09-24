@@ -1138,6 +1138,7 @@ def api_send_school_whatsapp(school_id: str, req: SendWhatsAppRequest):
         "content_type": "template",
         "payload": {
             "messaging_product": "whatsapp",
+            "to": raw_phone,
             "type": "template",
             "template": {
                 "name": template_name,
