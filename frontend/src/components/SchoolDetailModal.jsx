@@ -199,23 +199,23 @@ export default function SchoolDetailModal({
     const t = tierObj?.tier || '';
     if (t === 'High Range') {
       return {
-        label: '👑 High Range (International / CBSE / ICSE)',
-        className: 'bg-purple-500/25 text-purple-200 border-purple-500/40'
+        label: '👑 High Range',
+        className: 'bg-purple-500/20 text-purple-200 border-purple-500/30'
       };
     } else if (t === 'State Board - High Strength') {
       return {
-        label: '🔷 State Board - High Strength (1,200+ Students)',
-        className: 'bg-blue-500/25 text-blue-200 border-blue-500/40'
+        label: '🔷 State Board (High Strength)',
+        className: 'bg-blue-500/20 text-blue-200 border-blue-500/30'
       };
     } else if (t === 'State Board - Mid Strength') {
       return {
-        label: '🔶 State Board - Mid Strength (500–1,200 Students)',
-        className: 'bg-amber-500/25 text-amber-200 border-amber-500/40'
+        label: '🔶 State Board (Mid Strength)',
+        className: 'bg-amber-500/20 text-amber-200 border-amber-500/30'
       };
     } else if (t === 'State Board - Low Strength') {
       return {
-        label: '⚪ State Board - Low Strength (<500 Students)',
-        className: 'bg-slate-700 text-slate-300 border-slate-600'
+        label: '⚪ State Board (<500)',
+        className: 'bg-slate-700/60 text-slate-300 border-slate-600'
       };
     }
     return null;
@@ -223,168 +223,151 @@ export default function SchoolDetailModal({
 
   const tierBadge = getTierBadge(school.tier);
 
+  const getCleanLocation = () => {
+    const locality = hierarchy?.village_locality_ward || hierarchy?.local_body_name || '';
+    const district = hierarchy?.district || '';
+    const state = hierarchy?.state || '';
+    const pin = info?.pincode ? ` • ${info.pincode}` : '';
+
+    const parts = [];
+    if (locality) parts.push(locality);
+    if (district && !locality.toLowerCase().includes(district.toLowerCase())) {
+      parts.push(district);
+    }
+    if (state) parts.push(state);
+    return (parts.join(', ') + pin) || info?.full_address || 'Location unavailable';
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-50 dark:bg-slate-950 flex flex-col w-screen h-screen overflow-hidden select-text animate-in fade-in duration-150">
       
-      {/* Fullscreen Sticky Modal Header */}
-      <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white shrink-0 border-b border-slate-800 shadow-md z-20">
-        <div className="w-full max-w-7xl 2xl:max-w-[1700px] mx-auto px-5 sm:px-8 pt-5 pb-3">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1.5 flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
+      {/* Minimal Sticky Modal Header */}
+      <div className="bg-slate-900 text-white shrink-0 border-b border-slate-800 shadow-sm z-20">
+        <div className="w-full max-w-7xl 2xl:max-w-[1700px] mx-auto px-5 sm:px-8 py-3.5">
+          <div className="flex items-center justify-between gap-4">
+            
+            {/* Left: School Identity & Key Meta */}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white truncate">
+                  {info?.school_name}
+                </h2>
                 {tierBadge && (
-                  <span className={`text-xs px-3 py-1 rounded-full border font-bold shadow-xs ${tierBadge.className}`}>
+                  <span className={`text-[11px] px-2.5 py-0.5 rounded-full border font-semibold ${tierBadge.className}`}>
                     {tierBadge.label}
                   </span>
                 )}
-                {details_fetched ? (
-                  <>
-                    <span className="font-mono text-xs px-2.5 py-1 rounded-full bg-slate-800/90 text-slate-300 border border-slate-700">
-                      UDISE: <span className="text-white font-bold">{info?.udise_code}</span>
-                    </span>
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-semibold">
-                      {info?.board}
-                    </span>
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold inline-flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Full 49-Field Profile Verified
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-semibold">
-                      {info?.board}
-                    </span>
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold inline-flex items-center gap-1.5">
-                      <Zap className="w-3.5 h-3.5 text-amber-400" /> Basic Info Only (Full Profile Pending)
-                    </span>
-                  </>
+                {info?.board && (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-medium">
+                    {info.board}
+                  </span>
+                )}
+                {info?.udise_code && (
+                  <span className="font-mono text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/80">
+                    UDISE: <span className="text-slate-100 font-semibold">{info.udise_code}</span>
+                  </span>
                 )}
               </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-                {info?.school_name}
-              </h2>
-              <div className="flex items-center gap-2 text-xs text-slate-300/90 flex-wrap">
-                <MapPin className="w-4 h-4 text-indigo-400 shrink-0" />
-                <span>
-                  {hierarchy?.village_locality_ward}, {hierarchy?.local_body_name}, {hierarchy?.mandal} Mandal, {hierarchy?.revenue_division} Division, {hierarchy?.district}, {hierarchy?.state}
-                </span>
-                {info?.pincode && (
-                  <span className="text-slate-400 font-mono">({info.pincode})</span>
-                )}
+
+              {/* Clean single-line Location */}
+              <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-1">
+                <MapPin className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                <span className="truncate">{getCleanLocation()}</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              {userRole === 'admin' ? (
+            {/* Right: Direct Actions & Close */}
+            <div className="flex items-center gap-2 shrink-0">
+              {userRole === 'admin' && (
                 <button
                   onClick={() => onOpenEditModal(school)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-100 text-xs font-semibold border border-slate-700/80 transition cursor-pointer shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition cursor-pointer"
+                  title="Edit School Data"
                 >
-                  <Edit3 className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="hidden sm:inline">Edit School</span>
+                  <Edit3 className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="hidden sm:inline">Edit</span>
                 </button>
-              ) : (
-                <div 
-                  title="Only Administrators can edit verified institutional attributes"
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-400 text-xs font-medium"
-                >
-                  <Lock className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="hidden sm:inline">Admin Edit Only</span>
-                </div>
               )}
 
               <button
                 onClick={handleAiEnrich}
                 disabled={isEnriching}
-                title="Use Skila AI to evaluate school data, determine tech adoption score, and draft a high-converting sales pitch"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-indigo-700 hover:from-purple-500 hover:to-indigo-600 text-white text-xs font-bold shadow-md shadow-indigo-500/20 transition cursor-pointer disabled:opacity-50"
+                title="Generate AI sales strategy"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600/90 hover:bg-purple-600 text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50"
               >
                 <Sparkles className={`w-3.5 h-3.5 ${isEnriching ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">
-                  {isEnriching ? 'Generating AI Pitch...' : enrichSuccess ? '✓ Sales Pitch Ready!' : '✨ Generate AI Sales Pitch'}
+                <span className="hidden md:inline">
+                  {isEnriching ? 'Analyzing...' : enrichSuccess ? 'Pitch Ready' : 'AI Pitch'}
                 </span>
               </button>
 
               <button
                 onClick={() => setEmailModalOpen(true)}
-                title="Compose and send contextual partnership email to this school"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/20 transition cursor-pointer"
+                title="Send Proposal Email"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
               >
                 <Mail className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Send Mail</span>
+                <span className="hidden sm:inline">Email</span>
               </button>
 
               <button
                 onClick={() => setWhatsappModalOpen(true)}
-                title="Send AI-formatted WhatsApp partnership pitch to school leadership"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer"
+                title="Send WhatsApp Message"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">WhatsApp</span>
               </button>
 
+              <div className="h-4 w-px bg-slate-800 mx-1 hidden sm:block" />
+
               <button
                 onClick={onClose}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-semibold text-xs transition cursor-pointer shadow-xs group"
-                title="Return to School Directory"
+                className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 text-xs font-medium transition cursor-pointer inline-flex items-center gap-1.5"
+                title="Close (Esc)"
               >
-                <ArrowLeft className="w-3.5 h-3.5 text-slate-400 group-hover:text-white group-hover:-translate-x-0.5 transition-transform" />
-                <span>Back to Directory</span>
+                <X className="w-4 h-4 text-slate-400 group-hover:text-white" />
+                <span className="hidden sm:inline">Close</span>
               </button>
             </div>
           </div>
 
-          {/* Navigation Segment Tabs */}
-          <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-800/80 overflow-x-auto pb-1 scrollbar-none">
+          {/* Minimal Navigation Tabs */}
+          <div className="flex items-center gap-2 mt-3 pt-2.5 border-t border-slate-800/80 overflow-x-auto scrollbar-none">
             <button
               onClick={() => setActiveTab('info')}
-              className={`px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-2 transition cursor-pointer ${
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition cursor-pointer ${
                 activeTab === 'info'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
               }`}
             >
-              <Building2 className="w-4 h-4" />
+              <Building2 className="w-3.5 h-3.5" />
               <span>School Information</span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                activeTab === 'info' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
-              }`}>
-                16 Fields
-              </span>
             </button>
 
             <button
               onClick={() => setActiveTab('tech')}
-              className={`px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-2 transition cursor-pointer ${
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition cursor-pointer ${
                 activeTab === 'tech'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
               }`}
             >
-              <Cpu className="w-4 h-4" />
+              <Cpu className="w-3.5 h-3.5" />
               <span>Technology Usage</span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                activeTab === 'tech' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
-              }`}>
-                17 Fields
-              </span>
             </button>
 
             <button
               onClick={() => setActiveTab('sales')}
-              className={`px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-2 transition cursor-pointer ${
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition cursor-pointer ${
                 activeTab === 'sales'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
               }`}
             >
-              <DollarSign className="w-4 h-4" />
+              <DollarSign className="w-3.5 h-3.5" />
               <span>Sales & CRM Pipeline</span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                activeTab === 'sales' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
-              }`}>
-                16 Fields
-              </span>
             </button>
           </div>
         </div>
