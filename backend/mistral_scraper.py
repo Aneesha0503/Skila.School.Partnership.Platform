@@ -302,6 +302,22 @@ def scrape_single_school_details_ai(school_data: Dict[str, Any]) -> Dict[str, An
             existing_sales["existing_edtech_partners"] = ", ".join(str(p) for p in partners)
 
         rem = existing_sales.get("remarks")
+        def format_remark_item(item):
+            if isinstance(item, dict):
+                if "area" in item and "details" in item:
+                    return f"{item['area']}: {item['details']}"
+                if "action" in item and "goal" in item:
+                    return f"{item['action']} (Goal: {item['goal']})"
+                if "step" in item and "deadline" in item:
+                    return f"{item['step']} (Deadline: {item['deadline']})"
+                if "partner_name" in item:
+                    parts = [item['partner_name']]
+                    if 'purpose' in item: parts.append(f"Purpose: {item['purpose']}")
+                    if 'tenure' in item: parts.append(f"Tenure: {item['tenure']}")
+                    return " — ".join(parts)
+                return " — ".join(f"{ik.replace('_', ' ').title()}: {iv}" for ik, iv in item.items())
+            return str(item)
+
         if isinstance(rem, dict):
             parts = []
             for k, v in rem.items():
@@ -310,13 +326,13 @@ def scrape_single_school_details_ai(school_data: Dict[str, Any]) -> Dict[str, An
                     subparts = [f"  • {sk.replace('_', ' ').title()}: {sv}" for sk, sv in v.items()]
                     parts.append(f"{title}:\n" + "\n".join(subparts))
                 elif isinstance(v, list):
-                    subparts = [f"  • {item}" if isinstance(item, str) else f"  • {json.dumps(item)}" for item in v]
+                    subparts = [f"  • {format_remark_item(item)}" for item in v]
                     parts.append(f"{title}:\n" + "\n".join(subparts))
                 else:
                     parts.append(f"{title}: {v}")
             existing_sales["remarks"] = "\n\n".join(parts)
         elif isinstance(rem, list):
-            existing_sales["remarks"] = "\n".join(f"• {r}" for r in rem)
+            existing_sales["remarks"] = "\n".join(f"• {format_remark_item(r)}" for r in rem)
 
         school_data["sales"] = existing_sales
 

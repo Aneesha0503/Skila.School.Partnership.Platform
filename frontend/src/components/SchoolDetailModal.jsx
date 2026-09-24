@@ -16,19 +16,122 @@ export default function SchoolDetailModal({
 }) {
   const formatRemarks = (val) => {
     if (!val) return '';
-    if (typeof val === 'string') return val;
+
+    const formatObjectToText = (obj) => {
+      if (!obj || typeof obj !== 'object') return String(obj);
+      if (obj.area && obj.details) {
+        return `${obj.area}: ${obj.details}`;
+      }
+      if (obj.action && obj.goal) {
+        return `${obj.action} (Goal: ${obj.goal})`;
+      }
+      if (obj.step && obj.deadline) {
+        return `${obj.step} (Deadline: ${obj.deadline})`;
+      }
+      if (obj.partner_name) {
+        const parts = [obj.partner_name];
+        if (obj.purpose) parts.push(`Purpose: ${obj.purpose}`);
+        if (obj.tenure) parts.push(`Tenure: ${obj.tenure}`);
+        return parts.join(' — ');
+      }
+      return Object.entries(obj)
+        .map(([k, v]) => {
+          const title = k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+          if (Array.isArray(v)) {
+            return `${title}:\n    - ${v.join('\n    - ')}`;
+          }
+          if (typeof v === 'object' && v !== null) {
+            return `${title}: ${JSON.stringify(v)}`;
+          }
+          return `${title}: ${v}`;
+        })
+        .join(' — ');
+    };
+
+    let t = '';
     if (typeof val === 'object') {
       try {
-        return Object.entries(val).map(([k, v]) => {
+        t = Object.entries(val).map(([k, v]) => {
           const title = k.replace(/_/g, ' ').toUpperCase();
-          if (typeof v === 'object') return `${title}:\n${JSON.stringify(v, null, 2)}`;
+          if (Array.isArray(v)) {
+            return `${title}:\n` + v.map(item => `  • ${typeof item === 'object' ? formatObjectToText(item) : item}`).join('\n');
+          }
+          if (typeof v === 'object') return `${title}:\n${formatObjectToText(v)}`;
           return `${title}: ${v}`;
         }).join('\n\n');
       } catch (e) {
-        return JSON.stringify(val, null, 2);
+        t = JSON.stringify(val);
       }
+    } else {
+      t = String(val);
     }
-    return String(val);
+
+    // 1. Unescape escaped unicode sequences & clean replacement artifacts
+    t = t
+      .replace(/\\u2019/g, "'")
+      .replace(/\\u2018/g, "'")
+      .replace(/\\u201c/g, '"')
+      .replace(/\\u201d/g, '"')
+      .replace(/\\u2014/g, ' — ')
+      .replace(/\\u2013/g, ' – ')
+      .replace(/\ufffd/g, "'");
+
+    // 2. Parse inline stringified JSON objects like {"area": "...", "details": "..."}
+    t = t.replace(/\{[^{}]+\}/g, (match) => {
+      try {
+        const parsed = JSON.parse(match);
+        return formatObjectToText(parsed);
+      } catch (e) {
+        try {
+          const relaxed = match.replace(/'/g, '"');
+          const parsed = JSON.parse(relaxed);
+          return formatObjectToText(parsed);
+        } catch (e2) {
+          return match;
+        }
+      }
+    });
+
+    // 3. Format stringified python-style arrays like ['Item 1', 'Item 2']
+    t = t.replace(/\[\s*('[^']+'|"[^"]+")(?:\s*,\s*('[^']+'|"[^"]+"))*\s*\]/g, (match) => {
+      try {
+        const jsonArr = match.replace(/'/g, '"');
+        const parsed = JSON.parse(jsonArr);
+        if (Array.isArray(parsed)) {
+          return '\n    • ' + parsed.join('\n    • ');
+        }
+      } catch (e) {}
+      return match;
+    });
+
+    // 4. Format [Skila AI Analysis]: { ... } blocks
+    t = t.replace(/\[Skila AI Analysis\]:\s*(\{[\s\S]*?\})/g, (match, dictStr) => {
+      try {
+        const jsonStr = dictStr.replace(/'/g, '"');
+        const parsed = JSON.parse(jsonStr);
+        if (typeof parsed === 'object') {
+          const lines = ['[Skila AI Analysis]:'];
+          for (const [k, v] of Object.entries(parsed)) {
+            const title = k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            if (Array.isArray(v)) {
+              lines.push(`  • ${title}:`);
+              v.forEach(item => lines.push(`    - ${item}`));
+            } else {
+              lines.push(`  • ${title}: ${v}`);
+            }
+          }
+          return lines.join('\n');
+        }
+      } catch (e) {}
+      return match;
+    });
+
+    // 5. Clean redundant bullet markers and spaces
+    t = t.replace(/[•\u2022]\s*[•\u2022]/g, '•');
+    t = t.replace(/[•\u2022]\s*-\s*/g, '• ');
+    t = t.replace(/^[ \t]*[•\u2022][ \t]*/gm, '  • ');
+
+    return t.trim();
   };
 
   const [activeTab, setActiveTab] = useState('info'); // 'info' | 'tech' | 'sales'

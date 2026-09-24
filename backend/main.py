@@ -734,7 +734,22 @@ def api_enrich_school(school_id: str):
     
     if "remarks" in enriched and enriched["remarks"]:
         current_remarks = school_data.get("sales", {}).get("remarks", "")
-        updated_remarks = f"{current_remarks}\n[Skila AI Analysis]: {enriched['remarks']}".strip()
+        enrich_rem = enriched["remarks"]
+        if isinstance(enrich_rem, dict):
+            lines = ["[Skila AI Analysis]:"]
+            for k, v in enrich_rem.items():
+                title = k.replace("_", " ").title()
+                if isinstance(v, list):
+                    lines.append(f"  • {title}:")
+                    for item in v:
+                        lines.append(f"    - {item}")
+                else:
+                    lines.append(f"  • {title}: {v}")
+            enrich_rem_str = "\n".join(lines)
+        else:
+            enrich_rem_str = f"[Skila AI Analysis]: {enrich_rem}"
+        
+        updated_remarks = f"{current_remarks}\n\n{enrich_rem_str}".strip()
         school_data["sales"]["remarks"] = updated_remarks
         if "skila_ai_potential" in enriched:
             school_data["sales"]["skila_ai_potential"] = enriched["skila_ai_potential"]
