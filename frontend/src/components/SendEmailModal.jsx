@@ -166,31 +166,60 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
         if (onUpdateSchool && data.school) {
           onUpdateSchool(data.school);
         }
-        if (data.smtp_sent) {
-          setSendSuccess(true);
-          setTimeout(() => {
-            setSendSuccess(false);
-            onClose();
-          }, 2500);
-        } else if (data.smtp_error) {
-          setSendError(`SMTP dispatch error: ${data.smtp_error}`);
-        } else {
-          setSendSuccess(true);
-          setTimeout(() => {
-            setSendSuccess(false);
-            onClose();
-          }, 2500);
-        }
+        setSendSuccess(true);
+        setTimeout(() => {
+          setSendSuccess(false);
+          onClose();
+        }, 2500);
       } else {
         const err = await res.json().catch(() => ({}));
-        setSendError(err.detail || 'Failed to dispatch email. Please check address.');
+        setSendError(err.detail || 'Failed to dispatch email. Please check network or click "Send via Gmail Web".');
       }
     } catch (err) {
       console.error('Send email error:', err);
-      setSendError('Network error while dispatching email.');
+      setSendError('Network error while dispatching email. Please click "Send via Gmail Web" instead.');
     } finally {
       setIsSending(false);
     }
+  };
+
+  const handleSendViaGmailWeb = async () => {
+    if (!recipientEmail || !recipientEmail.trim()) {
+      setSendError('Please provide a valid recipient email address.');
+      return;
+    }
+
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(recipientEmail.trim())}&su=${encodeURIComponent(subject.trim())}&body=${encodeURIComponent(body.trim())}`;
+    
+    // Open Gmail web compose in a new browser tab
+    window.open(gmailUrl, '_blank', 'noopener,noreferrer');
+
+    // Automatically record engagement in CRM as Contacted
+    try {
+      const res = await fetch(`/api/schools/${school.id}/log-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipient_email: recipientEmail.trim(),
+          recipient_name: recipientName.trim(),
+          subject: subject.trim(),
+          body: `[Dispatched via Gmail Web (${senderType === 'personal' ? 'Personal' : 'Company'})]\n` + body.trim(),
+          sender_type: senderType
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (onUpdateSchool && data.school) onUpdateSchool(data.school);
+      }
+    } catch (e) {
+      console.error('Failed to log Gmail Web dispatch:', e);
+    }
+
+    setSendSuccess(true);
+    setTimeout(() => {
+      setSendSuccess(false);
+      onClose();
+    }, 2500);
   };
 
   const handleOpenMailClient = async () => {
@@ -199,7 +228,7 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
 
     // Record engagement in CRM
     try {
-      await fetch(`/api/schools/${school.id}/send-email`, {
+      const res = await fetch(`/api/schools/${school.id}/log-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -209,9 +238,11 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
           body: `[Dispatched via Local Mail Client as ${senderType === 'personal' ? 'Personal' : 'Company'}]\n` + body,
           sender_type: senderType
         })
-      }).then(r => r.json()).then(data => {
-        if (onUpdateSchool && data.school) onUpdateSchool(data.school);
       });
+      if (res.ok) {
+        const data = await res.json();
+        if (onUpdateSchool && data.school) onUpdateSchool(data.school);
+      }
     } catch (e) {
       console.error('Failed to log mail client trigger', e);
     }
@@ -259,9 +290,21 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
           )}
 
           {sendError && (
-            <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-200 text-xs font-medium flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-              <span>{sendError}</span>
+            <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs space-y-2 animate-in fade-in">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <span className="font-semibold leading-relaxed">{sendError}</span>
+              </div>
+              <div className="pl-6 pt-0.5">
+                <button
+                  type="button"
+                  onClick={handleSendViaGmailWeb}
+                  className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm cursor-pointer transition"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>Send via Gmail Web (1-Click, 100% Reliable)</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -407,22 +450,35 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/80 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 flex-wrap">
-          <button
-            type="button"
-            onClick={handleOpenMailClient}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold transition cursor-pointer shadow-xs"
-            title="Open in your default email client (Gmail, Outlook, Apple Mail)"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            <span>Open in Mail Client</span>
-          </button>
+        <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/80 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={handleSendViaGmailWeb}
+              disabled={sendSuccess}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-indigo-600 hover:from-red-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md shadow-red-600/20 transition cursor-pointer"
+              title="Open Gmail Web in a new tab with recipient and proposal pre-filled (Bypasses network blocks)"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              <span>Send via Gmail Web (1-Click)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleOpenMailClient}
+              className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition cursor-pointer shadow-xs"
+              title="Open in your default desktop mail app (Outlook, Apple Mail, Thunderbird)"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Desktop App</span>
+            </button>
+          </div>
 
           <div className="flex items-center gap-2 ml-auto">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-semibold transition cursor-pointer"
+              className="px-3.5 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-semibold transition cursor-pointer"
             >
               Cancel
             </button>
@@ -431,22 +487,23 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
               type="button"
               onClick={handleSendAutomatic}
               disabled={isSending || sendSuccess}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold shadow-md shadow-indigo-600/20 transition cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
+              title="Attempt background delivery via SMTP port"
             >
               {isSending ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Dispatching Email...</span>
+                  <span>Sending via SMTP...</span>
                 </>
               ) : sendSuccess ? (
                 <>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Sent!</span>
                 </>
               ) : (
                 <>
                   <Send className="w-3.5 h-3.5" />
-                  <span>Send Automatically</span>
+                  <span>Send via SMTP</span>
                 </>
               )}
             </button>

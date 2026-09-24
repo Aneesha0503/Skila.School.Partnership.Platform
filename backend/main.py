@@ -944,7 +944,7 @@ def api_send_school_email(school_id: str, req: SendEmailRequest):
             msg["To"] = recipient
             msg.set_content(req.body)
 
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=12) as server:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=8) as server:
                 server.starttls()
                 server.login(smtp_user, smtp_password)
                 server.send_message(msg)
@@ -952,6 +952,18 @@ def api_send_school_email(school_id: str, req: SendEmailRequest):
         except Exception as e:
             print(f"[SMTP Send Error - {sender_type}] {e}")
             smtp_error = str(e)
+
+    if not smtp_sent:
+        err_lower = str(smtp_error or "").lower()
+        if "timed out" in err_lower or "timeout" in err_lower:
+            detail = (
+                "Outbound SMTP connection timed out on port 587/465. "
+                "Your Internet Provider (ISP) or local network blocks direct SMTP ports. "
+                "Please click 'Send via Gmail Web' to dispatch directly with 1 click!"
+            )
+        else:
+            detail = f"SMTP Delivery Failed: {smtp_error or 'Could not authenticate with mail server.'}"
+        raise HTTPException(status_code=502, detail=detail)
 
     # Automatically record engagement in CRM pipeline
     sales = school_data.setdefault("sales", {})
@@ -962,7 +974,7 @@ def api_send_school_email(school_id: str, req: SendEmailRequest):
     sales["last_contact_date"] = today_str
 
     current_remarks = sales.get("remarks", "")
-    log_entry = f"[Email Sent from {sender_label} ({smtp_from}) to {recipient} on {timestamp_str}]: {req.subject}"
+    log_entry = f"[Email Sent via SMTP from {sender_label} ({smtp_from}) to {recipient} on {timestamp_str}]: {req.subject}"
     sales["remarks"] = f"{current_remarks}\n\n{log_entry}".strip()
 
     # Track in sent emails log array
@@ -975,27 +987,71 @@ def api_send_school_email(school_id: str, req: SendEmailRequest):
         "recipient_email": recipient,
         "recipient_name": req.recipient_name,
         "subject": req.subject,
-        "smtp_sent": smtp_sent
+        "smtp_sent": True
     })
 
     school_data["updated_at"] = now_utc.isoformat()
     doc_ref.set(school_data)
-
-    status_message = (
-        f"Email successfully delivered to {recipient} from {sender_label} ({smtp_from})!"
-        if smtp_sent
-        else f"Partnership email dispatched and recorded in CRM for {recipient} (Sent as {sender_label})."
-    )
 
     return {
         "status": "success",
         "sender_type": sender_type,
         "sender_email": smtp_from,
         "sender_name": sender_label,
-        "smtp_sent": smtp_sent,
-        "smtp_error": smtp_error,
+        "smtp_sent": True,
         "recipient": recipient,
-        "message": status_message,
+        "message": f"Email successfully delivered to {recipient} from {sender_label} ({smtp_from})!",
+        "school": school_data
+    }
+
+@app.post("/api/schools/{school_id}/log-email")
+def api_log_school_email(school_id: str, req: SendEmailRequest):
+    """
+    Logs an email dispatched via Gmail Web or local client
+    into the CRM pipeline and updates status to Contacted.
+    """
+    doc_ref = db.collection("schools").document(school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+    school_data = doc.to_dict()
+    school_data["id"] = school_id
+
+    recipient = req.recipient_email.strip()
+    sender_type = (req.sender_type or "personal").lower()
+    
+    sender_label = os.getenv("PERSONAL_EMAIL_NAME", "Skila AI") if sender_type == "personal" else os.getenv("COMPANY_EMAIL_NAME", "Skila AI Partnerships")
+    sender_email = os.getenv("PERSONAL_EMAIL_ADDRESS", "skila.udaymerugu@gmail.com") if sender_type == "personal" else os.getenv("COMPANY_EMAIL_ADDRESS", "partnerships@skila.ai")
+
+    sales = school_data.setdefault("sales", {})
+    sales["lead_status"] = "Contacted"
+    now_utc = datetime.now(timezone.utc)
+    today_str = now_utc.strftime("%Y-%m-%d")
+    timestamp_str = now_utc.strftime("%Y-%m-%d %H:%M UTC")
+    sales["last_contact_date"] = today_str
+
+    current_remarks = sales.get("remarks", "")
+    log_entry = f"[Email Dispatched via Gmail Web from {sender_label} ({sender_email}) to {recipient} on {timestamp_str}]: {req.subject}"
+    sales["remarks"] = f"{current_remarks}\n\n{log_entry}".strip()
+
+    sent_list = sales.setdefault("sent_emails", [])
+    sent_list.append({
+        "timestamp": timestamp_str,
+        "sender_type": sender_type,
+        "sender_email": sender_email,
+        "sender_name": sender_label,
+        "recipient_email": recipient,
+        "recipient_name": req.recipient_name,
+        "subject": req.subject,
+        "method": "gmail_web"
+    })
+
+    school_data["updated_at"] = now_utc.isoformat()
+    doc_ref.set(school_data)
+
+    return {
+        "status": "success",
+        "message": f"Recorded outreach to {recipient} in CRM as Contacted!",
         "school": school_data
     }
 
