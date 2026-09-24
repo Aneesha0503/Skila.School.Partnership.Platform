@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Building2, Cpu, DollarSign, MapPin, Phone, Mail, 
   Globe, User, CheckCircle2, XCircle, Edit3, Save, Sparkles, ExternalLink,
@@ -41,6 +41,33 @@ export default function SchoolDetailModal({
   const [enrichSuccess, setEnrichSuccess] = useState(false);
   const [isRunningDetails, setIsRunningDetails] = useState(false);
   const [runDetailsError, setRunDetailsError] = useState('');
+
+  const scrollContainerRef = useRef(null);
+
+  // Reset scroll to top whenever switching between tabs
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [activeTab]);
+
+  // Lock background scroll when modal is active, and listen for Escape key
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
 
   if (!school) return null;
 
@@ -165,13 +192,13 @@ export default function SchoolDetailModal({
   const tierBadge = getTierBadge(school.tier);
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 lg:p-6 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-[96vw] xl:max-w-[1360px] 2xl:max-w-[1500px] h-[93vh] flex flex-col overflow-hidden animate-in fade-in duration-200">
-        
-        {/* Modal Header */}
-        <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-5 sm:p-6 shrink-0 relative border-b border-slate-800">
+    <div className="fixed inset-0 z-50 bg-slate-50 dark:bg-slate-950 flex flex-col w-screen h-screen overflow-hidden select-text animate-in fade-in duration-150">
+      
+      {/* Fullscreen Sticky Modal Header */}
+      <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white shrink-0 border-b border-slate-800 shadow-md z-20">
+        <div className="w-full max-w-7xl 2xl:max-w-[1700px] mx-auto px-5 sm:px-8 pt-5 pb-3">
           <div className="flex items-start justify-between gap-4">
-            <div className="space-y-2">
+            <div className="space-y-1.5 flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 {tierBadge && (
                   <span className={`text-xs px-3 py-1 rounded-full border font-bold shadow-xs ${tierBadge.className}`}>
@@ -215,14 +242,14 @@ export default function SchoolDetailModal({
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               {userRole === 'admin' ? (
                 <button
                   onClick={() => onOpenEditModal(school)}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-100 text-xs font-semibold border border-slate-700/80 transition cursor-pointer shadow-xs"
                 >
                   <Edit3 className="w-3.5 h-3.5 text-indigo-400" />
-                  Edit School
+                  <span className="hidden sm:inline">Edit School</span>
                 </button>
               ) : (
                 <div 
@@ -230,21 +257,34 @@ export default function SchoolDetailModal({
                   className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-400 text-xs font-medium"
                 >
                   <Lock className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Admin Edit Only</span>
+                  <span className="hidden sm:inline">Admin Edit Only</span>
                 </div>
               )}
+
+              <button
+                onClick={handleAiEnrich}
+                disabled={isEnriching}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-semibold shadow-md shadow-indigo-500/20 transition cursor-pointer disabled:opacity-50"
+              >
+                <Sparkles className={`w-3.5 h-3.5 ${isEnriching ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">{isEnriching ? 'Enriching...' : 'Skila AI Enrich'}</span>
+              </button>
+
               <button
                 onClick={onClose}
-                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800/90 hover:bg-rose-950/60 hover:text-rose-200 text-slate-300 border border-slate-700 hover:border-rose-600/50 transition cursor-pointer group"
                 aria-label="Close modal"
+                title="Close (Press Esc)"
               >
-                <X className="w-5 h-5" />
+                <span className="text-xs font-medium hidden md:inline text-slate-300 group-hover:text-rose-200">Close</span>
+                <kbd className="hidden lg:inline text-[10px] px-1.5 py-0.5 bg-slate-900 border border-slate-700 rounded text-slate-400 font-mono">ESC</kbd>
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
           {/* Navigation Segment Tabs */}
-          <div className="flex items-center gap-2 mt-5 pt-3 border-t border-slate-800/80 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-800/80 overflow-x-auto pb-1 scrollbar-none">
             <button
               onClick={() => setActiveTab('info')}
               className={`px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-2 transition cursor-pointer ${
@@ -297,9 +337,14 @@ export default function SchoolDetailModal({
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Modal Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto flex-1 bg-slate-50/70 dark:bg-slate-950">
+      {/* Fullscreen Modal Body with Smooth Momentum Scroll */}
+      <div 
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto overscroll-contain scroll-smooth bg-slate-50/80 dark:bg-slate-950"
+      >
+        <div className="w-full max-w-7xl 2xl:max-w-[1700px] mx-auto p-5 sm:p-8 space-y-6 pb-28">
           {!details_fetched ? (
             <div className="py-10 px-6 flex flex-col items-center justify-center text-center max-w-xl mx-auto bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs my-auto">
               <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-4 shadow-xs">
