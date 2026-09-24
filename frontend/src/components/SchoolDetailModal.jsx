@@ -48,6 +48,7 @@ export default function SchoolDetailModal({
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
 
   const scrollContainerRef = useRef(null);
+  const remarksTextareaRef = useRef(null);
 
   // Synchronize local CRM form state whenever school updates or changes
   useEffect(() => {
@@ -61,6 +62,21 @@ export default function SchoolDetailModal({
       setSaveSuccess(false);
     }
   }, [school?.id]);
+
+  // Auto-resize remarks textarea so notes are completely visible and never restricted
+  useEffect(() => {
+    if (remarksTextareaRef.current && activeTab === 'sales') {
+      remarksTextareaRef.current.style.height = 'auto';
+      const scrollH = remarksTextareaRef.current.scrollHeight;
+      remarksTextareaRef.current.style.height = `${Math.max(260, scrollH + 4)}px`;
+    }
+  }, [remarks, activeTab]);
+
+  const handleRemarksChange = (e) => {
+    setRemarks(e.target.value);
+    e.target.style.height = 'auto';
+    e.target.style.height = `${Math.max(260, e.target.scrollHeight + 4)}px`;
+  };
 
   // Reset scroll to top whenever switching between tabs
   useEffect(() => {
@@ -1054,15 +1070,20 @@ export default function SchoolDetailModal({
                 </div>
 
                 {/* Remarks & Notes */}
-                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Interaction Remarks & Strategy Notes
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                    Interaction Remarks & Strategy Notes
+                  </label>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    Auto-expands to full content • Resizable
+                  </span>
+                </div>
                 <textarea
-                  rows="4"
+                  ref={remarksTextareaRef}
                   value={remarks}
-                  onChange={(e) => setRemarks(e.target.value)}
+                  onChange={handleRemarksChange}
                   placeholder="Record meeting outcomes, principal/correspondent feedback, budget constraints, next steps..."
-                  className="w-full text-xs p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition mb-4 font-mono text-[11px] leading-relaxed"
+                  className="w-full text-xs sm:text-[13px] p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition mb-4 font-mono leading-relaxed resize-y min-h-[260px]"
                 />
 
                 {saveError && (
