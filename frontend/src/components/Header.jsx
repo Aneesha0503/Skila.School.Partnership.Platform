@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  School, Database, FileSpreadsheet, Plus, Sun, Moon, 
+  School, FileSpreadsheet, Plus, Sun, Moon, 
   ShieldCheck, ChevronDown, Check, Lock, UserCheck, Crown, Briefcase 
 } from 'lucide-react';
 
@@ -61,15 +61,6 @@ export default function Header({
           {/* Right Header Navigation & Access Controls */}
           <div className="flex items-center gap-2 sm:gap-2.5">
             
-            {/* Database indicator */}
-            <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
-              <Database className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="text-slate-600 dark:text-slate-300 font-medium">
-                {statusInfo?.firebase_live ? 'Firebase Firestore (Live)' : 'Firestore Engine (Local)'}
-              </span>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            </div>
-
             {/* Role-Based Access Control Switcher */}
             <div className="relative" ref={dropdownRef}>
               <button
