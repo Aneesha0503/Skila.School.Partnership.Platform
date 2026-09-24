@@ -160,7 +160,7 @@ Warm regards,
       return;
     }
 
-    const waUrl = `https://web.whatsapp.com/send?phone=${clean}&text=${encodeURIComponent(message.trim())}`;
+    const waUrl = `https://api.whatsapp.com/send?phone=${clean}&text=${encodeURIComponent(message.trim())}`;
     window.open(waUrl, '_blank', 'noopener,noreferrer');
 
     // Automatically record engagement in CRM as Contacted
