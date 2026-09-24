@@ -58,6 +58,8 @@ export default function App() {
   const [selectedSchool, setSelectedSchool] = useState(null);
   const [addEditModalOpen, setAddEditModalOpen] = useState(false);
   const [editingSchool, setEditingSchool] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [activeModalTab, setActiveModalTab] = useState('info');
 
   // Light / Dark Theme State
   const [theme, setTheme] = useState(() => {
@@ -92,6 +94,54 @@ export default function App() {
         'X-User-Role': userRole
       }
     });
+  };
+
+  // Fetch notifications for Admin alert bell
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetchWithRole('/api/notifications');
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data || []);
+      }
+    } catch (err) {
+      console.warn('Could not fetch notifications:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 20000);
+    return () => clearInterval(interval);
+  }, [userRole]);
+
+  const handleNotificationClick = async (notif) => {
+    try {
+      await fetch(`/api/notifications/${notif.id}/read`, { method: 'PUT' });
+      setNotifications((prev) => prev.map((n) => (n.id === notif.id ? { ...n, is_read: true } : n)));
+    } catch (e) {}
+
+    let targetSchool = schools.find((s) => s.id === notif.school_id);
+    if (!targetSchool) {
+      try {
+        const res = await fetchWithRole(`/api/schools/${notif.school_id}`);
+        if (res.ok) {
+          targetSchool = await res.json();
+        }
+      } catch (e) {}
+    }
+
+    if (targetSchool) {
+      setActiveModalTab('notes');
+      setSelectedSchool(targetSchool);
+    }
+  };
+
+  const handleMarkAllNotificationsRead = async () => {
+    try {
+      await fetch('/api/notifications/mark-all-read', { method: 'POST' });
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    } catch (e) {}
   };
 
   // Fetch initial status and metadata
@@ -331,6 +381,9 @@ export default function App() {
         userRole={userRole}
         onRoleChange={setUserRole}
         onOpenAccessModal={() => setAccessModalOpen(true)}
+        notifications={notifications}
+        onNotificationClick={handleNotificationClick}
+        onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
       />
 
       {/* Main Content Area */}
@@ -427,11 +480,16 @@ export default function App() {
       {selectedSchool && (
         <SchoolDetailModal
           school={selectedSchool}
-          onClose={() => setSelectedSchool(null)}
+          initialTab={activeModalTab}
+          onClose={() => {
+            setSelectedSchool(null);
+            setActiveModalTab('info');
+          }}
           onUpdateSchool={(updated) => {
             setSelectedSchool(updated);
             fetchSchools();
             fetchStats();
+            fetchNotifications();
           }}
           onOpenEditModal={handleOpenEditModal}
           userRole={userRole}

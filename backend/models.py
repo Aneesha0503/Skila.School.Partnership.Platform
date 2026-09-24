@@ -73,6 +73,30 @@ class SalesCRM(BaseModel):
     remarks: Optional[Union[str, Dict[str, Any], List[Any]]] = ""
     sent_emails: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     sent_whatsapp: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    agent_notes: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+
+class AgentNoteCreate(BaseModel):
+    model_config = ConfigDict(extra="allow", coerce_numbers_to_str=True)
+    agent_name: Optional[str] = "Field Agent"
+    category: Optional[str] = "School Visit"
+    urgency: Optional[str] = "Normal"
+    text: str
+    action_required: Optional[str] = ""
+
+class AgentNoteModel(BaseModel):
+    model_config = ConfigDict(extra="allow", coerce_numbers_to_str=True)
+    id: Optional[str] = None
+    school_id: Optional[str] = None
+    school_name: Optional[str] = None
+    agent_name: Optional[str] = "Field Agent"
+    author_role: Optional[str] = "agent"
+    category: Optional[str] = "School Visit"
+    urgency: Optional[str] = "Normal"
+    text: str
+    action_required: Optional[str] = ""
+    timestamp: Optional[str] = None
+    admin_notified: Optional[bool] = True
+    admin_read: Optional[bool] = False
 
 class SchoolModel(BaseModel):
     model_config = ConfigDict(extra="allow", coerce_numbers_to_str=True)
@@ -81,6 +105,7 @@ class SchoolModel(BaseModel):
     info: Optional[SchoolInfo] = None
     technology: Optional[TechnologyUsage] = None
     sales: Optional[SalesCRM] = None
+    agent_notes: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
     scraped_by: Optional[str] = None
@@ -92,3 +117,5 @@ class SchoolCreateUpdate(BaseModel):
     info: Optional[SchoolInfo] = None
     technology: Optional[TechnologyUsage] = None
     sales: Optional[SalesCRM] = None
+    agent_notes: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Building2, Cpu, DollarSign, MapPin, Phone, Mail, 
   Globe, User, CheckCircle2, XCircle, Edit3, Save, Sparkles, ExternalLink,
-  Play, RefreshCw, Zap, Layers, Lock, ShieldCheck, UserCheck, ArrowLeft, Send, MessageSquare, AlertCircle
+  Play, RefreshCw, Zap, Layers, Lock, ShieldCheck, UserCheck, ArrowLeft, Send, MessageSquare, AlertCircle,
+  FileText, Clock, Tag, Bell, CheckCheck
 } from 'lucide-react';
 import SendEmailModal from './SendEmailModal';
 import SendWhatsAppModal from './SendWhatsAppModal';
@@ -12,7 +13,8 @@ export default function SchoolDetailModal({
   onClose, 
   onUpdateSchool, 
   onOpenEditModal,
-  userRole = 'admin'
+  userRole = 'admin',
+  initialTab = 'info'
 }) {
   const formatRemarks = (val) => {
     if (!val) return '';
@@ -134,7 +136,34 @@ export default function SchoolDetailModal({
     return t.trim();
   };
 
-  const [activeTab, setActiveTab] = useState('info'); // 'info' | 'tech' | 'sales'
+  const [activeTab, setActiveTab] = useState(initialTab || 'info'); // 'info' | 'tech' | 'sales' | 'notes'
+  const [agentNotes, setAgentNotes] = useState(school?.agent_notes || []);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
+  useEffect(() => {
+    if (school?.agent_notes) {
+      setAgentNotes(school.agent_notes);
+    } else {
+      setAgentNotes([]);
+    }
+  }, [school?.agent_notes, school?.id]);
+
+  // Note composer form state
+  const [noteText, setNoteText] = useState('');
+  const [noteAgentName, setNoteAgentName] = useState(userRole === 'agent' ? 'Field Agent' : 'Admin');
+  const [noteCategory, setNoteCategory] = useState('School Visit');
+  const [noteUrgency, setNoteUrgency] = useState('Normal');
+  const [noteActionRequired, setNoteActionRequired] = useState('');
+  const [isSubmittingNote, setIsSubmittingNote] = useState(false);
+  const [noteSubmitSuccess, setNoteSubmitSuccess] = useState('');
+  const [noteSubmitError, setNoteSubmitError] = useState('');
+  const noteTextareaRef = useRef(null);
+
   const [leadStatus, setLeadStatus] = useState(school?.sales?.lead_status || 'New');
   const [interestLevel, setInterestLevel] = useState(school?.sales?.interest_level || 'Medium');
   const [nextFollowUpDate, setNextFollowUpDate] = useState(school?.sales?.next_follow_up_date || '');
@@ -152,6 +181,56 @@ export default function SchoolDetailModal({
 
   const scrollContainerRef = useRef(null);
   const remarksTextareaRef = useRef(null);
+
+  const handleSaveAndSubmitNote = async (e) => {
+    if (e) e.preventDefault();
+    if (!noteText.trim()) {
+      setNoteSubmitError('Please enter note text before submitting.');
+      return;
+    }
+    setIsSubmittingNote(true);
+    setNoteSubmitError('');
+    setNoteSubmitSuccess('');
+
+    try {
+      const res = await fetch(`/api/schools/${school.id}/agent-notes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Role': userRole
+        },
+        body: JSON.stringify({
+          agent_name: noteAgentName.trim() || (userRole === 'agent' ? 'Field Agent' : 'Admin'),
+          category: noteCategory,
+          urgency: noteUrgency,
+          text: noteText.trim(),
+          action_required: noteActionRequired.trim()
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.school) {
+          onUpdateSchool(data.school);
+          setAgentNotes(data.school.agent_notes || []);
+        } else if (data.note) {
+          setAgentNotes((prev) => [data.note, ...prev]);
+        }
+        setNoteText('');
+        setNoteActionRequired('');
+        setNoteSubmitSuccess('Field note saved successfully! Admin alert has been dispatched.');
+        setTimeout(() => setNoteSubmitSuccess(''), 5000);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setNoteSubmitError(err.detail || 'Failed to submit field update.');
+      }
+    } catch (err) {
+      console.error('Submit agent note error:', err);
+      setNoteSubmitError('Network error while saving field note.');
+    } finally {
+      setIsSubmittingNote(false);
+    }
+  };
 
   // Synchronize local CRM form state whenever school updates or changes
   useEffect(() => {
@@ -487,6 +566,27 @@ export default function SchoolDetailModal({
             >
               <DollarSign className="w-3.5 h-3.5" />
               <span>Sales & CRM Pipeline</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('notes')}
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition cursor-pointer ${
+                activeTab === 'notes'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Field Notes & Updates</span>
+              {agentNotes.length > 0 && (
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  activeTab === 'notes' 
+                    ? 'bg-indigo-700/80 text-white' 
+                    : 'bg-slate-800 text-slate-300 border border-slate-700'
+                }`}>
+                  {agentNotes.length}
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -1220,6 +1320,264 @@ export default function SchoolDetailModal({
                     {isSaving ? 'Saving...' : userRole === 'agent' ? 'Save Field CRM Updates' : 'Save CRM Updates'}
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: AGENT FIELD NOTES & INSTITUTIONAL UPDATES */}
+          {activeTab === 'notes' && (
+            <div className="space-y-6">
+              {/* Top: New Field Note Composer Card */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <span>Log Agent Field Note & Institutional Update</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Record call takeaways, visit observations, or pipeline progress. Submitting dispatches an alert to the Admin.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
+                      <Bell className="w-3 h-3 text-indigo-500" />
+                      Admin Alert Automated
+                    </span>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSaveAndSubmitNote} className="space-y-4">
+                  {/* Meta row: Agent Name, Category, Urgency */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* Agent Name */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                        Reporting Agent / Author
+                      </label>
+                      <input
+                        type="text"
+                        value={noteAgentName}
+                        onChange={(e) => setNoteAgentName(e.target.value)}
+                        placeholder="Enter agent name..."
+                        className="w-full text-xs rounded-xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white p-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Category */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                        Update Category
+                      </label>
+                      <select
+                        value={noteCategory}
+                        onChange={(e) => setNoteCategory(e.target.value)}
+                        className="w-full text-xs rounded-xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white p-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer"
+                      >
+                        <option value="School Visit">🏫 School Visit</option>
+                        <option value="Principal Call">📞 Principal / Management Call</option>
+                        <option value="Demo Feedback">💻 Demo & Presentation Feedback</option>
+                        <option value="Follow-up Required">⏳ Follow-up Required</option>
+                        <option value="Pricing / Budget">💰 Pricing & Proposal Discussion</option>
+                        <option value="Blocker / Issue">⚠️ Blocker / Concern Raised</option>
+                        <option value="General Note">📝 General Field Note</option>
+                      </select>
+                    </div>
+
+                    {/* Urgency */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                        Priority / Urgency
+                      </label>
+                      <select
+                        value={noteUrgency}
+                        onChange={(e) => setNoteUrgency(e.target.value)}
+                        className="w-full text-xs rounded-xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white p-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer"
+                      >
+                        <option value="Normal">🟢 Normal</option>
+                        <option value="Important">🟡 Important (Needs Attention)</option>
+                        <option value="Urgent Action Required">🔴 Urgent Action Required</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Main Note Text */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                      Update Notes & Meeting Summary <span className="text-rose-500">*</span>
+                    </label>
+                    <textarea
+                      ref={noteTextareaRef}
+                      value={noteText}
+                      onChange={(e) => {
+                        setNoteText(e.target.value);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = `${Math.max(100, e.target.scrollHeight)}px`;
+                      }}
+                      placeholder="Write detailed notes here: What was discussed, who did you meet, specific feedback on Skila AI, budget, key requirements, or immediate next steps..."
+                      rows={4}
+                      className="w-full text-xs rounded-xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white p-3 font-normal focus:ring-2 focus:ring-indigo-500 focus:outline-none leading-relaxed transition resize-none placeholder-slate-400"
+                    />
+                  </div>
+
+                  {/* Optional Action Item */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                      Immediate Action Required (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={noteActionRequired}
+                      onChange={(e) => setNoteActionRequired(e.target.value)}
+                      placeholder="e.g. Admin needs to approve custom pricing by Thursday, or send demo recording..."
+                      className="w-full text-xs rounded-xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white p-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-slate-400"
+                    />
+                  </div>
+
+                  {/* Status / Feedback messages */}
+                  {noteSubmitError && (
+                    <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                        <span>{noteSubmitError}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setNoteSubmitError('')}
+                        className="text-rose-500 hover:text-rose-700 font-bold text-xs"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  )}
+
+                  {noteSubmitSuccess && (
+                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2 animate-in fade-in duration-200">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                      <span>{noteSubmitSuccess}</span>
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <button
+                      type="submit"
+                      disabled={isSubmittingNote || !noteText.trim()}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/25 transition cursor-pointer disabled:opacity-50"
+                    >
+                      {isSubmittingNote ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Saving & Alerting Admin...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          <span>Save & Submit Update (Alert Admin)</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Bottom: Historical Updates Timeline */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
+                <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                      Field Notes & Updates History
+                    </h4>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                      {agentNotes.length} {agentNotes.length === 1 ? 'entry' : 'entries'}
+                    </span>
+                  </div>
+                </div>
+
+                {agentNotes.length === 0 ? (
+                  <div className="py-12 px-4 text-center">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 mx-auto mb-3">
+                      <FileText className="w-6 h-6" />
+                    </div>
+                    <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                      No Field Notes Logged Yet
+                    </h5>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                      Use the form above to record your first field note or update for {info?.school_name || 'this school'}. All logged updates trigger an alert to the administrator.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {agentNotes.map((note, index) => {
+                      const isUrgent = note.urgency === 'Urgent Action Required';
+                      const isImportant = note.urgency === 'Important';
+                      const formattedTime = note.timestamp
+                        ? new Date(note.timestamp).toLocaleString('en-IN', {
+                            dateStyle: 'medium',
+                            timeStyle: 'short'
+                          })
+                        : 'Recently';
+
+                      return (
+                        <div
+                          key={note.id || index}
+                          className={`p-4 rounded-xl border transition ${
+                            isUrgent
+                              ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'
+                              : isImportant
+                              ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50'
+                              : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200/80 dark:border-slate-800'
+                          }`}
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                                <User className="w-3.5 h-3.5 text-indigo-500" />
+                                {note.agent_name || 'Field Agent'}
+                              </span>
+                              <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
+                                {note.category || 'General Note'}
+                              </span>
+                              {isUrgent && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-500 text-white animate-pulse">
+                                  🔴 Urgent Action
+                                </span>
+                              )}
+                              {isImportant && !isUrgent && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                                  🟡 Important
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-3 text-[11px] text-slate-400">
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {formattedTime}
+                              </span>
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                <CheckCheck className="w-3 h-3" /> Admin Alerted
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="text-xs text-slate-700 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">
+                            {note.text}
+                          </div>
+
+                          {note.action_required && (
+                            <div className="mt-2.5 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-200 text-xs flex items-start gap-1.5 font-medium">
+                              <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                              <span><strong>Action:</strong> {note.action_required}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}

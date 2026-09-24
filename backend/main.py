@@ -16,7 +16,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 from firebase_config import get_db, is_live_firebase
-from models import SchoolModel, SchoolCreateUpdate
+from models import SchoolModel, SchoolCreateUpdate, AgentNoteCreate, AgentNoteModel
 
 app = FastAPI(title="Skila School Partnership Platform API", version="1.0.0")
 
@@ -312,6 +312,140 @@ def update_school(school_id: str, payload: SchoolCreateUpdate, role: str = Depen
         
     doc_ref.set(record)
     return record
+
+@app.post("/api/schools/{school_id}/agent-notes")
+def add_agent_note(
+    school_id: str,
+    payload: AgentNoteCreate,
+    role: str = Depends(get_current_role)
+):
+    """
+    Agent / Admin logs a field note / update for a school.
+    - Appends note to school.agent_notes
+    - Generates an Admin alert notification in 'notifications' collection
+    - Returns updated school and the note object
+    """
+    doc_ref = db.collection("schools").document(school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+        
+    school = doc.to_dict()
+    school["id"] = school_id
+    now = datetime.now(timezone.utc).isoformat()
+    note_id = str(uuid.uuid4())
+    
+    school_name = (
+        school.get("info", {}).get("school_name") or 
+        school.get("name") or 
+        f"School {school_id[:8]}"
+    )
+    
+    agent_display_name = payload.agent_name.strip() if payload.agent_name and payload.agent_name.strip() else ("Field Agent" if role == "agent" else "Admin")
+    
+    note_data = {
+        "id": note_id,
+        "school_id": school_id,
+        "school_name": school_name,
+        "agent_name": agent_display_name,
+        "author_role": role,
+        "category": payload.category or "School Visit",
+        "urgency": payload.urgency or "Normal",
+        "text": payload.text.strip(),
+        "action_required": (payload.action_required or "").strip(),
+        "timestamp": now,
+        "admin_notified": True,
+        "admin_read": False
+    }
+    
+    # Append note to school record (newest first)
+    existing_notes = school.get("agent_notes") or []
+    updated_notes = [note_data] + existing_notes
+    school["agent_notes"] = updated_notes
+    school["updated_at"] = now
+    school["last_updated_by_role"] = role
+    
+    doc_ref.set(school)
+    
+    # Save notification for Admin in 'notifications' collection
+    notification_data = {
+        "id": str(uuid.uuid4()),
+        "note_id": note_id,
+        "school_id": school_id,
+        "school_name": school_name,
+        "district": school.get("hierarchy", {}).get("district", ""),
+        "state": school.get("hierarchy", {}).get("state", ""),
+        "agent_name": note_data["agent_name"],
+        "category": note_data["category"],
+        "urgency": note_data["urgency"],
+        "text_snippet": (note_data["text"][:140] + "...") if len(note_data["text"]) > 140 else note_data["text"],
+        "full_text": note_data["text"],
+        "timestamp": now,
+        "is_read": False,
+        "type": "agent_field_update"
+    }
+    
+    try:
+        db.collection("notifications").document(notification_data["id"]).set(notification_data)
+    except Exception as e:
+        print(f"Warning: Could not save notification to Firestore: {e}")
+        
+    return {
+        "success": True,
+        "note": note_data,
+        "school": school,
+        "notification": notification_data
+    }
+
+@app.get("/api/notifications")
+def get_notifications(
+    limit: int = 50,
+    role: str = Depends(get_current_role)
+):
+    """
+    Fetches recent agent update notifications for Admin.
+    """
+    try:
+        col = db.collection("notifications")
+        docs = col.stream()
+        notifications = []
+        for d in docs:
+            item = d.to_dict()
+            if not item.get("id"):
+                item["id"] = d.id
+            notifications.append(item)
+            
+        notifications.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+        return notifications[:limit]
+    except Exception as e:
+        print(f"Error fetching notifications: {e}")
+        return []
+
+@app.put("/api/notifications/{notification_id}/read")
+def mark_notification_read(notification_id: str):
+    """Marks a single notification as read."""
+    try:
+        doc_ref = db.collection("notifications").document(notification_id)
+        doc = doc_ref.get()
+        if doc.exists:
+            doc_ref.update({"is_read": True})
+        return {"success": True, "id": notification_id}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.post("/api/notifications/mark-all-read")
+def mark_all_notifications_read():
+    """Marks all notifications as read."""
+    try:
+        col = db.collection("notifications")
+        docs = col.stream()
+        for d in docs:
+            data = d.to_dict()
+            if not data.get("is_read"):
+                col.document(d.id).update({"is_read": True})
+        return {"success": True}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 @app.delete("/api/schools/clear-all")
 def clear_all_schools(role: str = Depends(require_admin)):
