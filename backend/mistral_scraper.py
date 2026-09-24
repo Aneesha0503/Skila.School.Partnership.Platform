@@ -443,4 +443,96 @@ def generate_contextual_email_ai(school_data: Dict[str, Any]) -> Dict[str, str]:
         "recipient_name": principal or school_name
     }
 
+def generate_whatsapp_pitch_ai(school_data: dict) -> dict:
+    """
+    Uses Mistral AI to draft a punchy, high-conversion WhatsApp partnership message
+    customized for Indian school leadership with NEP 2020 AI & STEM highlights.
+    """
+    info = school_data.get("info", {})
+    sales = school_data.get("sales", {})
+    hierarchy = school_data.get("hierarchy", {})
+    tech = school_data.get("technology", {})
+
+    school_name = info.get("school_name") or "School"
+    principal = info.get("principal_name") or info.get("correspondent_name") or sales.get("decision_maker") or ""
+    phone = info.get("mobile") or info.get("phone") or sales.get("decision_maker_contact") or ""
+    board = info.get("board") or "CBSE"
+    strength = info.get("student_strength") or "1,000+"
+    location = [hierarchy.get("mandal"), hierarchy.get("district"), hierarchy.get("state")]
+    location = ", ".join([l for l in location if l])
+
+    # Clean phone number for WhatsApp (+91 format)
+    clean_phone = "".join(filter(str.isdigit, str(phone)))
+    if clean_phone.startswith("0"):
+        clean_phone = clean_phone[1:]
+    if len(clean_phone) == 10:
+        clean_phone = f"91{clean_phone}"
+
+    sys_prompt = (
+        "You are an executive EdTech Partnership Director at Skila AI. "
+        "Draft a punchy, highly engaging, professional WhatsApp outreach message to a School Principal or Correspondent in India. "
+        "Use WhatsApp formatting: *bold* for key terms, clean emojis (🚀, 🤖, 📚, 🎯), and brief bullet points. "
+        "Focus on NEP 2020 alignment, turnkey AI & Coding curriculum, Atal Tinkering Labs (ATL), and scheduling a 15-minute demo. "
+        "Keep it under 150 words so it fits comfortably on mobile screens. "
+        "Return a JSON object with keys:\n"
+        "- 'message': Full formatted WhatsApp message string with *bold* text and emojis\n"
+        "- 'recipient_name': String principal or correspondent name\n"
+        "- 'recipient_phone': String phone number with country code\n"
+        "- 'var1': Short principal name\n"
+        "- 'var2': School name\n"
+        "- 'var3': Board name\n"
+    )
+
+    user_prompt = (
+        f"School Name: {school_name}\n"
+        f"Principal: {principal}\n"
+        f"Phone: {clean_phone}\n"
+        f"Board: {board}\n"
+        f"Strength: {strength}\n"
+        f"Location: {location}\n"
+        f"Technology Context: ATL Lab={tech.get('atl_lab')}, Coding={tech.get('coding_used')}, Robotics={tech.get('robotics_used')}"
+    )
+
+    messages = [
+        {"role": "system", "content": sys_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+
+    try:
+        res = call_mistral(messages, json_mode=True)
+        if isinstance(res, dict) and "message" in res:
+            res["recipient_phone"] = res.get("recipient_phone") or clean_phone
+            res["recipient_name"] = res.get("recipient_name") or principal
+            res["var1"] = principal or "Principal"
+            res["var2"] = school_name
+            res["var3"] = board
+            return res
+    except Exception as e:
+        print(f"[Generate WhatsApp AI Error] {e}")
+
+    # Fallback high-conversion WhatsApp pitch
+    salutation = f"Respected *{principal}*," if principal and principal != "—" else "Respected *Principal*,"
+    default_msg = (
+        f"{salutation}\n\n"
+        f"Greetings from *Skila AI Educational Technologies* 🚀\n\n"
+        f"In alignment with *NEP 2020 guidelines*, we partner with leading *{board}* institutions to empower students with future-ready AI and STEM literacy.\n\n"
+        f"We would love to introduce our *Turnkey Innovation Curriculum* for *{school_name}*:\n\n"
+        f"🤖 *Hands-on AI, Robotics & Coding* (Grades 1–12 mapped to {board})\n"
+        f"🔬 *Atal Tinkering Lab (ATL)* setup & certified mentor support\n"
+        f"📊 *Integrated Student Progress Analytics* for school leadership\n\n"
+        f"Could we schedule a quick *15-minute virtual briefing* or on-campus walkthrough for your leadership team this week?\n\n"
+        f"Warm regards,\n"
+        f"*Skila AI Strategic Partnerships*\n"
+        f"🌐 https://skila.ai"
+    )
+
+    return {
+        "message": default_msg,
+        "recipient_phone": clean_phone,
+        "recipient_name": principal or "Principal",
+        "var1": principal or "Principal",
+        "var2": school_name,
+        "var3": board
+    }
+
 scrape_schools_ai = scrape_district_schools_ai

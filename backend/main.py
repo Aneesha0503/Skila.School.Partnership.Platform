@@ -654,7 +654,10 @@ def export_csv(state: Optional[str] = None, district: Optional[str] = None):
         headers={"Content-Disposition": "attachment; filename=skila_schools.csv"}
     )
 
-from mistral_scraper import scrape_schools_ai, scrape_district_schools_ai, scrape_single_school_details_ai, enrich_school_with_ai, generate_contextual_email_ai
+from mistral_scraper import (
+    scrape_schools_ai, scrape_district_schools_ai, scrape_single_school_details_ai, 
+    enrich_school_with_ai, generate_contextual_email_ai, generate_whatsapp_pitch_ai
+)
 
 class AIScrapeRequest(BaseModel):
     query: Optional[str] = None
@@ -1052,6 +1055,204 @@ def api_log_school_email(school_id: str, req: SendEmailRequest):
     return {
         "status": "success",
         "message": f"Recorded outreach to {recipient} in CRM as Contacted!",
+        "school": school_data
+    }
+
+# ==============================================================================
+# WHATSAPP OUTREACH INTEGRATION (MSG91 + WHATSAPP WEB)
+# ==============================================================================
+
+class SendWhatsAppRequest(BaseModel):
+    recipient_phone: str
+    recipient_name: Optional[str] = ""
+    message: str
+    var1: Optional[str] = ""
+    var2: Optional[str] = ""
+    var3: Optional[str] = ""
+
+@app.get("/api/whatsapp-config")
+def api_get_whatsapp_config():
+    """
+    Returns WhatsApp sender status and integrated phone number.
+    """
+    authkey = os.getenv("MSG91_AUTHKEY")
+    integrated_number = os.getenv("MSG91_INTEGRATED_NUMBER", "919390875225")
+    template_name = os.getenv("MSG91_WHATSAPP_TEMPLATE", "skila_school_partnership")
+    is_configured = bool(authkey and integrated_number)
+    return {
+        "is_configured": is_configured,
+        "integrated_number": integrated_number,
+        "template_name": template_name,
+        "sender_name": "Skila AI",
+        "provider": "MSG91"
+    }
+
+@app.post("/api/schools/{school_id}/generate-whatsapp")
+def api_generate_school_whatsapp(school_id: str):
+    """
+    Uses Mistral AI to draft a tailored, high-conversion WhatsApp pitch
+    for this specific school leadership.
+    """
+    doc_ref = db.collection("schools").document(school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+    school_data = doc.to_dict()
+    school_data["id"] = school_id
+    
+    return generate_whatsapp_pitch_ai(school_data)
+
+@app.post("/api/schools/{school_id}/send-whatsapp")
+def api_send_school_whatsapp(school_id: str, req: SendWhatsAppRequest):
+    """
+    Dispatches automated WhatsApp outreach to the school leadership via MSG91 WhatsApp API.
+    """
+    doc_ref = db.collection("schools").document(school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+    school_data = doc.to_dict()
+    school_data["id"] = school_id
+
+    authkey = os.getenv("MSG91_AUTHKEY")
+    integrated_number = os.getenv("MSG91_INTEGRATED_NUMBER", "919390875225")
+    template_name = os.getenv("MSG91_WHATSAPP_TEMPLATE", "skila_school_partnership")
+
+    raw_phone = "".join(filter(str.isdigit, req.recipient_phone))
+    if raw_phone.startswith("0"):
+        raw_phone = raw_phone[1:]
+    if len(raw_phone) == 10:
+        raw_phone = f"91{raw_phone}"
+
+    if not raw_phone:
+        raise HTTPException(status_code=400, detail="Valid recipient phone number is required")
+
+    if not authkey:
+        raise HTTPException(status_code=400, detail="MSG91 AuthKey is not configured in backend/.env")
+
+    # Call MSG91 WhatsApp Outbound API
+    url = "https://control.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/"
+    payload = {
+        "integrated_number": integrated_number,
+        "content_type": "template",
+        "payload": {
+            "messaging_product": "whatsapp",
+            "type": "template",
+            "template": {
+                "name": template_name,
+                "language": {
+                    "code": "en",
+                    "policy": "deterministic"
+                },
+                "to_and_components": [
+                    {
+                        "to": [raw_phone],
+                        "components": {
+                            "body_1": {"type": "text", "value": req.var1 or req.recipient_name or "Principal"},
+                            "body_2": {"type": "text", "value": req.var2 or school_data.get("info", {}).get("school_name", "School")},
+                            "body_3": {"type": "text", "value": req.var3 or school_data.get("info", {}).get("board", "CBSE")}
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    headers = {
+        "authkey": authkey,
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    }
+
+    try:
+        import urllib.request
+        data_bytes = json.dumps(payload).encode("utf-8")
+        request = urllib.request.Request(url, data=data_bytes, headers=headers, method="POST")
+        with urllib.request.urlopen(request, timeout=12) as response:
+            res_body = response.read().decode("utf-8")
+            res_json = json.loads(res_body) if res_body else {}
+    except urllib.error.HTTPError as e:
+        err_msg = e.read().decode("utf-8")
+        if "418" in err_msg:
+            raise HTTPException(
+                status_code=403,
+                detail="MSG91 IP Restriction (Code 418): Please disable 'API Security / IP Whitelist' on your MSG91 Authkey or whitelist IP 4.240.107.236 in your MSG91 panel."
+            )
+        raise HTTPException(status_code=e.code, detail=f"MSG91 API Error: {err_msg}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Network error communicating with MSG91: {str(e)}")
+
+    # Update CRM pipeline
+    sales = school_data.setdefault("sales", {})
+    sales["lead_status"] = "Contacted"
+    now_utc = datetime.now(timezone.utc)
+    today_str = now_utc.strftime("%Y-%m-%d")
+    timestamp_str = now_utc.strftime("%Y-%m-%d %H:%M UTC")
+    sales["last_contact_date"] = today_str
+
+    current_remarks = sales.get("remarks", "")
+    log_entry = f"[WhatsApp Sent via MSG91 from {integrated_number} to +{raw_phone} on {timestamp_str}]: Template {template_name}"
+    sales["remarks"] = f"{current_remarks}\n\n{log_entry}".strip()
+
+    sent_list = sales.setdefault("sent_whatsapp", [])
+    sent_list.append({
+        "timestamp": timestamp_str,
+        "sender_phone": integrated_number,
+        "recipient_phone": raw_phone,
+        "recipient_name": req.recipient_name,
+        "template": template_name,
+        "status": "dispatched"
+    })
+
+    school_data["updated_at"] = now_utc.isoformat()
+    doc_ref.set(school_data)
+
+    return {
+        "status": "success",
+        "message": f"WhatsApp pitch successfully dispatched to +{raw_phone} via MSG91!",
+        "response": res_json,
+        "school": school_data
+    }
+
+@app.post("/api/schools/{school_id}/log-whatsapp")
+def api_log_school_whatsapp(school_id: str, req: SendWhatsAppRequest):
+    """
+    Logs WhatsApp outreach dispatched via WhatsApp Web / WhatsApp Desktop app
+    into the CRM pipeline.
+    """
+    doc_ref = db.collection("schools").document(school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+    school_data = doc.to_dict()
+    school_data["id"] = school_id
+
+    raw_phone = "".join(filter(str.isdigit, req.recipient_phone))
+    sales = school_data.setdefault("sales", {})
+    sales["lead_status"] = "Contacted"
+    now_utc = datetime.now(timezone.utc)
+    today_str = now_utc.strftime("%Y-%m-%d")
+    timestamp_str = now_utc.strftime("%Y-%m-%d %H:%M UTC")
+    sales["last_contact_date"] = today_str
+
+    current_remarks = sales.get("remarks", "")
+    log_entry = f"[WhatsApp Pitch Dispatched via WhatsApp Web to +{raw_phone} on {timestamp_str}]"
+    sales["remarks"] = f"{current_remarks}\n\n{log_entry}".strip()
+
+    sent_list = sales.setdefault("sent_whatsapp", [])
+    sent_list.append({
+        "timestamp": timestamp_str,
+        "recipient_phone": raw_phone,
+        "recipient_name": req.recipient_name,
+        "method": "whatsapp_web"
+    })
+
+    school_data["updated_at"] = now_utc.isoformat()
+    doc_ref.set(school_data)
+
+    return {
+        "status": "success",
+        "message": f"Recorded WhatsApp outreach to +{raw_phone} in CRM as Contacted!",
         "school": school_data
     }
 

@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Building2, Cpu, DollarSign, MapPin, Phone, Mail, 
   Globe, User, CheckCircle2, XCircle, Edit3, Save, Sparkles, ExternalLink,
-  Play, RefreshCw, Zap, Layers, Lock, ShieldCheck, UserCheck, ArrowLeft, Send
+  Play, RefreshCw, Zap, Layers, Lock, ShieldCheck, UserCheck, ArrowLeft, Send, MessageSquare
 } from 'lucide-react';
 import SendEmailModal from './SendEmailModal';
+import SendWhatsAppModal from './SendWhatsAppModal';
 
 export default function SchoolDetailModal({ 
   school, 
@@ -43,6 +44,7 @@ export default function SchoolDetailModal({
   const [isRunningDetails, setIsRunningDetails] = useState(false);
   const [runDetailsError, setRunDetailsError] = useState('');
   const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
 
   const scrollContainerRef = useRef(null);
 
@@ -285,6 +287,15 @@ export default function SchoolDetailModal({
               </button>
 
               <button
+                onClick={() => setWhatsappModalOpen(true)}
+                title="Send AI-formatted WhatsApp partnership pitch to school leadership"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">WhatsApp</span>
+              </button>
+
+              <button
                 onClick={onClose}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-semibold text-xs transition cursor-pointer shadow-xs group"
                 title="Return to School Directory"
@@ -494,11 +505,31 @@ export default function SchoolDetailModal({
                         <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Correspondent Name</span>
                         <span className="font-bold text-slate-900 dark:text-white text-sm">{info?.correspondent_name || '—'}</span>
                       </div>
-                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Official Mobile</span>
-                        <a href={`tel:${info?.mobile}`} className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1.5 text-sm">
-                          <Phone className="w-3.5 h-3.5" /> {info?.mobile || '—'}
-                        </a>
+                      <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Official Mobile</span>
+                            <button
+                              type="button"
+                              onClick={() => setWhatsappModalOpen(true)}
+                              className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:underline cursor-pointer"
+                              title="Send WhatsApp pitch"
+                            >
+                              <MessageSquare className="w-2.5 h-2.5" /> WhatsApp
+                            </button>
+                          </div>
+                          <a href={`tel:${info?.mobile}`} className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1.5 text-sm">
+                            <Phone className="w-3.5 h-3.5" /> {info?.mobile || '—'}
+                          </a>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setWhatsappModalOpen(true)}
+                          className="mt-2.5 w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs transition cursor-pointer"
+                          title="Open WhatsApp pitch composer"
+                        >
+                          <MessageSquare className="w-3 h-3" /> WhatsApp Principal
+                        </button>
                       </div>
                       <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
                         <div>
@@ -806,6 +837,15 @@ export default function SchoolDetailModal({
                       <span>Send Proposal Mail</span>
                     </button>
 
+                    <button
+                      onClick={() => setWhatsappModalOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition cursor-pointer"
+                      title="Send WhatsApp pitch to school leadership"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>WhatsApp Pitch</span>
+                    </button>
+
                     <div className="flex items-center gap-1.5 bg-indigo-50/80 dark:bg-indigo-950/50 px-2.5 py-1 rounded-xl border border-indigo-200 dark:border-indigo-800">
                       <span className="text-[11px] font-bold text-indigo-900 dark:text-indigo-200">Status:</span>
                       <select
@@ -1042,6 +1082,14 @@ export default function SchoolDetailModal({
         school={school}
         isOpen={emailModalOpen}
         onClose={() => setEmailModalOpen(false)}
+        onUpdateSchool={onUpdateSchool}
+      />
+
+      {/* Send Contextual WhatsApp Modal */}
+      <SendWhatsAppModal
+        school={school}
+        isOpen={whatsappModalOpen}
+        onClose={() => setWhatsappModalOpen(false)}
         onUpdateSchool={onUpdateSchool}
       />
     </div>
