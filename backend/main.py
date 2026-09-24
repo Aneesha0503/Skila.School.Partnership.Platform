@@ -667,7 +667,7 @@ class AISaveScrapedRequest(BaseModel):
 @app.post("/api/ai/scrape")
 def api_scrape_schools(req: AIScrapeRequest):
     """
-    Triggers Mistral AI (ministral-14b-latest) to research, extract, and scrape
+    Triggers Skila AI Intelligence Engine to research, extract, and scrape
     schools matching the region or search prompt.
     """
     scraped = scrape_schools_ai(
@@ -704,7 +704,7 @@ def api_save_scraped_schools(req: AISaveScrapedRequest):
 @app.post("/api/ai/enrich/{school_id}")
 def api_enrich_school(school_id: str):
     """
-    Uses Mistral AI to evaluate an existing school and enrich its tech recommendations
+    Uses Skila AI to evaluate an existing school and enrich its tech recommendations
     and sales strategy pitch.
     """
     doc_ref = db.collection("schools").document(school_id)
@@ -718,7 +718,7 @@ def api_enrich_school(school_id: str):
     
     if "remarks" in enriched and enriched["remarks"]:
         current_remarks = school_data.get("sales", {}).get("remarks", "")
-        updated_remarks = f"{current_remarks}\n[Mistral AI Analysis]: {enriched['remarks']}".strip()
+        updated_remarks = f"{current_remarks}\n[Skila AI Analysis]: {enriched['remarks']}".strip()
         school_data["sales"]["remarks"] = updated_remarks
         if "skila_ai_potential" in enriched:
             school_data["sales"]["skila_ai_potential"] = enriched["skila_ai_potential"]
@@ -792,7 +792,7 @@ def api_run_district(req: RunDistrictRequest, role: str = Depends(require_admin)
         return {
             "schools": all_district_schools,
             "count": len(all_district_schools),
-            "source": "mistral_ai",
+            "source": "skila_ai",
             "state": state_clean,
             "district": district_clean,
             "scraped_new": len(scraped)
@@ -818,7 +818,7 @@ def api_run_school_details(school_id: str, role: str = Depends(require_admin)):
     Step 2: On-demand single school intelligence runner.
     Restricted to Administrator role.
     When user approves or selects a specific school from the district list,
-    runs Mistral AI specifically for that school to populate all 16 Info,
+    runs Skila AI specifically for that school to populate all 16 Info,
     17 Technology, and 16 Sales CRM fields.
     """
     doc_ref = db.collection("schools").document(school_id)

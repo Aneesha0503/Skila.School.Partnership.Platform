@@ -4,7 +4,7 @@ import {
   Check, CheckCircle2, RefreshCw, Plus, ArrowRight, ShieldCheck 
 } from 'lucide-react';
 
-export default function MistralScraperModal({ onClose, onImportSuccess }) {
+export default function SkilaScraperModal({ onClose, onImportSuccess }) {
   const [query, setQuery] = useState('');
   const [state, setState] = useState('Telangana');
   const [district, setDistrict] = useState('Hyderabad');
@@ -45,11 +45,11 @@ export default function MistralScraperModal({ onClose, onImportSuccess }) {
         const allIds = new Set((data.schools || []).map(s => s.id));
         setSelectedIds(allIds);
       } else {
-        alert('Failed to scrape schools with Mistral AI. Please try again.');
+        alert('Failed to scrape schools with Skila AI. Please try again.');
       }
     } catch (err) {
       console.error('Scraping error:', err);
-      alert('Network error while calling Mistral AI.');
+      alert('Network error while calling Skila AI.');
     } finally {
       setIsScraping(false);
     }
@@ -104,10 +104,10 @@ export default function MistralScraperModal({ onClose, onImportSuccess }) {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-white tracking-tight">
-                  Mistral AI School Scraper & Intelligence
+                  Skila AI School Scraper & Intelligence
                 </h2>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300 border border-indigo-500/40">
-                  ministral-14b
+                  Skila AI Engine
                 </span>
               </div>
               <p className="text-xs text-slate-300">
@@ -189,7 +189,7 @@ export default function MistralScraperModal({ onClose, onImportSuccess }) {
                 {isScraping ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Mistral AI Scraping...</span>
+                    <span>Skila AI Scraping...</span>
                   </>
                 ) : (
                   <>
@@ -210,7 +210,7 @@ export default function MistralScraperModal({ onClose, onImportSuccess }) {
                 <Bot className="w-8 h-8" />
               </div>
               <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 mb-1">
-                Mistral 14B is Researching & Scrapping School Profiles...
+                Skila AI is Researching & Scraping School Profiles...
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md">
                 Querying educational directories, mapping administrative boundaries, evaluating tech adoption, and calculating Skila AI opportunity metrics.
@@ -319,7 +319,7 @@ export default function MistralScraperModal({ onClose, onImportSuccess }) {
             </span>
           ) : (
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              Powered by Mistral AI (<code>ministral-14b-latest</code>)
+              Powered by Skila AI Intelligence Engine
             </span>
           )}
 

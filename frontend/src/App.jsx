@@ -7,7 +7,7 @@ import SchoolCard from './components/SchoolCard';
 import SchoolTable from './components/SchoolTable';
 import SchoolDetailModal from './components/SchoolDetailModal';
 import AddEditSchoolModal from './components/AddEditSchoolModal';
-import MistralScraperModal from './components/MistralScraperModal';
+import SkilaScraperModal from './components/SkilaScraperModal';
 import DistrictRunner from './components/DistrictRunner';
 import IndiaMapHero from './components/IndiaMapHero';
 import AccessControlModal from './components/AccessControlModal';
@@ -19,7 +19,7 @@ export default function App() {
   const [statusInfo, setStatusInfo] = useState(null);
   const [hierarchyData, setHierarchyData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [mistralModalOpen, setMistralModalOpen] = useState(false);
+  const [skilaScraperModalOpen, setSkilaScraperModalOpen] = useState(false);
 
   // Role-Based Access Control State (Admin vs Agent)
   const [userRole, setUserRole] = useState(() => {
@@ -443,10 +443,10 @@ export default function App() {
         />
       )}
 
-      {/* Mistral AI Scraper Modal */}
-      {mistralModalOpen && (
-        <MistralScraperModal
-          onClose={() => setMistralModalOpen(false)}
+      {/* Skila AI Scraper Modal */}
+      {skilaScraperModalOpen && (
+        <SkilaScraperModal
+          onClose={() => setSkilaScraperModalOpen(false)}
           onImportSuccess={() => {
             fetchSchools();
             fetchStats();

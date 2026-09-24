@@ -180,7 +180,7 @@ def scrape_district_batch(
                 },
                 "created_at": now,
                 "updated_at": now,
-                "scraped_by": "Mistral AI (ministral-14b-latest)"
+                "scraped_by": "Skila AI Engine"
             }
             school_record["tier"] = get_school_tier(school_record)
             cleaned.append(school_record)
@@ -226,7 +226,7 @@ def scrape_single_school_details_ai(school_data: Dict[str, Any]) -> Dict[str, An
     """
     Step 2: Deep-dive single school intelligence scraper.
     When user approves or selects a specific school from the list,
-    runs Mistral AI specifically for THAT school to populate all 16 Info,
+    runs Skila AI specifically for THAT school to populate all 16 Info,
     17 Technology, and 16 Sales CRM fields.
     """
     school_name = school_data.get("info", {}).get("school_name", "")
@@ -331,7 +331,7 @@ def scrape_single_school_details_ai(school_data: Dict[str, Any]) -> Dict[str, An
 
 def enrich_school_with_ai(school_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Uses Mistral AI to evaluate an existing school and enrich its tech usage
+    Uses Skila AI to evaluate an existing school and enrich its tech usage
     and sales pitch remarks for Skila AI.
     """
     sys_prompt = (

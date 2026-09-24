@@ -283,7 +283,7 @@ export default function SchoolDetailModal({
 
               <p className="text-xs text-slate-600 dark:text-slate-300 mb-5 leading-relaxed">
                 This school was discovered during your district run ({info?.board}, ~{info?.student_strength} students). 
-                Click below to trigger <strong>Mistral 14B</strong> to research and populate all <strong>16 School Information, 17 Technology Usage, and 16 Sales CRM fields</strong> specifically for this school.
+                Click below to trigger <strong>Skila AI Engine</strong> to research and populate all <strong>16 School Information, 17 Technology Usage, and 16 Sales CRM fields</strong> specifically for this school.
               </p>
 
               {runDetailsError && (
@@ -302,7 +302,7 @@ export default function SchoolDetailModal({
                   {isRunningDetails ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
-                      <span>Mistral 14B is Scraping 49 Fields... (~8-10s)</span>
+                      <span>Skila AI is Extracting 49 Fields... (~8-10s)</span>
                     </>
                   ) : (
                     <>
@@ -596,7 +596,7 @@ export default function SchoolDetailModal({
                       onClick={handleAiEnrich}
                       disabled={isEnriching}
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold text-[11px] shadow-2xs transition disabled:opacity-50"
-                      title="Analyze with Mistral 14B"
+                      title="Analyze with Skila AI"
                     >
                       <Sparkles className="w-3 h-3 text-amber-300" />
                       {isEnriching ? 'AI Analyzing...' : 'AI Pitch & Tech Insights'}
@@ -622,7 +622,7 @@ export default function SchoolDetailModal({
                 {enrichSuccess && (
                   <div className="mb-4 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-medium flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Mistral AI analysis completed! Strategy notes and AI potential updated below.</span>
+                    <span>Skila AI analysis completed! Strategy notes and AI potential updated below.</span>
                   </div>
                 )}
 

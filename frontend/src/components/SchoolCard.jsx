@@ -151,7 +151,7 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
         </div>
       ) : (
         <div className="mb-3 p-2 rounded-lg bg-amber-50/70 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 flex items-center justify-between gap-2">
-          <span>Click to run Mistral AI 49-field profile</span>
+          <span>Click to run Skila AI 49-field profile</span>
           {userRole === 'admin' ? (
             <button
               type="button"

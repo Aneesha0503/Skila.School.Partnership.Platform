@@ -40,7 +40,7 @@ export default function AccessControlModal({ isOpen, onClose, currentRole, onSel
     },
     {
       feature: 'District AI Discovery Scraper',
-      description: 'Trigger Mistral 14B multi-mandal crawler (25, 50, 100+ schools)',
+      description: 'Trigger Skila AI multi-mandal crawler (25, 50, 100+ schools)',
       admin: true,
       agent: false,
       category: 'AI Automation'
