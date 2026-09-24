@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Building2, Cpu, DollarSign, MapPin, Phone, Mail, 
   Globe, User, CheckCircle2, XCircle, Edit3, Save, Sparkles, ExternalLink,
-  Play, RefreshCw, Zap, Layers, Lock, ShieldCheck, UserCheck, ArrowLeft, Send, MessageSquare
+  Play, RefreshCw, Zap, Layers, Lock, ShieldCheck, UserCheck, ArrowLeft, Send, MessageSquare, AlertCircle
 } from 'lucide-react';
 import SendEmailModal from './SendEmailModal';
 import SendWhatsAppModal from './SendWhatsAppModal';
@@ -39,6 +39,7 @@ export default function SchoolDetailModal({
   const [remarks, setRemarks] = useState(() => formatRemarks(school?.sales?.remarks));
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [isEnriching, setIsEnriching] = useState(false);
   const [enrichSuccess, setEnrichSuccess] = useState(false);
   const [isRunningDetails, setIsRunningDetails] = useState(false);
@@ -47,6 +48,19 @@ export default function SchoolDetailModal({
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
 
   const scrollContainerRef = useRef(null);
+
+  // Synchronize local CRM form state whenever school updates or changes
+  useEffect(() => {
+    if (school?.sales) {
+      setLeadStatus(school.sales.lead_status || 'New');
+      setInterestLevel(school.sales.interest_level || 'Medium');
+      setNextFollowUpDate(school.sales.next_follow_up_date || '');
+      setSalesOwner(school.sales.sales_owner || '');
+      setRemarks(formatRemarks(school.sales.remarks));
+      setSaveError('');
+      setSaveSuccess(false);
+    }
+  }, [school?.id]);
 
   // Reset scroll to top whenever switching between tabs
   useEffect(() => {
@@ -125,8 +139,21 @@ export default function SchoolDetailModal({
     }
   };
 
+  const parseErrorMessage = (err, fallback = 'Failed to save CRM updates.') => {
+    if (!err) return fallback;
+    if (typeof err === 'string') return err;
+    if (typeof err.detail === 'string') return err.detail;
+    if (Array.isArray(err.detail)) {
+      return err.detail.map(d => `${d.loc ? d.loc.slice(-1)[0] : 'field'}: ${d.msg}`).join(', ');
+    }
+    if (err.message && typeof err.message === 'string') return err.message;
+    return fallback;
+  };
+
   const handleQuickSave = async () => {
     setIsSaving(true);
+    setSaveError('');
+    setSaveSuccess(false);
     try {
       const updatedPayload = {
         hierarchy: school.hierarchy,
@@ -155,13 +182,14 @@ export default function SchoolDetailModal({
         const saved = await res.json();
         onUpdateSchool(saved);
         setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
+        setTimeout(() => setSaveSuccess(false), 4000);
       } else {
         const err = await res.json().catch(() => ({}));
-        alert(err.detail || 'Failed to save CRM updates.');
+        setSaveError(parseErrorMessage(err));
       }
     } catch (err) {
       console.error('Error saving sales update:', err);
+      setSaveError(err.message || 'Network error while saving CRM updates.');
     } finally {
       setIsSaving(false);
     }
@@ -1053,6 +1081,22 @@ export default function SchoolDetailModal({
                   placeholder="Record meeting outcomes, principal/correspondent feedback, budget constraints, next steps..."
                   className="w-full text-xs p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition mb-4 font-mono text-[11px] leading-relaxed"
                 />
+
+                {saveError && (
+                  <div className="mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-medium flex items-center justify-between gap-2 animate-in fade-in duration-200">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                      <span>{saveError}</span>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => setSaveError('')}
+                      className="text-rose-500 hover:text-rose-700 dark:hover:text-rose-200 text-xs font-bold cursor-pointer px-2 py-0.5"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between">
                   {saveSuccess && (

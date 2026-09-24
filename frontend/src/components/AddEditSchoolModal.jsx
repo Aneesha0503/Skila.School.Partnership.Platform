@@ -112,8 +112,16 @@ export default function AddEditSchoolModal({ initialData, onClose, onSaveSuccess
         onSaveSuccess(saved);
         onClose();
       } else {
-        const err = await res.json();
-        setErrorMsg(err.detail || 'Failed to save school.');
+        const err = await res.json().catch(() => ({}));
+        let msg = 'Failed to save school.';
+        if (typeof err.detail === 'string') {
+          msg = err.detail;
+        } else if (Array.isArray(err.detail)) {
+          msg = err.detail.map(d => `${d.loc ? d.loc.slice(-1)[0] : 'field'}: ${d.msg}`).join(', ');
+        } else if (err.message) {
+          msg = err.message;
+        }
+        setErrorMsg(msg);
       }
     } catch (err) {
       setErrorMsg('Network error while saving.');

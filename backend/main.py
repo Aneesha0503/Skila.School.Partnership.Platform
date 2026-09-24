@@ -250,10 +250,10 @@ def create_school(payload: SchoolCreateUpdate, role: str = Depends(require_admin
     now = datetime.now(timezone.utc).isoformat()
     record = {
         "id": school_id,
-        "hierarchy": payload.hierarchy.model_dump(),
-        "info": payload.info.model_dump(),
-        "technology": payload.technology.model_dump(),
-        "sales": payload.sales.model_dump(),
+        "hierarchy": payload.hierarchy.model_dump(exclude_unset=True) if payload.hierarchy else {},
+        "info": payload.info.model_dump(exclude_unset=True) if payload.info else {},
+        "technology": payload.technology.model_dump(exclude_unset=True) if payload.technology else {},
+        "sales": payload.sales.model_dump(exclude_unset=True) if payload.sales else {},
         "created_at": now,
         "updated_at": now,
         "created_by_role": role
@@ -276,14 +276,23 @@ def update_school(school_id: str, payload: SchoolCreateUpdate, role: str = Depen
     existing = doc.to_dict()
     now = datetime.now(timezone.utc).isoformat()
     
+    # Safely extract updates without overwriting existing nested data (e.g. sent_emails/sent_whatsapp)
+    sales_update = payload.sales.model_dump(exclude_unset=True) if payload.sales else {}
+    tech_update = payload.technology.model_dump(exclude_unset=True) if payload.technology else {}
+    hierarchy_update = payload.hierarchy.model_dump(exclude_unset=True) if payload.hierarchy else {}
+    info_update = payload.info.model_dump(exclude_unset=True) if payload.info else {}
+
+    merged_sales = {**existing.get("sales", {}), **sales_update}
+    merged_tech = {**existing.get("technology", {}), **tech_update}
+
     if role == "agent":
         # Agent level: allow updating sales milestones, notes, technology observations,
         # but preserve official administrative hierarchy and verified UDISE code
         record = {
             **existing,
             "id": school_id,
-            "sales": payload.sales.model_dump(),
-            "technology": payload.technology.model_dump(),
+            "sales": merged_sales,
+            "technology": merged_tech,
             "updated_at": now,
             "last_updated_by_role": "agent"
         }
@@ -292,10 +301,10 @@ def update_school(school_id: str, payload: SchoolCreateUpdate, role: str = Depen
         record = {
             **existing,
             "id": school_id,
-            "hierarchy": payload.hierarchy.model_dump(),
-            "info": payload.info.model_dump(),
-            "technology": payload.technology.model_dump(),
-            "sales": payload.sales.model_dump(),
+            "hierarchy": {**existing.get("hierarchy", {}), **hierarchy_update} if hierarchy_update else existing.get("hierarchy", {}),
+            "info": {**existing.get("info", {}), **info_update} if info_update else existing.get("info", {}),
+            "technology": merged_tech,
+            "sales": merged_sales,
             "created_at": existing.get("created_at", now),
             "updated_at": now,
             "last_updated_by_role": "admin"
