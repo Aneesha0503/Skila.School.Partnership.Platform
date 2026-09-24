@@ -1117,7 +1117,8 @@ def api_send_school_whatsapp(school_id: str, req: SendWhatsAppRequest):
 
     authkey = os.getenv("MSG91_AUTHKEY")
     integrated_number = os.getenv("MSG91_INTEGRATED_NUMBER", "919390875225")
-    template_name = os.getenv("MSG91_WHATSAPP_TEMPLATE", "skila_school_partnership")
+    template_name = os.getenv("MSG91_WHATSAPP_TEMPLATE", "school_notice_general")
+    namespace = os.getenv("MSG91_WHATSAPP_NAMESPACE", "da3632e0_cc65_4531_af19_8f0e0c271485")
 
     raw_phone = "".join(filter(str.isdigit, req.recipient_phone))
     if raw_phone.startswith("0"):
@@ -1142,6 +1143,7 @@ def api_send_school_whatsapp(school_id: str, req: SendWhatsAppRequest):
             "type": "template",
             "template": {
                 "name": template_name,
+                "namespace": namespace,
                 "language": {
                     "code": "en",
                     "policy": "deterministic"
