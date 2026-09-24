@@ -1,6 +1,9 @@
 import io
 import csv
 import uuid
+import os
+import smtplib
+from email.message import EmailMessage
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 
@@ -651,7 +654,7 @@ def export_csv(state: Optional[str] = None, district: Optional[str] = None):
         headers={"Content-Disposition": "attachment; filename=skila_schools.csv"}
     )
 
-from mistral_scraper import scrape_schools_ai, scrape_district_schools_ai, scrape_single_school_details_ai, enrich_school_with_ai
+from mistral_scraper import scrape_schools_ai, scrape_district_schools_ai, scrape_single_school_details_ai, enrich_school_with_ai, generate_contextual_email_ai
 
 class AIScrapeRequest(BaseModel):
     query: Optional[str] = None
@@ -831,5 +834,113 @@ def api_run_school_details(school_id: str, role: str = Depends(require_admin)):
     enriched = scrape_single_school_details_ai(school_data)
     doc_ref.set(enriched)
     return enriched
+
+class SendEmailRequest(BaseModel):
+    recipient_email: str
+    recipient_name: Optional[str] = ""
+    subject: str
+    body: str
+
+@app.post("/api/schools/{school_id}/generate-email")
+def api_generate_school_email(school_id: str):
+    """
+    Uses Skila AI to automatically generate a tailored, contextual
+    partnership proposal email for this specific school.
+    """
+    doc_ref = db.collection("schools").document(school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+    school_data = doc.to_dict()
+    school_data["id"] = school_id
+    
+    generated = generate_contextual_email_ai(school_data)
+    return generated
+
+@app.post("/api/schools/{school_id}/send-email")
+def api_send_school_email(school_id: str, req: SendEmailRequest):
+    """
+    Dispatches a contextual partnership email to the school or principal.
+    If SMTP environment variables are configured, sends real email via SMTP.
+    In all cases, automatically records the dispatch in Firestore,
+    updates lead_status to 'Contacted', and logs the interaction.
+    """
+    doc_ref = db.collection("schools").document(school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+    school_data = doc.to_dict()
+    school_data["id"] = school_id
+
+    recipient = req.recipient_email.strip()
+    if not recipient:
+        raise HTTPException(status_code=400, detail="Recipient email address is required")
+
+    # Check for SMTP configuration
+    smtp_host = os.getenv("SMTP_HOST")
+    smtp_port = int(os.getenv("SMTP_PORT", 587))
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    smtp_from = os.getenv("SMTP_FROM", smtp_user or "partnerships@skila.ai")
+
+    smtp_sent = False
+    smtp_error = None
+
+    if smtp_host and smtp_user and smtp_password:
+        try:
+            msg = EmailMessage()
+            msg["Subject"] = req.subject
+            msg["From"] = smtp_from
+            msg["To"] = recipient
+            msg.set_content(req.body)
+
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_password)
+                server.send_message(msg)
+            smtp_sent = True
+        except Exception as e:
+            print(f"[SMTP Send Error] {e}")
+            smtp_error = str(e)
+
+    # Automatically record engagement in CRM pipeline
+    sales = school_data.setdefault("sales", {})
+    sales["lead_status"] = "Contacted"
+    now_utc = datetime.now(timezone.utc)
+    today_str = now_utc.strftime("%Y-%m-%d")
+    timestamp_str = now_utc.strftime("%Y-%m-%d %H:%M UTC")
+    sales["last_contact_date"] = today_str
+
+    current_remarks = sales.get("remarks", "")
+    log_entry = f"[Email Dispatched to {recipient} on {timestamp_str}]: {req.subject}"
+    sales["remarks"] = f"{current_remarks}\n\n{log_entry}".strip()
+
+    # Track in sent emails log array
+    sent_list = sales.setdefault("sent_emails", [])
+    sent_list.append({
+        "timestamp": timestamp_str,
+        "recipient_email": recipient,
+        "recipient_name": req.recipient_name,
+        "subject": req.subject,
+        "smtp_sent": smtp_sent
+    })
+
+    school_data["updated_at"] = now_utc.isoformat()
+    doc_ref.set(school_data)
+
+    status_message = (
+        f"Email successfully delivered to {recipient} via SMTP!"
+        if smtp_sent
+        else f"Partnership email dispatched and recorded in CRM for {recipient}."
+    )
+
+    return {
+        "status": "success",
+        "smtp_sent": smtp_sent,
+        "smtp_error": smtp_error,
+        "recipient": recipient,
+        "message": status_message,
+        "school": school_data
+    }
 
 

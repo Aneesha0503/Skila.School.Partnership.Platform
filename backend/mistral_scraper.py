@@ -355,4 +355,92 @@ def enrich_school_with_ai(school_data: Dict[str, Any]) -> Dict[str, Any]:
         print(f"[Mistral Enrichment Error] {e}")
         return {"error": str(e)}
 
+def generate_contextual_email_ai(school_data: Dict[str, Any]) -> Dict[str, str]:
+    """
+    Uses Skila AI / Mistral to generate a personalized, executive-level
+    partnership proposal email tailored to the school's leadership,
+    board, location, student count, and technology infrastructure.
+    """
+    info = school_data.get("info", {})
+    hierarchy = school_data.get("hierarchy", {})
+    tech = school_data.get("technology", {})
+    sales = school_data.get("sales", {})
+
+    school_name = info.get("school_name") or "School"
+    principal = info.get("principal_name") or "Principal"
+    board = info.get("board") or "Affiliated"
+    strength = info.get("student_strength") or 1000
+    location = f"{hierarchy.get('mandal', '')}, {hierarchy.get('district', '')}, {hierarchy.get('state', '')}".strip(', ')
+    email = info.get("email") or sales.get("decision_maker_contact") or ""
+
+    sys_prompt = (
+        "You are the Strategic Partnerships Director at Skila AI (an enterprise EdTech & AI curriculum platform in India). "
+        "Draft a high-converting, respectful, and highly tailored partnership proposal email to the school principal or correspondent. "
+        "Use real context from their school: their board (CBSE/ICSE/State), student strength, location, and technological alignment. "
+        "Keep the tone professional, prestigious, concise, and focused on student AI/coding literacy aligned with NEP 2020. "
+        "Return a JSON object with keys:\n"
+        "- 'subject': Compelling, clear email subject line\n"
+        "- 'body': Full formatted email body with greeting, 3-4 structured paragraphs, bullet points, call to action, and formal sign-off\n"
+        "- 'recipient_email': String email address\n"
+        "- 'recipient_name': String principal or correspondent name\n"
+    )
+
+    user_prompt = (
+        f"School Name: {school_name}\n"
+        f"Principal Name: {principal}\n"
+        f"Official Email: {email}\n"
+        f"Board: {board}\n"
+        f"Approx Strength: {strength} students\n"
+        f"Location: {location}\n"
+        f"Tech Infrastructure: ERP={tech.get('erp_used')}, Coding={tech.get('coding_used')}, Robotics={tech.get('robotics_used')}, ATL Lab={tech.get('atl_lab')}\n"
+        f"Pitch Context: {sales.get('remarks') or 'Introduce comprehensive AI curriculum and STEM innovation labs.'}"
+    )
+
+    messages = [
+        {"role": "system", "content": sys_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+
+    try:
+        res = call_mistral(messages, json_mode=True)
+        if isinstance(res, dict) and "body" in res and "subject" in res:
+            res["recipient_email"] = res.get("recipient_email") or email
+            res["recipient_name"] = res.get("recipient_name") or principal
+            return res
+    except Exception as e:
+        print(f"[Generate Email AI Error] {e}")
+
+    # Fallback contextual email if Mistral call errors
+    salutation = f"Dear {principal}," if principal and principal != "—" else "Respected Principal,"
+    subject = f"Partnership Proposal: Skila AI & STEM Curriculum Collaboration — {school_name}"
+    
+    strength_formatted = f"{int(strength):,}" if str(strength).isdigit() else str(strength)
+    body = (
+        f"{salutation}\n\n"
+        f"Greetings from Skila AI.\n\n"
+        f"I am writing to formally propose an educational technology partnership with {school_name}. "
+        f"In alignment with NEP 2020 guidelines and the modern technological needs of {board} institutions, "
+        f"Skila AI collaborates with forward-thinking schools to establish comprehensive AI, Coding, and Robotics curricula.\n\n"
+        f"With an esteemed student body of approximately {strength_formatted} students in {location or 'your district'}, "
+        f"{school_name} has a remarkable opportunity to empower learners with future-ready digital competencies.\n\n"
+        f"Our partnership framework includes:\n"
+        f"• Turnkey AI, Robotics & Coding Curriculum for Grades 1–12 (aligned with {board} learning outcomes)\n"
+        f"• Hands-on Innovation Labs with mentor training and project-based STEM modules\n"
+        f"• Executive Analytics & Student Progress Telemetry for institutional leadership\n\n"
+        f"We would welcome the privilege of scheduling a brief 15-minute introductory consultation or an on-campus demonstration "
+        f"for your leadership team this week.\n\n"
+        f"Please let us know your preferred date and time, or feel free to reply directly to this email.\n\n"
+        f"Warm regards,\n\n"
+        f"Strategic Partnerships Team\n"
+        f"Skila AI Educational Technologies\n"
+        f"Email: partnerships@skila.ai | Website: https://skila.ai"
+    )
+
+    return {
+        "subject": subject,
+        "body": body,
+        "recipient_email": email,
+        "recipient_name": principal or school_name
+    }
+
 scrape_schools_ai = scrape_district_schools_ai
