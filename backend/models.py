@@ -78,6 +78,7 @@ class SalesCRM(BaseModel):
 class AgentNoteCreate(BaseModel):
     model_config = ConfigDict(extra="allow", coerce_numbers_to_str=True)
     agent_name: Optional[str] = "Field Agent"
+    bucket: Optional[str] = "Campus Visits & Demos"
     category: Optional[str] = "School Visit"
     urgency: Optional[str] = "Normal"
     text: str
@@ -89,6 +90,7 @@ class AgentNoteModel(BaseModel):
     school_id: Optional[str] = None
     school_name: Optional[str] = None
     agent_name: Optional[str] = "Field Agent"
+    bucket: Optional[str] = "Campus Visits & Demos"
     author_role: Optional[str] = "agent"
     category: Optional[str] = "School Visit"
     urgency: Optional[str] = "Normal"

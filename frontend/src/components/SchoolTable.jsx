@@ -92,7 +92,14 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
                     )}
                   </td>
                   <td className="py-3 px-4">
-                    <div className="font-semibold text-slate-900 dark:text-slate-100">{info?.school_name}</div>
+                    <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 flex-wrap">
+                      <span>{info?.school_name}</span>
+                      {school.agent_notes && school.agent_notes.length > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
+                          💼 {school.agent_notes[0].agent_name || 'Agent'} ({school.agent_notes.length})
+                        </span>
+                      )}
+                    </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                       {info?.school_category} • {info?.management_type}
                     </div>

@@ -156,6 +156,7 @@ export default function SchoolDetailModal({
   // Note composer form state
   const [noteText, setNoteText] = useState('');
   const [noteAgentName, setNoteAgentName] = useState(userRole === 'agent' ? 'Field Agent' : 'Admin');
+  const [noteBucket, setNoteBucket] = useState('Campus Visits & Demos');
   const [noteCategory, setNoteCategory] = useState('School Visit');
   const [noteUrgency, setNoteUrgency] = useState('Normal');
   const [noteActionRequired, setNoteActionRequired] = useState('');
@@ -163,6 +164,38 @@ export default function SchoolDetailModal({
   const [noteSubmitSuccess, setNoteSubmitSuccess] = useState('');
   const [noteSubmitError, setNoteSubmitError] = useState('');
   const noteTextareaRef = useRef(null);
+
+  // Note history filters
+  const [historyAgentFilter, setHistoryAgentFilter] = useState('All');
+  const [historyBucketFilter, setHistoryBucketFilter] = useState('All');
+
+  const uniqueNoteAgents = React.useMemo(() => {
+    const set = new Set();
+    agentNotes.forEach((n) => {
+      if (n.agent_name && n.agent_name.trim()) set.add(n.agent_name.trim());
+    });
+    return Array.from(set).sort();
+  }, [agentNotes]);
+
+  const uniqueNoteBuckets = React.useMemo(() => {
+    const set = new Set();
+    agentNotes.forEach((n) => {
+      if (n.bucket && n.bucket.trim()) set.add(n.bucket.trim());
+    });
+    return Array.from(set).sort();
+  }, [agentNotes]);
+
+  const filteredAgentNotes = React.useMemo(() => {
+    return agentNotes.filter((n) => {
+      if (historyAgentFilter !== 'All' && (n.agent_name || '').toLowerCase() !== historyAgentFilter.toLowerCase()) {
+        return false;
+      }
+      if (historyBucketFilter !== 'All' && (n.bucket || 'Campus Visits & Demos').toLowerCase() !== historyBucketFilter.toLowerCase()) {
+        return false;
+      }
+      return true;
+    });
+  }, [agentNotes, historyAgentFilter, historyBucketFilter]);
 
   const [leadStatus, setLeadStatus] = useState(school?.sales?.lead_status || 'New');
   const [interestLevel, setInterestLevel] = useState(school?.sales?.interest_level || 'Medium');
@@ -201,6 +234,7 @@ export default function SchoolDetailModal({
         },
         body: JSON.stringify({
           agent_name: noteAgentName.trim() || (userRole === 'agent' ? 'Field Agent' : 'Admin'),
+          bucket: noteBucket,
           category: noteCategory,
           urgency: noteUrgency,
           text: noteText.trim(),
@@ -218,7 +252,7 @@ export default function SchoolDetailModal({
         }
         setNoteText('');
         setNoteActionRequired('');
-        setNoteSubmitSuccess('Field note saved successfully! Admin alert has been dispatched.');
+        setNoteSubmitSuccess(`Field update saved to bucket "${noteBucket}" successfully! Admin alert has been dispatched.`);
         setTimeout(() => setNoteSubmitSuccess(''), 5000);
       } else {
         const err = await res.json().catch(() => ({}));
@@ -1349,8 +1383,8 @@ export default function SchoolDetailModal({
                 </div>
 
                 <form onSubmit={handleSaveAndSubmitNote} className="space-y-4">
-                  {/* Meta row: Agent Name, Category, Urgency */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Meta row: Agent Name, Target Bucket, Category, Urgency */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     {/* Agent Name */}
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
@@ -1363,6 +1397,26 @@ export default function SchoolDetailModal({
                         placeholder="Enter agent name..."
                         className="w-full text-xs rounded-xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white p-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                       />
+                    </div>
+
+                    {/* Target Bucket Selector */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 flex items-center justify-between">
+                        <span>Save to Bucket</span>
+                        <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">Bucket</span>
+                      </label>
+                      <select
+                        value={noteBucket}
+                        onChange={(e) => setNoteBucket(e.target.value)}
+                        className="w-full text-xs rounded-xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white p-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer"
+                      >
+                        <option value="Campus Visits & Demos">🏫 Campus Visits & Demos</option>
+                        <option value="Lead Qualification & Scouting">🎯 Lead Qualification & Scouting</option>
+                        <option value="Commercials & Budget Discussion">💼 Commercials & Budget Discussion</option>
+                        <option value="Follow-up & Pipeline Progress">⏳ Follow-up & Pipeline Progress</option>
+                        <option value="Blocker & Escalation">⚠️ Blocker & Escalation</option>
+                        <option value="General Field Intel">📝 General Field Intel</option>
+                      </select>
                     </div>
 
                     {/* Category */}
@@ -1469,7 +1523,7 @@ export default function SchoolDetailModal({
                       {isSubmittingNote ? (
                         <>
                           <RefreshCw className="w-4 h-4 animate-spin" />
-                          <span>Saving & Alerting Admin...</span>
+                          <span>Saving to Bucket & Alerting Admin...</span>
                         </>
                       ) : (
                         <>
@@ -1484,7 +1538,7 @@ export default function SchoolDetailModal({
 
               {/* Bottom: Historical Updates Timeline */}
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
-                <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -1494,6 +1548,41 @@ export default function SchoolDetailModal({
                       {agentNotes.length} {agentNotes.length === 1 ? 'entry' : 'entries'}
                     </span>
                   </div>
+
+                  {/* Filter controls by Agent and Bucket */}
+                  {agentNotes.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Agent Filter */}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] font-bold text-slate-400">Agent:</span>
+                        <select
+                          value={historyAgentFilter}
+                          onChange={(e) => setHistoryAgentFilter(e.target.value)}
+                          className="text-xs py-1 px-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-medium cursor-pointer"
+                        >
+                          <option value="All">All Agents</option>
+                          {uniqueNoteAgents.map((ag) => (
+                            <option key={ag} value={ag}>{ag}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Bucket Filter */}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] font-bold text-slate-400">Bucket:</span>
+                        <select
+                          value={historyBucketFilter}
+                          onChange={(e) => setHistoryBucketFilter(e.target.value)}
+                          className="text-xs py-1 px-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-medium cursor-pointer"
+                        >
+                          <option value="All">All Buckets</option>
+                          {uniqueNoteBuckets.map((b) => (
+                            <option key={b} value={b}>{b}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {agentNotes.length === 0 ? (
@@ -1508,9 +1597,20 @@ export default function SchoolDetailModal({
                       Use the form above to record your first field note or update for {info?.school_name || 'this school'}. All logged updates trigger an alert to the administrator.
                     </p>
                   </div>
+                ) : filteredAgentNotes.length === 0 ? (
+                  <div className="py-8 text-center">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">No notes match the selected agent or bucket filter.</p>
+                    <button
+                      type="button"
+                      onClick={() => { setHistoryAgentFilter('All'); setHistoryBucketFilter('All'); }}
+                      className="mt-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
+                      Clear Filters
+                    </button>
+                  </div>
                 ) : (
                   <div className="space-y-4">
-                    {agentNotes.map((note, index) => {
+                    {filteredAgentNotes.map((note, index) => {
                       const isUrgent = note.urgency === 'Urgent Action Required';
                       const isImportant = note.urgency === 'Important';
                       const formattedTime = note.timestamp
@@ -1536,6 +1636,9 @@ export default function SchoolDetailModal({
                               <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
                                 <User className="w-3.5 h-3.5 text-indigo-500" />
                                 {note.agent_name || 'Field Agent'}
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/60">
+                                🗂️ {note.bucket || 'Campus Visits & Demos'}
                               </span>
                               <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
                                 {note.category || 'General Note'}

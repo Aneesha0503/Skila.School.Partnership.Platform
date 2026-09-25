@@ -20,11 +20,82 @@ export default function Header({
 }) {
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [alertsViewMode, setAlertsViewMode] = useState('stream'); // 'stream' | 'buckets'
+  const [selectedAgentFilter, setSelectedAgentFilter] = useState('All');
+  const [selectedAlertUrgency, setSelectedAlertUrgency] = useState('all'); // 'all' | 'unread' | 'urgent'
+  const [expandedAgentBuckets, setExpandedAgentBuckets] = useState({});
+
   const dropdownRef = useRef(null);
   const notificationsRef = useRef(null);
   const handleExport = onExportExcel || onExportCsv;
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  // Extract unique agents from alerts list
+  const uniqueAlertAgents = React.useMemo(() => {
+    const set = new Set();
+    notifications.forEach((n) => {
+      if (n.agent_name && n.agent_name.trim()) {
+        set.add(n.agent_name.trim());
+      }
+    });
+    return Array.from(set).sort();
+  }, [notifications]);
+
+  // Filter alerts based on active agent and urgency criteria
+  const filteredNotifications = React.useMemo(() => {
+    return notifications.filter((n) => {
+      if (selectedAgentFilter !== 'All') {
+        if ((n.agent_name || '').toLowerCase() !== selectedAgentFilter.toLowerCase()) {
+          return false;
+        }
+      }
+      if (selectedAlertUrgency === 'unread' && n.is_read) {
+        return false;
+      }
+      if (selectedAlertUrgency === 'urgent' && n.urgency !== 'Urgent Action Required') {
+        return false;
+      }
+      return true;
+    });
+  }, [notifications, selectedAgentFilter, selectedAlertUrgency]);
+
+  // Group filtered alerts into buckets by Agent
+  const agentBucketsList = React.useMemo(() => {
+    const bucketsMap = {};
+    filteredNotifications.forEach((n) => {
+      const agent = n.agent_name || 'Field Agent';
+      if (!bucketsMap[agent]) {
+        bucketsMap[agent] = {
+          agent,
+          items: [],
+          unreadCount: 0,
+          uniqueSchools: new Set()
+        };
+      }
+      bucketsMap[agent].items.push(n);
+      if (!n.is_read) {
+        bucketsMap[agent].unreadCount += 1;
+      }
+      if (n.school_id || n.school_name) {
+        bucketsMap[agent].uniqueSchools.add(n.school_id || n.school_name);
+      }
+    });
+
+    return Object.values(bucketsMap).map((b) => ({
+      agent: b.agent,
+      items: b.items,
+      unreadCount: b.unreadCount,
+      uniqueSchoolsCount: b.uniqueSchools.size
+    })).sort((a, b) => b.items.length - a.items.length);
+  }, [filteredNotifications]);
+
+  const toggleAgentBucket = (agent) => {
+    setExpandedAgentBuckets((prev) => ({
+      ...prev,
+      [agent]: prev[agent] === false ? true : false
+    }));
+  };
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -185,41 +256,249 @@ export default function Header({
 
               {/* Notifications Dropdown */}
               {notificationsOpen && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute right-0 mt-2 w-88 sm:w-[460px] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  {/* Popover Header */}
                   <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <div>
                       <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                         <Bell className="w-3.5 h-3.5 text-indigo-500" />
                         <span>Agent Field Alerts</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60">
+                          {notifications.length}
+                        </span>
                       </div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                        Real-time institutional field updates
+                        Real-time institutional field updates & bucket logs
                       </div>
                     </div>
 
-                    {unreadCount > 0 && onMarkAllNotificationsRead && (
-                      <button
-                        onClick={() => {
-                          onMarkAllNotificationsRead();
-                        }}
-                        className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
-                      >
-                        Mark all as read
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {unreadCount > 0 && onMarkAllNotificationsRead && (
+                        <button
+                          onClick={() => onMarkAllNotificationsRead()}
+                          className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
-                    {notifications.length === 0 ? (
-                      <div className="py-8 px-4 text-center">
-                        <Bell className="w-6 h-6 text-slate-300 dark:text-slate-600 mx-auto mb-2 opacity-60" />
-                        <div className="text-xs font-semibold text-slate-600 dark:text-slate-400">No alerts yet</div>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                          When field agents log notes or updates, alerts will show here.
+                  {/* Sub Header: View Mode Switcher & Filters */}
+                  <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 space-y-2">
+                    {/* View Switcher: Stream vs Agent Buckets */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="inline-flex p-0.5 rounded-lg bg-slate-200/70 dark:bg-slate-800 text-[11px] font-semibold">
+                        <button
+                          type="button"
+                          onClick={() => setAlertsViewMode('stream')}
+                          className={`px-2.5 py-1 rounded-md transition cursor-pointer flex items-center gap-1 ${
+                            alertsViewMode === 'stream'
+                              ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-2xs font-bold'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                        >
+                          <Clock className="w-3 h-3" />
+                          <span>Timeline Stream</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAlertsViewMode('buckets')}
+                          className={`px-2.5 py-1 rounded-md transition cursor-pointer flex items-center gap-1 ${
+                            alertsViewMode === 'buckets'
+                              ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-2xs font-bold'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                        >
+                          <Briefcase className="w-3 h-3" />
+                          <span>Agent Buckets</span>
+                        </button>
+                      </div>
+
+                      {/* Urgency quick pills */}
+                      <div className="flex items-center gap-1 text-[10px]">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAlertUrgency('all')}
+                          className={`px-2 py-0.5 rounded-md font-semibold transition cursor-pointer ${
+                            selectedAlertUrgency === 'all'
+                              ? 'bg-slate-900 dark:bg-indigo-600 text-white'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          All
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAlertUrgency('unread')}
+                          className={`px-2 py-0.5 rounded-md font-semibold transition cursor-pointer ${
+                            selectedAlertUrgency === 'unread'
+                              ? 'bg-indigo-600 text-white'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          Unread ({unreadCount})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAlertUrgency('urgent')}
+                          className={`px-2 py-0.5 rounded-md font-semibold transition cursor-pointer ${
+                            selectedAlertUrgency === 'urgent'
+                              ? 'bg-rose-600 text-white'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          Urgent ({notifications.filter(n => n.urgency === 'Urgent Action Required').length})
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Agent Name Filter Selector */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0 flex items-center gap-1">
+                        <Briefcase className="w-3 h-3 text-indigo-500" />
+                        Agent Filter:
+                      </span>
+                      <select
+                        value={selectedAgentFilter}
+                        onChange={(e) => setSelectedAgentFilter(e.target.value)}
+                        className="text-[11px] font-medium py-1 px-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full cursor-pointer shadow-2xs"
+                      >
+                        <option value="All">All Reporting Agents ({notifications.length})</option>
+                        {uniqueAlertAgents.map((ag) => {
+                          const count = notifications.filter(n => n.agent_name === ag).length;
+                          return (
+                            <option key={ag} value={ag}>
+                              💼 Agent: {ag} ({count} {count === 1 ? 'update' : 'updates'})
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* List / Bucket Content Area */}
+                  <div className="max-h-96 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
+                    {filteredNotifications.length === 0 ? (
+                      <div className="py-10 px-4 text-center">
+                        <Bell className="w-7 h-7 text-slate-300 dark:text-slate-600 mx-auto mb-2 opacity-60" />
+                        <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          No updates found
+                        </div>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                          {selectedAgentFilter !== 'All' 
+                            ? `No alerts found for agent "${selectedAgentFilter}" under active filters.`
+                            : 'When field agents log notes or updates, alerts will show here.'}
                         </p>
+                        {selectedAgentFilter !== 'All' && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedAgentFilter('All')}
+                            className="mt-2.5 inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                          >
+                            Reset Agent Filter
+                          </button>
+                        )}
+                      </div>
+                    ) : alertsViewMode === 'buckets' ? (
+                      /* AGENT BUCKETS VIEW */
+                      <div className="p-2.5 space-y-3">
+                        {agentBucketsList.map((bucket) => {
+                          const isExpanded = expandedAgentBuckets[bucket.agent] !== false;
+                          return (
+                            <div
+                              key={bucket.agent}
+                              className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs overflow-hidden"
+                            >
+                              {/* Bucket Header */}
+                              <div
+                                onClick={() => toggleAgentBucket(bucket.agent)}
+                                className="px-3.5 py-2.5 bg-slate-50/80 dark:bg-slate-800/60 flex items-center justify-between cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-800 transition"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold text-[11px]">
+                                    💼
+                                  </div>
+                                  <div>
+                                    <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                      <span>{bucket.agent}</span>
+                                      <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
+                                        Bucket: {bucket.items.length} {bucket.items.length === 1 ? 'note' : 'notes'}
+                                      </span>
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                                      {bucket.uniqueSchoolsCount} {bucket.uniqueSchoolsCount === 1 ? 'school' : 'schools'} visited / updated
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  {bucket.unreadCount > 0 && (
+                                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-rose-500 text-white">
+                                      {bucket.unreadCount} unread
+                                    </span>
+                                  )}
+                                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                                </div>
+                              </div>
+
+                              {/* Bucket Items */}
+                              {isExpanded && (
+                                <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                                  {bucket.items.map((n) => {
+                                    const isUnread = !n.is_read;
+                                    return (
+                                      <div
+                                        key={n.id}
+                                        onClick={() => {
+                                          setNotificationsOpen(false);
+                                          if (onNotificationClick) onNotificationClick(n);
+                                        }}
+                                        className={`p-3 transition cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/80 ${
+                                          isUnread ? 'bg-indigo-50/40 dark:bg-indigo-950/20' : ''
+                                        }`}
+                                      >
+                                        <div className="flex items-start justify-between gap-2 mb-1">
+                                          <div className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                                            {n.school_name || 'School Update'}
+                                          </div>
+                                          <span className="text-[10px] text-slate-400 shrink-0">
+                                            {n.timestamp ? new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                          </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/60">
+                                            🗂️ {n.bucket || 'Campus Visits & Demos'}
+                                          </span>
+                                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
+                                            {n.category || 'Field Note'}
+                                          </span>
+                                          {n.urgency === 'Urgent Action Required' && (
+                                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-500 text-white animate-pulse">
+                                              Urgent
+                                            </span>
+                                          )}
+                                          {isUnread && (
+                                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 shrink-0 ml-auto" />
+                                          )}
+                                        </div>
+
+                                        <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                                          {n.text_snippet || n.full_text}
+                                        </p>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : (
-                      notifications.map((n) => {
+                      /* TIMELINE STREAM VIEW */
+                      filteredNotifications.map((n) => {
                         const isUnread = !n.is_read;
                         return (
                           <div
@@ -245,11 +524,14 @@ export default function Header({
                               <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                                 💼 {n.agent_name || 'Agent'}
                               </span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/60">
+                                🗂️ {n.bucket || 'Campus Visits & Demos'}
+                              </span>
                               <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
                                 {n.category || 'Field Note'}
                               </span>
                               {n.urgency === 'Urgent Action Required' && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500 text-white">
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500 text-white animate-pulse">
                                   Urgent
                                 </span>
                               )}

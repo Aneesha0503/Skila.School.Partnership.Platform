@@ -182,7 +182,8 @@ def list_schools(
     lead_status: Optional[str] = None,
     skila_ai_potential: Optional[str] = None,
     technology_adoption_level: Optional[str] = None,
-    tier: Optional[str] = None
+    tier: Optional[str] = None,
+    agent_name: Optional[str] = None
 ):
     schools = get_all_schools_raw()
     filtered = []
@@ -195,6 +196,7 @@ def list_schools(
         tech = s.get("technology", {})
         sales = s.get("sales", {})
         t_info = s.get("tier", {})
+        notes = s.get("agent_notes", [])
         
         if state and h.get("state") != state:
             continue
@@ -219,6 +221,13 @@ def list_schools(
             continue
         if technology_adoption_level and technology_adoption_level != "All" and sales.get("technology_adoption_level") != technology_adoption_level:
             continue
+            
+        if agent_name and agent_name != "All":
+            agent_lower = agent_name.lower().strip()
+            sales_match = sales.get("sales_owner", "").lower().strip() == agent_lower
+            notes_match = any(n.get("agent_name", "").lower().strip() == agent_lower for n in notes)
+            if not (sales_match or notes_match):
+                continue
             
         if search_lower:
             text_corpus = f"{info.get('school_name', '')} {info.get('udise_code', '')} {info.get('principal_name', '')} {info.get('correspondent_name', '')} {h.get('district', '')} {h.get('mandal', '')} {h.get('village_locality_ward', '')}".lower()
@@ -342,6 +351,7 @@ def add_agent_note(
     )
     
     agent_display_name = payload.agent_name.strip() if payload.agent_name and payload.agent_name.strip() else ("Field Agent" if role == "agent" else "Admin")
+    bucket_name = (payload.bucket or "").strip() or "Campus Visits & Demos"
     
     note_data = {
         "id": note_id,
@@ -349,6 +359,7 @@ def add_agent_note(
         "school_name": school_name,
         "agent_name": agent_display_name,
         "author_role": role,
+        "bucket": bucket_name,
         "category": payload.category or "School Visit",
         "urgency": payload.urgency or "Normal",
         "text": payload.text.strip(),
@@ -376,6 +387,7 @@ def add_agent_note(
         "district": school.get("hierarchy", {}).get("district", ""),
         "state": school.get("hierarchy", {}).get("state", ""),
         "agent_name": note_data["agent_name"],
+        "bucket": bucket_name,
         "category": note_data["category"],
         "urgency": note_data["urgency"],
         "text_snippet": (note_data["text"][:140] + "...") if len(note_data["text"]) > 140 else note_data["text"],
@@ -400,10 +412,13 @@ def add_agent_note(
 @app.get("/api/notifications")
 def get_notifications(
     limit: int = 50,
+    agent_name: Optional[str] = None,
+    bucket: Optional[str] = None,
+    unread_only: bool = False,
     role: str = Depends(get_current_role)
 ):
     """
-    Fetches recent agent update notifications for Admin.
+    Fetches recent agent update notifications for Admin with optional agent and bucket filtering.
     """
     try:
         col = db.collection("notifications")
@@ -413,6 +428,23 @@ def get_notifications(
             item = d.to_dict()
             if not item.get("id"):
                 item["id"] = d.id
+            if not item.get("bucket"):
+                item["bucket"] = "Campus Visits & Demos"
+            
+            # Apply agent filter if provided
+            if agent_name and agent_name != "All":
+                if item.get("agent_name", "").lower() != agent_name.lower():
+                    continue
+                    
+            # Apply bucket filter if provided
+            if bucket and bucket != "All":
+                if item.get("bucket", "").lower() != bucket.lower():
+                    continue
+                    
+            # Apply unread filter if requested
+            if unread_only and item.get("is_read", False):
+                continue
+                
             notifications.append(item)
             
         notifications.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
@@ -420,6 +452,51 @@ def get_notifications(
     except Exception as e:
         print(f"Error fetching notifications: {e}")
         return []
+
+@app.get("/api/notifications/summary")
+def get_notifications_summary(role: str = Depends(get_current_role)):
+    """
+    Returns aggregation summary for agent buckets and notification counts.
+    """
+    try:
+        col = db.collection("notifications")
+        docs = col.stream()
+        agents_map = {}
+        buckets_map = {}
+        total = 0
+        total_unread = 0
+        
+        for d in docs:
+            item = d.to_dict()
+            total += 1
+            is_unread = not item.get("is_read", False)
+            if is_unread:
+                total_unread += 1
+                
+            agent = item.get("agent_name") or "Field Agent"
+            bucket = item.get("bucket") or "Campus Visits & Demos"
+            
+            if agent not in agents_map:
+                agents_map[agent] = {"name": agent, "total": 0, "unread": 0}
+            agents_map[agent]["total"] += 1
+            if is_unread:
+                agents_map[agent]["unread"] += 1
+                
+            if bucket not in buckets_map:
+                buckets_map[bucket] = {"name": bucket, "total": 0, "unread": 0}
+            buckets_map[bucket]["total"] += 1
+            if is_unread:
+                buckets_map[bucket]["unread"] += 1
+                
+        return {
+            "total": total,
+            "total_unread": total_unread,
+            "agents": sorted(list(agents_map.values()), key=lambda x: x["total"], reverse=True),
+            "buckets": sorted(list(buckets_map.values()), key=lambda x: x["total"], reverse=True)
+        }
+    except Exception as e:
+        print(f"Error fetching notification summary: {e}")
+        return {"total": 0, "total_unread": 0, "agents": [], "buckets": []}
 
 @app.put("/api/notifications/{notification_id}/read")
 def mark_notification_read(notification_id: str):

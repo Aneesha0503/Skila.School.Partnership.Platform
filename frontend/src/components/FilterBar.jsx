@@ -6,9 +6,10 @@ export default function FilterBar({
   onFilterChange,
   viewMode,
   onViewModeChange,
-  onClearFilters
+  onClearFilters,
+  availableAgents = []
 }) {
-  const { search, board, lead_status, skila_ai_potential, technology_adoption_level, tier = 'All' } = filters;
+  const { search, board, lead_status, skila_ai_potential, technology_adoption_level, tier = 'All', agent = 'All' } = filters;
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs p-3.5 mb-6 space-y-3 transition-colors">
@@ -28,6 +29,21 @@ export default function FilterBar({
 
         {/* Quick Dropdown Filters */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* Agent Filter */}
+          <select
+            value={agent}
+            onChange={(e) => onFilterChange('agent', e.target.value)}
+            className="text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2 px-2.5 font-medium text-slate-700 dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
+            title="Filter by Field Agent (notes author or sales owner)"
+          >
+            <option value="All" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All Agents</option>
+            {availableAgents.map((ag) => (
+              <option key={ag} value={ag} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                💼 {ag}
+              </option>
+            ))}
+          </select>
+
           {/* Board */}
           <select
             value={board}

@@ -44,7 +44,8 @@ export default function App() {
     board: 'All',
     lead_status: 'All',
     skila_ai_potential: 'All',
-    technology_adoption_level: 'All'
+    technology_adoption_level: 'All',
+    agent: 'All'
   });
 
   const [viewMode, setViewMode] = useState(() => {
@@ -216,6 +217,7 @@ export default function App() {
       if (filters.lead_status !== 'All') params.append('lead_status', filters.lead_status);
       if (filters.skila_ai_potential !== 'All') params.append('skila_ai_potential', filters.skila_ai_potential);
       if (filters.technology_adoption_level !== 'All') params.append('technology_adoption_level', filters.technology_adoption_level);
+      if (filters.agent && filters.agent !== 'All') params.append('agent_name', filters.agent);
 
       const res = await fetchWithRole(`/api/schools?${params.toString()}`);
       if (res.ok) {
@@ -369,6 +371,26 @@ export default function App() {
     });
   };
 
+  const availableAgents = React.useMemo(() => {
+    const set = new Set();
+    schools.forEach((s) => {
+      if (s.sales?.sales_owner && s.sales.sales_owner !== 'Unassigned') {
+        set.add(s.sales.sales_owner.trim());
+      }
+      (s.agent_notes || []).forEach((n) => {
+        if (n.agent_name && n.agent_name.trim()) {
+          set.add(n.agent_name.trim());
+        }
+      });
+    });
+    notifications.forEach((n) => {
+      if (n.agent_name && n.agent_name.trim()) {
+        set.add(n.agent_name.trim());
+      }
+    });
+    return Array.from(set).sort();
+  }, [schools, notifications]);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
       {/* Top Header */}
@@ -422,6 +444,7 @@ export default function App() {
           onFilterChange={handleFilterChange}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          availableAgents={availableAgents}
         />
 
         {/* Schools Listing */}
