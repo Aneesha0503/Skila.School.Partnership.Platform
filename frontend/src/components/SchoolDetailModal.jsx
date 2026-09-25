@@ -1082,34 +1082,6 @@ export default function SchoolDetailModal({
                     <span>Commercial Opportunity & Decision Maker</span>
                   </h3>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      onClick={handleAiEnrich}
-                      disabled={isEnriching}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-indigo-700 hover:from-purple-500 hover:to-indigo-600 text-white font-bold text-xs shadow-xs transition disabled:opacity-50 cursor-pointer"
-                      title="Analyze this school and write a customized sales pitch"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                      {isEnriching ? 'Generating AI Pitch...' : '✨ Generate AI Sales Pitch'}
-                    </button>
-
-                    <button
-                      onClick={() => setEmailModalOpen(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition cursor-pointer"
-                      title="Compose and send contextual proposal email"
-                    >
-                      <Mail className="w-3.5 h-3.5" />
-                      <span>Send Proposal Mail</span>
-                    </button>
-
-                    <button
-                      onClick={() => setWhatsappModalOpen(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition cursor-pointer"
-                      title="Send WhatsApp pitch to school leadership"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span>WhatsApp Pitch</span>
-                    </button>
-
                     <div className="flex items-center gap-1.5 bg-indigo-50/80 dark:bg-indigo-950/50 px-2.5 py-1 rounded-xl border border-indigo-200 dark:border-indigo-800">
                       <span className="text-[11px] font-bold text-indigo-900 dark:text-indigo-200">Status:</span>
                       <select
