@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, ChevronRight, MapPin, Award, Layers, Zap, RefreshCw, CheckCircle2, Lock } from 'lucide-react';
+import { Sparkles, ChevronRight, MapPin, Award, Layers, Zap, RefreshCw, CheckCircle2, Lock, User } from 'lucide-react';
 
 export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetails, userRole = 'admin' }) {
   const [runningId, setRunningId] = useState(null);
@@ -60,6 +60,7 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
               <th className="py-3 px-3 w-12 text-center text-slate-500 dark:text-slate-400 font-mono">#</th>
               <th className="py-3 px-4">Tier (High to Low)</th>
               <th className="py-3 px-4">School Name</th>
+              <th className="py-3 px-4">Field Agent</th>
               <th className="py-3 px-4">Administrative Location</th>
               <th className="py-3 px-4">Board & Strength</th>
               <th className="py-3 px-4">Details Status</th>
@@ -92,17 +93,37 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
                     )}
                   </td>
                   <td className="py-3 px-4">
-                    <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 flex-wrap">
-                      <span>{info?.school_name}</span>
-                      {school.agent_notes && school.agent_notes.length > 0 && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
-                          💼 {school.agent_notes[0].agent_name || 'Agent'} ({school.agent_notes.length})
-                        </span>
-                      )}
+                    <div className="font-semibold text-slate-900 dark:text-slate-100">
+                      {info?.school_name}
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                       {info?.school_category} • {info?.management_type}
                     </div>
+                  </td>
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    {school.agent_notes && school.agent_notes.length > 0 ? (
+                      <div>
+                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 shadow-2xs">
+                          <span>💼</span>
+                          <span className="font-bold">{school.agent_notes[0].agent_name || 'Agent'}</span>
+                          <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded-full bg-indigo-200/80 dark:bg-indigo-900/80 text-indigo-900 dark:text-indigo-200">
+                            {school.agent_notes.length}
+                          </span>
+                        </span>
+                        {school.agent_notes[0].bucket && (
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-medium truncate max-w-[140px]">
+                            {school.agent_notes[0].bucket}
+                          </div>
+                        )}
+                      </div>
+                    ) : sales?.sales_owner && sales.sales_owner !== 'Unassigned' ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                        <User className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{sales.sales_owner}</span>
+                      </span>
+                    ) : (
+                      <span className="text-slate-300 dark:text-slate-600 text-xs font-medium">—</span>
+                    )}
                   </td>
                   <td className="py-3 px-4">
                     <div className="font-medium text-slate-800 dark:text-slate-200">{hierarchy?.village_locality_ward}</div>
