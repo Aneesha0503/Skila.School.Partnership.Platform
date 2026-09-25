@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
-import { Sparkles, ChevronRight, MapPin, Award, Layers, Zap, RefreshCw, CheckCircle2, Lock, User } from 'lucide-react';
+import React from 'react';
+import { Zap, CheckCircle2, User } from 'lucide-react';
 
-export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetails, userRole = 'admin' }) {
-  const [runningId, setRunningId] = useState(null);
-
+export default function SchoolTable({ schools, onSelectSchool, userRole = 'admin' }) {
   const getTierBadge = (tierObj) => {
     const t = tierObj?.tier || '';
     if (t === 'High Range') {
@@ -38,19 +36,6 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
     };
   };
 
-  const handleRunDetailsClick = async (e, schoolId) => {
-    e.stopPropagation();
-    if (runningId) return;
-    setRunningId(schoolId);
-    try {
-      if (onRunSchoolDetails) {
-        await onRunSchoolDetails(schoolId);
-      }
-    } finally {
-      setRunningId(null);
-    }
-  };
-
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
       <div className="overflow-x-auto">
@@ -64,14 +49,12 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
               <th className="py-3 px-4">Administrative Location</th>
               <th className="py-3 px-4">Board & Strength</th>
               <th className="py-3 px-4">Details Status</th>
-              <th className="py-3 px-4 text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
             {schools.map((school, index) => {
               const { hierarchy, info, technology, sales, tier, details_fetched } = school;
               const tierBadge = getTierBadge(tier);
-              const isRunning = runningId === school.id;
 
               return (
                 <tr
@@ -147,41 +130,6 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[11px] font-semibold">
                         <Zap className="w-3 h-3 text-amber-600 dark:text-amber-400" /> Profile Pending
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    {details_fetched ? (
-                      <button className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-semibold inline-flex items-center text-xs">
-                        View Full Profile <ChevronRight className="w-4 h-4 ml-0.5" />
-                      </button>
-                    ) : userRole === 'admin' ? (
-                      <button
-                        type="button"
-                        onClick={(e) => handleRunDetailsClick(e, school.id)}
-                        disabled={isRunning}
-                        className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-xs inline-flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
-                        title="Fetch verified 49-field profile for this school"
-                      >
-                        {isRunning ? (
-                          <>
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin text-slate-950" />
-                            <span>Fetching...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Zap className="w-3.5 h-3.5 fill-current" />
-                            <span>Fetch Profile</span>
-                          </>
-                        )}
-                      </button>
-                    ) : (
-                      <span 
-                        title="Single school AI research requires Administrator role"
-                        className="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold text-[11px] inline-flex items-center gap-1 border border-slate-300 dark:border-slate-700"
-                      >
-                        <Lock className="w-3 h-3 text-amber-500" />
-                        <span>Admin Only</span>
                       </span>
                     )}
                   </td>
