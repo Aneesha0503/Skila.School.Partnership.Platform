@@ -54,6 +54,12 @@ def require_admin(role: str = Depends(get_current_role)) -> str:
         )
     return role
 
+def get_current_agent_name(x_agent_name: Optional[str] = Header(None)) -> Optional[str]:
+    """Extracts agent identity from X-Agent-Name header for agent isolation."""
+    if x_agent_name and x_agent_name.strip():
+        return x_agent_name.strip()
+    return None
+
 @app.get("/api/auth/roles")
 def get_roles_matrix(role: str = Depends(get_current_role)):
     """Returns available roles and full permissions matrix."""
@@ -183,12 +189,17 @@ def list_schools(
     skila_ai_potential: Optional[str] = None,
     technology_adoption_level: Optional[str] = None,
     tier: Optional[str] = None,
-    agent_name: Optional[str] = None
+    agent_name: Optional[str] = None,
+    role: str = Depends(get_current_role),
+    current_agent: Optional[str] = Depends(get_current_agent_name)
 ):
     schools = get_all_schools_raw()
     filtered = []
     
     search_lower = search.strip().lower() if search else None
+    
+    # If role is agent, strictly enforce current_agent scope if present
+    effective_agent = current_agent if (role == "agent" and current_agent) else agent_name
     
     for s in schools:
         h = s.get("hierarchy", {})
@@ -222,8 +233,8 @@ def list_schools(
         if technology_adoption_level and technology_adoption_level != "All" and sales.get("technology_adoption_level") != technology_adoption_level:
             continue
             
-        if agent_name and agent_name != "All":
-            agent_lower = agent_name.lower().strip()
+        if effective_agent and effective_agent != "All":
+            agent_lower = effective_agent.lower().strip()
             sales_match = sales.get("sales_owner", "").lower().strip() == agent_lower
             notes_match = any(n.get("agent_name", "").lower().strip() == agent_lower for n in notes)
             if not (sales_match or notes_match):
@@ -234,7 +245,17 @@ def list_schools(
             if search_lower not in text_corpus:
                 continue
                 
-        filtered.append(s)
+        # If logged in as an Agent, strip out all other agents' field notes for confidentiality!
+        if role == "agent" and current_agent:
+            active_lower = current_agent.lower().strip()
+            s_copy = dict(s)
+            s_copy["agent_notes"] = [
+                n for n in (s.get("agent_notes") or [])
+                if n.get("agent_name", "").lower().strip() == active_lower
+            ]
+            filtered.append(s_copy)
+        else:
+            filtered.append(s)
         
     # Sort from High to Low: High Range first, then State Board by strength descending
     filtered.sort(key=lambda x: (
@@ -244,12 +265,24 @@ def list_schools(
     return filtered
 
 @app.get("/api/schools/{school_id}")
-def get_school(school_id: str):
+def get_school(
+    school_id: str,
+    role: str = Depends(get_current_role),
+    current_agent: Optional[str] = Depends(get_current_agent_name)
+):
     doc = db.collection("schools").document(school_id).get()
     if not doc.exists:
         raise HTTPException(status_code=404, detail="School not found")
     data = doc.to_dict()
     data["id"] = school_id
+    
+    # Strict Agent Privacy Isolation: An agent only receives their OWN notes!
+    if role == "agent" and current_agent:
+        active_lower = current_agent.lower().strip()
+        data["agent_notes"] = [
+            n for n in (data.get("agent_notes") or [])
+            if n.get("agent_name", "").lower().strip() == active_lower
+        ]
     return data
 
 @app.post("/api/schools")
@@ -326,13 +359,14 @@ def update_school(school_id: str, payload: SchoolCreateUpdate, role: str = Depen
 def add_agent_note(
     school_id: str,
     payload: AgentNoteCreate,
-    role: str = Depends(get_current_role)
+    role: str = Depends(get_current_role),
+    current_agent: Optional[str] = Depends(get_current_agent_name)
 ):
     """
     Agent / Admin logs a field note / update for a school.
     - Appends note to school.agent_notes
     - Generates an Admin alert notification in 'notifications' collection
-    - Returns updated school and the note object
+    - Returns updated school and the note object (scoped for agents)
     """
     doc_ref = db.collection("schools").document(school_id)
     doc = doc_ref.get()
@@ -350,7 +384,12 @@ def add_agent_note(
         f"School {school_id[:8]}"
     )
     
-    agent_display_name = payload.agent_name.strip() if payload.agent_name and payload.agent_name.strip() else ("Field Agent" if role == "agent" else "Admin")
+    # Enforce agent identity if role is agent (anti-spoofing)
+    if role == "agent" and current_agent:
+        agent_display_name = current_agent.strip()
+    else:
+        agent_display_name = payload.agent_name.strip() if payload.agent_name and payload.agent_name.strip() else ("Field Agent" if role == "agent" else "Admin")
+        
     bucket_name = (payload.bucket or "").strip() or "Campus Visits & Demos"
     
     note_data = {
@@ -402,10 +441,18 @@ def add_agent_note(
     except Exception as e:
         print(f"Warning: Could not save notification to Firestore: {e}")
         
+    return_school = dict(school)
+    if role == "agent" and current_agent:
+        active_lower = current_agent.lower().strip()
+        return_school["agent_notes"] = [
+            n for n in (school.get("agent_notes") or [])
+            if n.get("agent_name", "").lower().strip() == active_lower
+        ]
+        
     return {
         "success": True,
         "note": note_data,
-        "school": school,
+        "school": return_school,
         "notification": notification_data
     }
 
@@ -415,15 +462,20 @@ def get_notifications(
     agent_name: Optional[str] = None,
     bucket: Optional[str] = None,
     unread_only: bool = False,
-    role: str = Depends(get_current_role)
+    role: str = Depends(get_current_role),
+    current_agent: Optional[str] = Depends(get_current_agent_name)
 ):
     """
-    Fetches recent agent update notifications for Admin with optional agent and bucket filtering.
+    Fetches recent agent update notifications.
+    - Admin: sees all agents or filters by agent.
+    - Agent: strictly scoped to current agent's notifications only.
     """
     try:
         col = db.collection("notifications")
         docs = col.stream()
         notifications = []
+        effective_agent = current_agent if (role == "agent" and current_agent) else agent_name
+
         for d in docs:
             item = d.to_dict()
             if not item.get("id"):
@@ -431,9 +483,9 @@ def get_notifications(
             if not item.get("bucket"):
                 item["bucket"] = "Campus Visits & Demos"
             
-            # Apply agent filter if provided
-            if agent_name and agent_name != "All":
-                if item.get("agent_name", "").lower() != agent_name.lower():
+            # Apply agent filter (strict isolation for agents)
+            if effective_agent and effective_agent != "All":
+                if item.get("agent_name", "").lower() != effective_agent.lower():
                     continue
                     
             # Apply bucket filter if provided

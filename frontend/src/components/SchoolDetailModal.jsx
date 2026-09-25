@@ -14,6 +14,7 @@ export default function SchoolDetailModal({
   onUpdateSchool, 
   onOpenEditModal,
   userRole = 'admin',
+  currentAgentName = 'Uday',
   initialTab = 'info'
 }) {
   const formatRemarks = (val) => {
@@ -155,7 +156,7 @@ export default function SchoolDetailModal({
 
   // Note composer form state
   const [noteText, setNoteText] = useState('');
-  const [noteAgentName, setNoteAgentName] = useState(userRole === 'agent' ? 'Field Agent' : 'Admin');
+  const [noteAgentName, setNoteAgentName] = useState(userRole === 'agent' ? currentAgentName : 'Admin');
   const [noteBucket, setNoteBucket] = useState('Campus Visits & Demos');
   const [noteCategory, setNoteCategory] = useState('School Visit');
   const [noteUrgency, setNoteUrgency] = useState('Normal');
@@ -165,29 +166,45 @@ export default function SchoolDetailModal({
   const [noteSubmitError, setNoteSubmitError] = useState('');
   const noteTextareaRef = useRef(null);
 
+  useEffect(() => {
+    if (userRole === 'agent') {
+      setNoteAgentName(currentAgentName);
+    }
+  }, [userRole, currentAgentName]);
+
+  // STRICT AGENT PRIVACY ISOLATION:
+  // Agents can ONLY see their own notes. Peer agent notes are completely redacted.
+  const visibleAgentNotes = React.useMemo(() => {
+    if (userRole === 'agent') {
+      const active = (currentAgentName || '').trim().toLowerCase();
+      return (agentNotes || []).filter((n) => (n.agent_name || '').trim().toLowerCase() === active);
+    }
+    return agentNotes || [];
+  }, [agentNotes, userRole, currentAgentName]);
+
   // Note history filters
   const [historyAgentFilter, setHistoryAgentFilter] = useState('All');
   const [historyBucketFilter, setHistoryBucketFilter] = useState('All');
 
   const uniqueNoteAgents = React.useMemo(() => {
     const set = new Set();
-    agentNotes.forEach((n) => {
+    visibleAgentNotes.forEach((n) => {
       if (n.agent_name && n.agent_name.trim()) set.add(n.agent_name.trim());
     });
     return Array.from(set).sort();
-  }, [agentNotes]);
+  }, [visibleAgentNotes]);
 
   const uniqueNoteBuckets = React.useMemo(() => {
     const set = new Set();
-    agentNotes.forEach((n) => {
+    visibleAgentNotes.forEach((n) => {
       if (n.bucket && n.bucket.trim()) set.add(n.bucket.trim());
     });
     return Array.from(set).sort();
-  }, [agentNotes]);
+  }, [visibleAgentNotes]);
 
   const filteredAgentNotes = React.useMemo(() => {
-    return agentNotes.filter((n) => {
-      if (historyAgentFilter !== 'All' && (n.agent_name || '').toLowerCase() !== historyAgentFilter.toLowerCase()) {
+    return visibleAgentNotes.filter((n) => {
+      if (userRole === 'admin' && historyAgentFilter !== 'All' && (n.agent_name || '').toLowerCase() !== historyAgentFilter.toLowerCase()) {
         return false;
       }
       if (historyBucketFilter !== 'All' && (n.bucket || 'Campus Visits & Demos').toLowerCase() !== historyBucketFilter.toLowerCase()) {
@@ -195,7 +212,7 @@ export default function SchoolDetailModal({
       }
       return true;
     });
-  }, [agentNotes, historyAgentFilter, historyBucketFilter]);
+  }, [visibleAgentNotes, userRole, historyAgentFilter, historyBucketFilter]);
 
   const [leadStatus, setLeadStatus] = useState(school?.sales?.lead_status || 'New');
   const [interestLevel, setInterestLevel] = useState(school?.sales?.interest_level || 'Medium');
@@ -225,15 +242,18 @@ export default function SchoolDetailModal({
     setNoteSubmitError('');
     setNoteSubmitSuccess('');
 
+    const effectiveAgentName = userRole === 'agent' ? currentAgentName : (noteAgentName.trim() || 'Admin');
+
     try {
       const res = await fetch(`/api/schools/${school.id}/agent-notes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Role': userRole
+          'X-User-Role': userRole,
+          'X-Agent-Name': currentAgentName
         },
         body: JSON.stringify({
-          agent_name: noteAgentName.trim() || (userRole === 'agent' ? 'Field Agent' : 'Admin'),
+          agent_name: effectiveAgentName,
           bucket: noteBucket,
           category: noteCategory,
           urgency: noteUrgency,
@@ -612,13 +632,13 @@ export default function SchoolDetailModal({
             >
               <FileText className="w-3.5 h-3.5" />
               <span>Field Notes & Updates</span>
-              {agentNotes.length > 0 && (
+              {visibleAgentNotes.length > 0 && (
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                   activeTab === 'notes' 
                     ? 'bg-indigo-700/80 text-white' 
                     : 'bg-slate-800 text-slate-300 border border-slate-700'
                 }`}>
-                  {agentNotes.length}
+                  {visibleAgentNotes.length}
                 </span>
               )}
             </button>
@@ -1359,16 +1379,31 @@ export default function SchoolDetailModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     {/* Agent Name */}
                     <div>
-                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                        Reporting Agent / Author
+                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 flex items-center justify-between">
+                        <span>Reporting Agent / Author</span>
+                        {userRole === 'agent' && (
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
+                            <Lock className="w-2.5 h-2.5" /> Locked
+                          </span>
+                        )}
                       </label>
-                      <input
-                        type="text"
-                        value={noteAgentName}
-                        onChange={(e) => setNoteAgentName(e.target.value)}
-                        placeholder="Enter agent name..."
-                        className="w-full text-xs rounded-xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white p-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                      />
+                      {userRole === 'agent' ? (
+                        <div className="w-full text-xs rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 p-2.5 font-bold flex items-center gap-1.5">
+                          <span>💼</span>
+                          <span>{currentAgentName}</span>
+                          <span className="ml-auto text-[9px] font-semibold uppercase px-1.5 py-0.2 rounded bg-emerald-200/60 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200">
+                            Active Identity
+                          </span>
+                        </div>
+                      ) : (
+                        <input
+                          type="text"
+                          value={noteAgentName}
+                          onChange={(e) => setNoteAgentName(e.target.value)}
+                          placeholder="Enter agent name..."
+                          className="w-full text-xs rounded-xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white p-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        />
+                      )}
                     </div>
 
                     {/* Target Bucket Selector */}
@@ -1517,27 +1552,29 @@ export default function SchoolDetailModal({
                       Field Notes & Updates History
                     </h4>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                      {agentNotes.length} {agentNotes.length === 1 ? 'entry' : 'entries'}
+                      {visibleAgentNotes.length} {visibleAgentNotes.length === 1 ? 'entry' : 'entries'}
                     </span>
                   </div>
 
                   {/* Filter controls by Agent and Bucket */}
-                  {agentNotes.length > 0 && (
+                  {visibleAgentNotes.length > 0 && (
                     <div className="flex items-center gap-2 flex-wrap">
-                      {/* Agent Filter */}
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-bold text-slate-400">Agent:</span>
-                        <select
-                          value={historyAgentFilter}
-                          onChange={(e) => setHistoryAgentFilter(e.target.value)}
-                          className="text-xs py-1 px-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-medium cursor-pointer"
-                        >
-                          <option value="All">All Agents</option>
-                          {uniqueNoteAgents.map((ag) => (
-                            <option key={ag} value={ag}>{ag}</option>
-                          ))}
-                        </select>
-                      </div>
+                      {/* Agent Filter - Only visible to Admin */}
+                      {userRole === 'admin' && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[11px] font-bold text-slate-400">Agent:</span>
+                          <select
+                            value={historyAgentFilter}
+                            onChange={(e) => setHistoryAgentFilter(e.target.value)}
+                            className="text-xs py-1 px-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-medium cursor-pointer"
+                          >
+                            <option value="All">All Agents</option>
+                            {uniqueNoteAgents.map((ag) => (
+                              <option key={ag} value={ag}>{ag}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
 
                       {/* Bucket Filter */}
                       <div className="flex items-center gap-1.5">
@@ -1557,16 +1594,18 @@ export default function SchoolDetailModal({
                   )}
                 </div>
 
-                {agentNotes.length === 0 ? (
+                {visibleAgentNotes.length === 0 ? (
                   <div className="py-12 px-4 text-center">
                     <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 mx-auto mb-3">
                       <FileText className="w-6 h-6" />
                     </div>
                     <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
-                      No Field Notes Logged Yet
+                      {userRole === 'agent' ? 'No Field Notes Logged by You Yet' : 'No Field Notes Logged Yet'}
                     </h5>
                     <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                      Use the form above to record your first field note or update for {info?.school_name || 'this school'}. All logged updates trigger an alert to the administrator.
+                      {userRole === 'agent'
+                        ? `You have not recorded any field updates for ${info?.school_name || 'this school'} yet. Use the form above to record your meeting notes or updates.`
+                        : `Use the form above to record your first field note or update for ${info?.school_name || 'this school'}. All logged updates trigger an alert to the administrator.`}
                     </p>
                   </div>
                 ) : filteredAgentNotes.length === 0 ? (

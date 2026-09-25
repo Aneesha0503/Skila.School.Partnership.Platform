@@ -7,7 +7,9 @@ export default function FilterBar({
   viewMode,
   onViewModeChange,
   onClearFilters,
-  availableAgents = []
+  availableAgents = [],
+  userRole = 'admin',
+  currentAgentName = 'Uday'
 }) {
   const { search, board, lead_status, skila_ai_potential, technology_adoption_level, tier = 'All', agent = 'All' } = filters;
 
@@ -29,20 +31,31 @@ export default function FilterBar({
 
         {/* Quick Dropdown Filters */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Agent Filter */}
-          <select
-            value={agent}
-            onChange={(e) => onFilterChange('agent', e.target.value)}
-            className="text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2 px-2.5 font-medium text-slate-700 dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
-            title="Filter by Field Agent (notes author or sales owner)"
-          >
-            <option value="All" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All Agents</option>
-            {availableAgents.map((ag) => (
-              <option key={ag} value={ag} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                💼 {ag}
-              </option>
-            ))}
-          </select>
+          {/* Agent Filter / Locked Scope Indicator */}
+          {userRole === 'agent' ? (
+            <div 
+              className="text-xs rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 py-1.5 px-2.5 font-semibold text-emerald-800 dark:text-emerald-200 inline-flex items-center gap-1.5 shadow-2xs"
+              title="Your view is strictly scoped to your assigned schools and field notes."
+            >
+              <span>💼</span>
+              <span>Agent: {currentAgentName}</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-200/60 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-bold uppercase tracking-wider">Scoped</span>
+            </div>
+          ) : (
+            <select
+              value={agent}
+              onChange={(e) => onFilterChange('agent', e.target.value)}
+              className="text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2 px-2.5 font-medium text-slate-700 dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
+              title="Filter by Field Agent (notes author or sales owner)"
+            >
+              <option value="All" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All Agents</option>
+              {availableAgents.map((ag) => (
+                <option key={ag} value={ag} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                  💼 {ag}
+                </option>
+              ))}
+            </select>
+          )}
 
           {/* Board */}
           <select

@@ -13,6 +13,8 @@ export default function Header({
   onToggleTheme,
   userRole = 'admin',
   onRoleChange,
+  currentAgentName = 'Uday',
+  onAgentNameChange,
   onOpenAccessModal,
   notifications = [],
   onNotificationClick,
@@ -29,23 +31,32 @@ export default function Header({
   const notificationsRef = useRef(null);
   const handleExport = onExportExcel || onExportCsv;
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  // STRICT AGENT ISOLATION: Agents strictly receive ONLY their own alerts!
+  const scopedNotifications = React.useMemo(() => {
+    if (userRole === 'agent') {
+      const active = (currentAgentName || '').trim().toLowerCase();
+      return notifications.filter((n) => (n.agent_name || '').trim().toLowerCase() === active);
+    }
+    return notifications;
+  }, [notifications, userRole, currentAgentName]);
 
-  // Extract unique agents from alerts list
+  const unreadCount = scopedNotifications.filter(n => !n.is_read).length;
+
+  // Extract unique agents from scoped alerts list
   const uniqueAlertAgents = React.useMemo(() => {
     const set = new Set();
-    notifications.forEach((n) => {
+    scopedNotifications.forEach((n) => {
       if (n.agent_name && n.agent_name.trim()) {
         set.add(n.agent_name.trim());
       }
     });
     return Array.from(set).sort();
-  }, [notifications]);
+  }, [scopedNotifications]);
 
   // Filter alerts based on active agent and urgency criteria
   const filteredNotifications = React.useMemo(() => {
-    return notifications.filter((n) => {
-      if (selectedAgentFilter !== 'All') {
+    return scopedNotifications.filter((n) => {
+      if (userRole === 'admin' && selectedAgentFilter !== 'All') {
         if ((n.agent_name || '').toLowerCase() !== selectedAgentFilter.toLowerCase()) {
           return false;
         }
@@ -58,7 +69,7 @@ export default function Header({
       }
       return true;
     });
-  }, [notifications, selectedAgentFilter, selectedAlertUrgency]);
+  }, [scopedNotifications, userRole, selectedAgentFilter, selectedAlertUrgency]);
 
   // Group filtered alerts into buckets by Agent
   const agentBucketsList = React.useMemo(() => {
@@ -161,7 +172,7 @@ export default function Header({
                 ) : (
                   <>
                     <span>💼</span>
-                    <span>Agent Level</span>
+                    <span>Agent Level ({currentAgentName})</span>
                   </>
                 )}
                 <ChevronDown className="w-3.5 h-3.5 opacity-70" />
@@ -169,17 +180,17 @@ export default function Header({
 
               {/* Role Dropdown Menu */}
               {roleDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
                   <div className="px-3.5 py-2 border-b border-slate-100 dark:border-slate-800">
                     <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                      Switch Active Role
+                      Switch Active Role & Persona
                     </div>
                     <div className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-                      Toggle operational permissions
+                      Toggle operational permissions & privacy scope
                     </div>
                   </div>
 
-                  <div className="p-1.5 space-y-1">
+                  <div className="p-1.5 space-y-1.5">
                     {/* Admin Option */}
                     <button
                       onClick={() => handleSelectRole('admin')}
@@ -193,30 +204,65 @@ export default function Header({
                         <span className="text-base">👑</span>
                         <div>
                           <div className="text-xs font-bold">Admin Level</div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Full AI Scraper & Database Control</div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Full 360° AI Scraper & Multi-Agent Control</div>
                         </div>
                       </div>
                       {userRole === 'admin' && <Check className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
                     </button>
 
                     {/* Agent Option */}
-                    <button
-                      onClick={() => handleSelectRole('agent')}
-                      className={`w-full text-left p-2.5 rounded-xl transition flex items-center justify-between cursor-pointer ${
+                    <div
+                      className={`p-2.5 rounded-xl transition ${
                         userRole === 'agent'
-                          ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 font-bold'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200'
                           : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                       }`}
                     >
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-base">💼</span>
-                        <div>
-                          <div className="text-xs font-bold">Agent Level</div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Field CRM & Lead Operations</div>
+                      <div 
+                        onClick={() => handleSelectRole('agent')}
+                        className="flex items-center justify-between cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-base">💼</span>
+                          <div>
+                            <div className="text-xs font-bold">Agent Level</div>
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400">Strictly Scoped CRM & Private Field Notes</div>
+                          </div>
                         </div>
+                        {userRole === 'agent' && <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
                       </div>
-                      {userRole === 'agent' && <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
-                    </button>
+
+                      {/* Agent Persona Quick-Switch */}
+                      {userRole === 'agent' && (
+                        <div className="mt-2.5 pt-2 border-t border-emerald-200/60 dark:border-emerald-800/60">
+                          <div className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 mb-1.5 flex items-center justify-between">
+                            <span>Active Agent Persona:</span>
+                            <span className="font-mono text-[9px] uppercase px-1.5 py-0.5 rounded bg-emerald-200/50 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 font-bold">
+                              Private Scope
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {['Uday', 'Agent Sneha', 'Karthik V'].map((name) => (
+                              <button
+                                key={name}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (onAgentNameChange) onAgentNameChange(name);
+                                }}
+                                className={`text-[10px] px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                                  currentAgentName === name
+                                    ? 'bg-emerald-700 text-white shadow-2xs'
+                                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-emerald-400'
+                                }`}
+                              >
+                                {name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="pt-1.5 px-1.5 border-t border-slate-100 dark:border-slate-800">
@@ -262,13 +308,15 @@ export default function Header({
                     <div>
                       <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                         <Bell className="w-3.5 h-3.5 text-indigo-500" />
-                        <span>Agent Field Alerts</span>
+                        <span>{userRole === 'agent' ? `${currentAgentName}'s Field Alerts` : 'Agent Field Alerts'}</span>
                         <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60">
-                          {notifications.length}
+                          {scopedNotifications.length}
                         </span>
                       </div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                        Real-time institutional field updates & bucket logs
+                        {userRole === 'agent'
+                          ? 'Your private institutional updates & bucket activity'
+                          : 'Real-time multi-agent field updates & bucket logs'}
                       </div>
                     </div>
 
@@ -348,33 +396,41 @@ export default function Header({
                               : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                           }`}
                         >
-                          Urgent ({notifications.filter(n => n.urgency === 'Urgent Action Required').length})
+                          Urgent ({scopedNotifications.filter(n => n.urgency === 'Urgent Action Required').length})
                         </button>
                       </div>
                     </div>
 
-                    {/* Agent Name Filter Selector */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0 flex items-center gap-1">
-                        <Briefcase className="w-3 h-3 text-indigo-500" />
-                        Agent Filter:
-                      </span>
-                      <select
-                        value={selectedAgentFilter}
-                        onChange={(e) => setSelectedAgentFilter(e.target.value)}
-                        className="text-[11px] font-medium py-1 px-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full cursor-pointer shadow-2xs"
-                      >
-                        <option value="All">All Reporting Agents ({notifications.length})</option>
-                        {uniqueAlertAgents.map((ag) => {
-                          const count = notifications.filter(n => n.agent_name === ag).length;
-                          return (
-                            <option key={ag} value={ag}>
-                              💼 Agent: {ag} ({count} {count === 1 ? 'update' : 'updates'})
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
+                    {/* Agent Isolation Indicator or Filter */}
+                    {userRole === 'agent' ? (
+                      <div className="flex items-center gap-2 py-1 px-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                        <Lock className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span>Private Stream: strictly scoped to notes & alerts for <strong>{currentAgentName}</strong></span>
+                      </div>
+                    ) : (
+                      /* Agent Name Filter Selector for Admin */
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0 flex items-center gap-1">
+                          <Briefcase className="w-3 h-3 text-indigo-500" />
+                          Agent Filter:
+                        </span>
+                        <select
+                          value={selectedAgentFilter}
+                          onChange={(e) => setSelectedAgentFilter(e.target.value)}
+                          className="text-[11px] font-medium py-1 px-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full cursor-pointer shadow-2xs"
+                        >
+                          <option value="All">All Reporting Agents ({scopedNotifications.length})</option>
+                          {uniqueAlertAgents.map((ag) => {
+                            const count = scopedNotifications.filter(n => n.agent_name === ag).length;
+                            return (
+                              <option key={ag} value={ag}>
+                                💼 Agent: {ag} ({count} {count === 1 ? 'update' : 'updates'})
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+                    )}
                   </div>
 
                   {/* List / Bucket Content Area */}

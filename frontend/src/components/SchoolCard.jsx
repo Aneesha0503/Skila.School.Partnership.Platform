@@ -4,7 +4,7 @@ import {
   Sparkles, Calendar, ChevronRight, Phone, Award, ShieldCheck, Layers, Play, RefreshCw, CheckCircle2, Zap, Lock 
 } from 'lucide-react';
 
-export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails, index, userRole = 'admin' }) {
+export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails, index, userRole = 'admin', currentAgentName = 'Uday' }) {
   const { hierarchy, info, technology, sales, tier, details_fetched } = school;
   const [isRunning, setIsRunning] = useState(false);
 
@@ -96,11 +96,17 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
                 UDISE: {info?.udise_code}
               </span>
             )}
-            {school.agent_notes && school.agent_notes.length > 0 && (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 flex items-center gap-1">
-                💼 {school.agent_notes[0].agent_name || 'Agent'} ({school.agent_notes.length})
-              </span>
-            )}
+            {(() => {
+              const notes = userRole === 'agent'
+                ? (school.agent_notes || []).filter(n => (n.agent_name || '').toLowerCase().trim() === (currentAgentName || '').toLowerCase().trim())
+                : (school.agent_notes || []);
+              if (notes.length === 0) return null;
+              return (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 flex items-center gap-1">
+                  💼 {notes[0].agent_name || 'Agent'} ({notes.length})
+                </span>
+              );
+            })()}
           </div>
           <h3 className="font-bold text-slate-900 dark:text-white text-base group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition leading-snug">
             {info?.school_name}

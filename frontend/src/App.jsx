@@ -86,18 +86,28 @@ export default function App() {
     localStorage.setItem('skila_user_role', userRole);
   }, [userRole]);
 
-  // Authenticated fetch wrapper passing active role header
+  // Current active agent identity (when in Agent Level)
+  const [currentAgentName, setCurrentAgentName] = useState(() => {
+    return localStorage.getItem('skila_current_agent') || 'Uday';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('skila_current_agent', currentAgentName);
+  }, [currentAgentName]);
+
+  // Authenticated fetch wrapper passing active role and agent name headers
   const fetchWithRole = (url, options = {}) => {
     return fetch(url, {
       ...options,
       headers: {
         ...(options.headers || {}),
-        'X-User-Role': userRole
+        'X-User-Role': userRole,
+        'X-Agent-Name': currentAgentName
       }
     });
   };
 
-  // Fetch notifications for Admin alert bell
+  // Fetch notifications for Admin alert bell / Agent alerts
   const fetchNotifications = async () => {
     try {
       const res = await fetchWithRole('/api/notifications');
@@ -114,7 +124,7 @@ export default function App() {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 20000);
     return () => clearInterval(interval);
-  }, [userRole]);
+  }, [userRole, currentAgentName]);
 
   const handleNotificationClick = async (notif) => {
     try {
@@ -149,13 +159,13 @@ export default function App() {
   useEffect(() => {
     fetchStatus();
     fetchStats();
-  }, [userRole]);
+  }, [userRole, currentAgentName]);
 
   // Fetch hierarchy options when administrative selection changes
   useEffect(() => {
     fetchHierarchyOptions();
     fetchSchools();
-  }, [selectedHierarchy, filters, userRole]);
+  }, [selectedHierarchy, filters, userRole, currentAgentName]);
 
   const fetchStatus = async () => {
     try {
@@ -372,7 +382,7 @@ export default function App() {
   };
 
   const availableAgents = React.useMemo(() => {
-    const set = new Set();
+    const set = new Set(['Uday', 'Agent Sneha', 'Karthik V']);
     schools.forEach((s) => {
       if (s.sales?.sales_owner && s.sales.sales_owner !== 'Unassigned') {
         set.add(s.sales.sales_owner.trim());
@@ -402,6 +412,8 @@ export default function App() {
         onToggleTheme={toggleTheme}
         userRole={userRole}
         onRoleChange={setUserRole}
+        currentAgentName={currentAgentName}
+        onAgentNameChange={setCurrentAgentName}
         onOpenAccessModal={() => setAccessModalOpen(true)}
         notifications={notifications}
         onNotificationClick={handleNotificationClick}
@@ -445,6 +457,8 @@ export default function App() {
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           availableAgents={availableAgents}
+          userRole={userRole}
+          currentAgentName={currentAgentName}
         />
 
         {/* Schools Listing */}
@@ -486,6 +500,7 @@ export default function App() {
                 onSelectSchool={setSelectedSchool}
                 onRunSchoolDetails={handleRunSchoolDetails}
                 userRole={userRole}
+                currentAgentName={currentAgentName}
               />
             ))}
           </div>
@@ -495,6 +510,7 @@ export default function App() {
             onSelectSchool={setSelectedSchool}
             onRunSchoolDetails={handleRunSchoolDetails}
             userRole={userRole}
+            currentAgentName={currentAgentName}
           />
         )}
       </main>
@@ -516,6 +532,7 @@ export default function App() {
           }}
           onOpenEditModal={handleOpenEditModal}
           userRole={userRole}
+          currentAgentName={currentAgentName}
         />
       )}
 
