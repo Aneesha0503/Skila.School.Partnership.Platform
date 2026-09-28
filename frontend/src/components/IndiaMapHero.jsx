@@ -193,26 +193,45 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                     <stop offset="0%" stopColor="#6366f1" />
                     <stop offset="100%" stopColor="#4338ca" />
                   </radialGradient>
+
+                  {/* Luminous Top-to-Bottom Corridor Gradient (North to Chennai) */}
+                  <linearGradient id="corridorGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#38bdf8" />
+                    <stop offset="50%" stopColor="#818cf8" />
+                    <stop offset="100%" stopColor="#4f46e5" />
+                  </linearGradient>
                 </defs>
 
-                {/* State Vector Paths */}
+                {/* Ambient Soft Logo Watermark in Background - Map is Star */}
+                <g id="skila-ambient-watermark" className="pointer-events-none select-none opacity-[0.09] dark:opacity-[0.15]">
+                  <image
+                    href="/skila_3d_glass.png"
+                    x="180"
+                    y="100"
+                    width="460"
+                    height="620"
+                    preserveAspectRatio="xMidYMid meet"
+                  />
+                </g>
+
+                {/* State Vector Paths - Vibrant & Crisply Highlighted */}
                 <g id="india-states-layer">
                   {INDIA_STATES.map((state) => {
                     const isSelected = selectedState === state.name;
                     const isHovered = hoveredState?.name === state.name;
 
-                    let fillClass = "fill-slate-100 dark:fill-slate-800/70 hover:fill-indigo-100 dark:hover:fill-indigo-900/60";
-                    let strokeClass = "stroke-slate-300 dark:stroke-slate-700";
-                    let strokeWidth = "0.7";
+                    let fillClass = "fill-slate-100/95 dark:fill-slate-800/85 hover:fill-indigo-100 dark:hover:fill-indigo-900/90";
+                    let strokeClass = "stroke-slate-300 dark:stroke-slate-600";
+                    let strokeWidth = "0.75";
 
                     if (isSelected) {
                       fillClass = "fill-indigo-600 dark:fill-indigo-500";
                       strokeClass = "stroke-white dark:stroke-white";
-                      strokeWidth = "2";
+                      strokeWidth = "2.2";
                     } else if (isHovered) {
                       fillClass = "fill-indigo-300 dark:fill-indigo-700";
                       strokeClass = "stroke-indigo-600 dark:stroke-indigo-400";
-                      strokeWidth = "1.5";
+                      strokeWidth = "1.6";
                     }
 
                     return (
@@ -235,17 +254,26 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                   })}
                 </g>
 
-                {/* 3D Skila Logo Mapped across India from Top (North) to Bottom (Chennai) */}
-                <g id="skila-3d-india-map" className="pointer-events-none select-none">
-                  <image
-                    href="/skila_3d_glass.png"
-                    x="145"
-                    y="80"
-                    width="530"
-                    height="710"
-                    opacity="0.80"
-                    className="drop-shadow-2xl transition-all duration-300"
-                    preserveAspectRatio="xMidYMid meet"
+                {/* Luminous Top-to-Bottom National AI Corridor (North to Chennai via Hyderabad HQ) */}
+                <g id="national-corridor-layer" className="pointer-events-none select-none">
+                  {/* Outer Glow Track */}
+                  <path
+                    d="M 345 310 Q 375 480 395 645 T 410 785"
+                    fill="none"
+                    stroke="#6366f1"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    className="opacity-25 dark:opacity-40 blur-[2px]"
+                  />
+                  {/* High-Tech Pulse Line */}
+                  <path
+                    d="M 345 310 Q 375 480 395 645 T 410 785"
+                    fill="none"
+                    stroke="url(#corridorGradient)"
+                    strokeWidth="2"
+                    strokeDasharray="6 4"
+                    strokeLinecap="round"
+                    className="opacity-80 dark:opacity-90"
                   />
                 </g>
 
