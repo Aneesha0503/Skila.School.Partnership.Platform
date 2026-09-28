@@ -48,7 +48,7 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
           
           {/* Eyebrow badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-indigo-500/10 border border-indigo-200/80 dark:border-indigo-800/80 text-indigo-700 dark:text-indigo-300 text-xs font-semibold w-fit tracking-wide shadow-xs">
-            <img src="/skila_icon.png" alt="Skila.ai" className="w-4 h-4 object-contain animate-pulse" />
+            <img src="/skila_3d_logo_tight.png" alt="Skila 3D" className="w-4.5 h-4.5 object-contain drop-shadow-xs animate-pulse" />
             <span>Pan-India School Intelligence & AI Pipeline</span>
           </div>
 
@@ -111,7 +111,7 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                 { name: 'Karnataka', hub: 'BLR' },
                 { name: 'Maharashtra', hub: 'BOM' },
                 { name: 'Delhi', hub: 'NCR' },
-                { name: 'Tamil Nadu', hub: 'MAA' },
+                { name: 'Tamil Nadu', hub: 'Chennai' },
                 { name: 'Gujarat', hub: 'AMD' },
                 { name: 'Uttar Pradesh', hub: 'LKO' },
                 { name: 'West Bengal', hub: 'CCU' },
@@ -170,7 +170,7 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
             {/* Map Top Bar */}
             <div className="w-full flex items-center justify-between px-2 pt-1 pb-2 border-b border-slate-100 dark:border-slate-800 text-xs">
               <div className="flex items-center gap-2">
-                <img src="/skila_icon.png" alt="Skila.ai" className="w-4.5 h-4.5 object-contain" />
+                <img src="/skila_3d_logo_tight.png" alt="Skila 3D" className="w-4.5 h-4.5 object-contain drop-shadow-xs" />
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
                   Interactive Pan-India Coverage Map
                 </span>
@@ -194,19 +194,6 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                     <stop offset="100%" stopColor="#4338ca" />
                   </radialGradient>
                 </defs>
-
-                {/* Central Transparent Skila Logo Watermark behind States */}
-                <g id="skila-central-watermark" className="pointer-events-none select-none">
-                  <image
-                    href="/skila_icon.png"
-                    x="290"
-                    y="320"
-                    width="440"
-                    height="440"
-                    className="opacity-[0.06] dark:opacity-[0.14]"
-                    preserveAspectRatio="xMidYMid meet"
-                  />
-                </g>
 
                 {/* State Vector Paths */}
                 <g id="india-states-layer">
@@ -248,6 +235,19 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                   })}
                 </g>
 
+                {/* 3D Skila Logo Mapped across India from Top (North) to Bottom (Chennai) */}
+                <g id="skila-3d-india-map" className="pointer-events-none select-none">
+                  <image
+                    href="/skila_3d_logo_tight.png"
+                    x="145"
+                    y="80"
+                    width="530"
+                    height="710"
+                    className="opacity-45 dark:opacity-55 filter drop-shadow-2xl transition-all duration-300"
+                    preserveAspectRatio="xMidYMid meet"
+                  />
+                </g>
+
                 {/* Major Educational Hubs with Glowing Radar Beacons */}
                 <g id="major-hubs-layer">
                   {MAJOR_HUBS.map((hub) => {
@@ -269,34 +269,42 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                         <circle
                           cx={hub.x}
                           cy={hub.y}
-                          r={isSelected || isHovered ? "14" : "9"}
-                          className="fill-indigo-500/20 dark:fill-indigo-400/25 animate-ping origin-center"
-                          style={{ animationDuration: hub.name === 'Hyderabad' ? '2s' : '3.5s' }}
+                          r={isSelected || isHovered || hub.name === 'Chennai' ? "14" : "9"}
+                          className={`${hub.name === 'Chennai' ? 'fill-indigo-500/35 dark:fill-indigo-400/40' : 'fill-indigo-500/20 dark:fill-indigo-400/25'} animate-ping origin-center`}
+                          style={{ animationDuration: hub.name === 'Hyderabad' ? '2s' : hub.name === 'Chennai' ? '2.5s' : '3.5s' }}
                         />
 
                         {/* Mid Halo Ring */}
                         <circle
                           cx={hub.x}
                           cy={hub.y}
-                          r={isSelected ? "8" : "5.5"}
+                          r={isSelected || hub.name === 'Chennai' ? "8" : "5.5"}
                           className={
                             hub.name === 'Hyderabad'
                               ? 'fill-amber-400 dark:fill-amber-300 stroke-amber-600 stroke-1'
+                              : hub.name === 'Chennai'
+                              ? 'fill-indigo-600 dark:fill-indigo-500 stroke-white dark:stroke-slate-900 stroke-1.5'
                               : 'fill-indigo-500 dark:fill-indigo-400 stroke-white dark:stroke-slate-900 stroke-1'
                           }
                         />
 
                         {/* Center Beacon Dot */}
-                        {/* Center Beacon Dot */}
                         {hub.name === 'Hyderabad' ? (
                           <image
-                            href="/skila_icon.png"
-                            x={hub.x - 7}
-                            y={hub.y - 7}
-                            width="14"
-                            height="14"
+                            href="/skila_3d_logo_tight.png"
+                            x={hub.x - 7.5}
+                            y={hub.y - 7.5}
+                            width="15"
+                            height="15"
                             className="pointer-events-none drop-shadow-xs"
                             preserveAspectRatio="xMidYMid meet"
+                          />
+                        ) : hub.name === 'Chennai' ? (
+                          <circle
+                            cx={hub.x}
+                            cy={hub.y}
+                            r="3.5"
+                            className="fill-white dark:fill-indigo-100"
                           />
                         ) : (
                           <circle
@@ -308,12 +316,12 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                         )}
 
                         {/* City Label for Prominent Hubs */}
-                        {(isSelected || isHovered || ['Hyderabad', 'Delhi NCR', 'Bengaluru', 'Mumbai'].includes(hub.name)) && (
+                        {(isSelected || isHovered || ['Hyderabad', 'Delhi NCR', 'Bengaluru', 'Mumbai', 'Chennai'].includes(hub.name)) && (
                           <text
                             x={hub.x + 8}
                             y={hub.y + 3}
                             className={`text-[9px] font-bold pointer-events-none select-none ${
-                              isSelected
+                              isSelected || hub.name === 'Chennai'
                                 ? 'fill-indigo-900 dark:fill-indigo-200 stroke-white dark:stroke-slate-900 stroke-[0.3]'
                                 : 'fill-slate-700 dark:fill-slate-200'
                             }`}
@@ -332,7 +340,7 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
             <div className="w-full mt-2 p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center p-1 shrink-0 shadow-2xs">
-                  <img src="/skila_icon.png" alt="Skila AI" className="w-5 h-5 object-contain" />
+                  <img src="/skila_3d_logo_tight.png" alt="Skila 3D" className="w-6 h-6 object-contain drop-shadow-xs" />
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
