@@ -109,6 +109,8 @@ export default function SchoolDetailModal({
   }, [visibleAgentNotes, userRole, historyAgentFilter, historyBucketFilter]);
 
   const [leadStatus, setLeadStatus] = useState(school?.sales?.lead_status || 'New');
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [statusUpdateMessage, setStatusUpdateMessage] = useState('');
   const [interestLevel, setInterestLevel] = useState(school?.sales?.interest_level || 'Medium');
   const [nextFollowUpDate, setNextFollowUpDate] = useState(school?.sales?.next_follow_up_date || '');
   const [salesOwner, setSalesOwner] = useState(school?.sales?.sales_owner || '');
@@ -343,35 +345,70 @@ export default function SchoolDetailModal({
     }
   };
 
-  const handleLeadStatusChange = (newStatus) => {
+  const handleLeadStatusChange = async (newStatus) => {
     setLeadStatus(newStatus);
-    if (newStatus === 'Closed Won' && !isDealClosed) {
+    setIsUpdatingStatus(true);
+    setStatusUpdateMessage('');
+
+    if (newStatus === 'Closed Won') {
       setIsDealClosed(true);
       setDealCelebrationBanner(true);
       triggerDealCelebration();
-      fetch(`/api/schools/${school.id}/toggle-deal`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-User-Role': userRole,
-          'X-Agent-Name': currentAgentName
-        },
-        body: JSON.stringify({ deal_closed: true })
-      }).then(res => res.ok ? res.json() : null)
-        .then(updated => { if (updated) onUpdateSchool(updated); });
-    } else if (newStatus !== 'Closed Won' && isDealClosed) {
+    } else if (isDealClosed) {
       setIsDealClosed(false);
       setDealCelebrationBanner(false);
-      fetch(`/api/schools/${school.id}/toggle-deal`, {
-        method: 'POST',
+    }
+
+    try {
+      const res = await fetch(`/api/schools/${school.id}/status`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'X-User-Role': userRole,
           'X-Agent-Name': currentAgentName
         },
-        body: JSON.stringify({ deal_closed: false })
-      }).then(res => res.ok ? res.json() : null)
-        .then(updated => { if (updated) onUpdateSchool(updated); });
+        body: JSON.stringify({ lead_status: newStatus })
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        onUpdateSchool(updated);
+        setStatusUpdateMessage('Saved');
+        setTimeout(() => setStatusUpdateMessage(''), 2500);
+      } else {
+        // Fallback: update via general school PUT endpoint
+        const updatedPayload = {
+          hierarchy: school.hierarchy,
+          info: school.info,
+          technology: school.technology,
+          sales: {
+            ...school.sales,
+            lead_status: newStatus,
+            deal_closed: newStatus === 'Closed Won',
+            deal_closed_at: newStatus === 'Closed Won' ? (school.sales?.deal_closed_at || new Date().toISOString()) : '',
+            deal_closed_by: newStatus === 'Closed Won' ? (school.sales?.deal_closed_by || (userRole === 'agent' ? currentAgentName : 'Admin')) : ''
+          }
+        };
+        const putRes = await fetch(`/api/schools/${school.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Role': userRole,
+            'X-Agent-Name': currentAgentName
+          },
+          body: JSON.stringify(updatedPayload)
+        });
+        if (putRes.ok) {
+          const saved = await putRes.json();
+          onUpdateSchool(saved);
+          setStatusUpdateMessage('Saved');
+          setTimeout(() => setStatusUpdateMessage(''), 2500);
+        }
+      }
+    } catch (err) {
+      console.error('Error updating school status:', err);
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -1348,7 +1385,8 @@ export default function SchoolDetailModal({
                       <select
                         value={leadStatus}
                         onChange={(e) => handleLeadStatusChange(e.target.value)}
-                        className="text-xs font-bold bg-transparent text-indigo-900 dark:text-indigo-200 focus:outline-none cursor-pointer"
+                        disabled={isUpdatingStatus}
+                        className="text-xs font-bold bg-transparent text-indigo-900 dark:text-indigo-200 focus:outline-none cursor-pointer disabled:opacity-50"
                       >
                         <option value="New" className="dark:bg-slate-900 dark:text-slate-100">New</option>
                         <option value="Contacted" className="dark:bg-slate-900 dark:text-slate-100">Contacted</option>
@@ -1358,6 +1396,13 @@ export default function SchoolDetailModal({
                         <option value="Closed Won" className="dark:bg-slate-900 dark:text-slate-100">Closed Won</option>
                         <option value="Closed Lost" className="dark:bg-slate-900 dark:text-slate-100">Closed Lost</option>
                       </select>
+                      {isUpdatingStatus ? (
+                        <RefreshCw className="w-3 h-3 text-indigo-600 dark:text-indigo-400 animate-spin ml-0.5" />
+                      ) : statusUpdateMessage ? (
+                        <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 animate-in fade-in ml-0.5">
+                          ✓ Saved
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                 </div>

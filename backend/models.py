@@ -82,6 +82,9 @@ class SalesCRM(BaseModel):
 class DealToggleRequest(BaseModel):
     deal_closed: bool
 
+class LeadStatusUpdateRequest(BaseModel):
+    lead_status: str
+
 class FormalitiesData(BaseModel):
     model_config = ConfigDict(extra="allow", coerce_numbers_to_str=True)
     status: Optional[str] = "In Progress"  # Drafting MOU, MOU Sent, Signed & Countersigned, Commercials Cleared, Onboarding Complete

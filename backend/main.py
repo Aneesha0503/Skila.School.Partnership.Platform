@@ -18,6 +18,7 @@ from openpyxl.utils import get_column_letter
 from firebase_config import get_db, is_live_firebase
 from models import (
     SchoolModel, SchoolCreateUpdate, AgentNoteCreate, AgentNoteModel, DealToggleRequest,
+    LeadStatusUpdateRequest,
     UserRegisterRequest, UserLoginRequest, UserProfile, TokenResponse, UserUpdateRequest,
     FormalitiesData, FormalitiesUpdateRequest
 )
@@ -815,6 +816,128 @@ def toggle_deal_closed(
         sales["deal_closed_by"] = ""
         if sales.get("lead_status") == "Closed Won":
             sales["lead_status"] = "Proposal Shared"
+
+    existing["sales"] = sales
+    existing["updated_at"] = now
+    doc_ref.set(existing)
+
+    if role == "agent" and current_agent:
+        active_lower = current_agent.lower().strip()
+        existing["agent_notes"] = [
+            n for n in (existing.get("agent_notes") or [])
+            if n.get("agent_name", "").lower().strip() == active_lower
+        ]
+
+    return existing
+
+@app.put("/api/schools/{school_id}/status")
+def update_school_status(
+    school_id: str,
+    payload: LeadStatusUpdateRequest,
+    role: str = Depends(get_current_role),
+    current_agent: Optional[str] = Depends(get_current_agent_name)
+):
+    """
+    Directly updates the lead status of a school (New, Contacted, Demo Scheduled, Proposal Shared, Pilot Started, Closed Won, Closed Lost).
+    - If status is 'Closed Won', activates deal_closed and initializes formalities.
+    - If status is moved away from 'Closed Won', sets deal_closed to False.
+    - Progresses sales funnel milestones (demo_done, proposal_shared, pilot_started).
+    - Immediately saves to Firestore and returns the updated school document.
+    """
+    doc_ref = db.collection("schools").document(school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+
+    existing = doc.to_dict()
+    sales = existing.get("sales", {})
+    now = datetime.now(timezone.utc).isoformat()
+    school_name = existing.get("info", {}).get("school_name", "School")
+    agent_display = (current_agent or "Field Agent") if role == "agent" else "Admin"
+
+    new_status = payload.lead_status.strip()
+    sales["lead_status"] = new_status
+
+    # Smart milestone sync
+    if new_status in ["Demo Scheduled", "Proposal Shared", "Pilot Started", "Closed Won"]:
+        if not sales.get("demo_done") or sales.get("demo_done") == "No":
+            sales["demo_done"] = "Yes"
+    if new_status in ["Proposal Shared", "Pilot Started", "Closed Won"]:
+        if not sales.get("proposal_shared") or sales.get("proposal_shared") == "No":
+            sales["proposal_shared"] = "Yes"
+    if new_status in ["Pilot Started", "Closed Won"]:
+        if not sales.get("pilot_started") or sales.get("pilot_started") == "No":
+            sales["pilot_started"] = "Yes"
+
+    if new_status == "Closed Won":
+        sales["deal_closed"] = True
+        sales["deal_closed_at"] = now
+        sales["deal_closed_by"] = agent_display
+
+        # Auto-initialize baseline formalities if missing
+        current_formalities = existing.get("formalities") or sales.get("formalities") or {}
+        if not current_formalities:
+            info = existing.get("info", {})
+            principal = info.get("principal_name") or info.get("correspondent_name") or "School Principal"
+            mou_num = f"SKILA-MOU-2026-{school_id[:6].upper()}"
+            inv_num = f"INV-SKILA-{school_id[:5].upper()}"
+            current_formalities = {
+                "status": "In Progress",
+                "progress_pct": 20,
+                "formalities_completed": False,
+                "formalities_completed_at": "",
+                "partnership_tier": "Skila AI Pioneer Partner",
+                "academic_year": "2026-2027",
+                "contract_value": sales.get("annual_fee_range") or "₹2,50,000",
+                "payment_terms": "Annual Upfront",
+                "mou_number": mou_num,
+                "mou_date": now[:10],
+                "mou_validity": "June 2026 - May 2027",
+                "mou_signatory_name": principal,
+                "mou_signatory_designation": "Principal / Correspondent",
+                "mou_status": "Drafting",
+                "mou_signed_date": "",
+                "invoice_number": inv_num,
+                "invoice_date": now[:10],
+                "invoice_status": "Pending Invoice",
+                "payment_ref_no": "",
+                "payment_received_date": "",
+                "school_spoc_name": principal,
+                "school_spoc_designation": "Institutional Coordinator",
+                "school_spoc_phone": info.get("mobile", ""),
+                "school_spoc_email": info.get("email", ""),
+                "roster_status": "Pending",
+                "lab_readiness": "Pending Inspection" if existing.get("technology", {}).get("computer_lab") == "Yes" else "Setup Required",
+                "teacher_training_date": "",
+                "teacher_training_status": "Scheduled",
+                "rollout_target_date": "",
+                "formalities_updated_by": agent_display,
+                "formalities_updated_at": now
+            }
+            current_formalities["progress_pct"] = compute_formalities_progress(current_formalities)
+            existing["formalities"] = current_formalities
+            sales["formalities"] = current_formalities
+
+        try:
+            notif_id = f"notif_{uuid.uuid4().hex[:10]}"
+            notif_data = {
+                "id": notif_id,
+                "school_id": school_id,
+                "school_name": school_name,
+                "agent_name": agent_display,
+                "category": "Deal Closed",
+                "urgency": "High",
+                "message": f"🎉 Deal Confirmed & Closed! {school_name} partnership finalized by {agent_display}.",
+                "timestamp": now,
+                "is_read": False
+            }
+            db.collection("notifications").document(notif_id).set(notif_data)
+        except Exception as e:
+            print(f"[Notifications] Could not write celebration alert: {e}")
+    else:
+        sales["deal_closed"] = False
+        sales["deal_closed_at"] = ""
+        sales["deal_closed_by"] = ""
 
     existing["sales"] = sales
     existing["updated_at"] = now
