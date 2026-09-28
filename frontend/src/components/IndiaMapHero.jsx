@@ -1,14 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles, MapPin, Compass, ArrowDownRight, Layers, School, ChevronRight, CheckCircle2, Zap } from 'lucide-react';
 import { INDIA_STATES, MAJOR_HUBS, PAN_INDIA_STATS } from '../data/indiaMapData';
 
 export default function IndiaMapHero({ onSelectState, selectedState, isAuthenticated = true, onRequireAuth }) {
+  const [internalPinnedState, setInternalPinnedState] = useState(selectedState || 'Telangana');
   const [hoveredState, setHoveredState] = useState(null);
   const [hoveredHub, setHoveredHub] = useState(null);
 
-  const activeStateName = hoveredState?.name || selectedState || 'Telangana';
-  const activeHubInfo = MAJOR_HUBS.find(h => h.state === activeStateName) || MAJOR_HUBS[0];
-  const activePinnedState = INDIA_STATES.find(s => s.name === activeStateName);
+  // Sync internal state whenever parent selectedState changes
+  useEffect(() => {
+    if (selectedState) {
+      setInternalPinnedState(selectedState);
+    }
+  }, [selectedState]);
+
+  const activePinnedStateName = internalPinnedState || selectedState || 'Telangana';
+  const activePinnedState = INDIA_STATES.find(s => s.name === activePinnedStateName);
+  const activeHubInfo = MAJOR_HUBS.find(h => h.state === activePinnedStateName) || 
+                        MAJOR_HUBS.find(h => h.state === (hoveredState?.name || 'Telangana')) ||
+                        MAJOR_HUBS[0];
 
   const scrollToTarget = () => {
     if (!isAuthenticated) {
@@ -27,6 +37,7 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
   };
 
   const handleStateClick = (stateName) => {
+    setInternalPinnedState(stateName);
     if (onSelectState) {
       onSelectState(stateName);
     }
@@ -118,13 +129,12 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                 { name: 'Kerala', hub: 'COK' },
                 { name: 'Rajasthan', hub: 'JAI' }
               ].map(({ name, hub }) => {
-                const isSelected = selectedState === name;
+                const isSelected = activePinnedStateName === name;
                 return (
                   <button
                     key={name}
                     onClick={() => {
                       handleStateClick(name);
-                      scrollToDistrictRunner();
                     }}
                     className={`text-xs px-2.5 py-1.5 rounded-lg font-medium transition cursor-pointer flex items-center gap-1 ${
                       isSelected
@@ -193,13 +203,24 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                     <stop offset="0%" stopColor="#6366f1" />
                     <stop offset="100%" stopColor="#4338ca" />
                   </radialGradient>
+
+                  <style>{`
+                    @keyframes pinDrop {
+                      0% { opacity: 0; transform: translateY(-16px) scale(0.9); }
+                      70% { opacity: 1; transform: translateY(2px) scale(1.04); }
+                      100% { opacity: 1; transform: translateY(0) scale(1); }
+                    }
+                    .pin-drop-anim {
+                      animation: pinDrop 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                    }
+                  `}</style>
                 </defs>
 
                 {/* State Vector Paths - Vibrant & Crisply Highlighted */}
                 <g id="india-states-layer">
                   {INDIA_STATES.map((state) => {
-                    const isSelected = selectedState === state.name;
-                    const isHovered = hoveredState?.name === state.name;
+                    const isSelected = activePinnedStateName === state.name;
+                    const isHovered = hoveredState?.name === state.name && !isSelected;
 
                     let fillClass = "fill-slate-100/95 dark:fill-slate-800/85 hover:fill-indigo-100 dark:hover:fill-indigo-900/90";
                     let strokeClass = "stroke-slate-300 dark:stroke-slate-600";
@@ -228,7 +249,6 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                         onMouseLeave={() => setHoveredState(null)}
                         onClick={() => {
                           handleStateClick(state.name);
-                          scrollToDistrictRunner();
                         }}
                       />
                     );
@@ -238,8 +258,8 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                 {/* Major Educational Hubs with Glowing Radar Beacons */}
                 <g id="major-hubs-layer">
                   {MAJOR_HUBS.map((hub) => {
-                    const isSelected = selectedState === hub.state;
-                    const isHovered = hoveredState?.name === hub.state || hoveredHub?.name === hub.name;
+                    const isSelected = activePinnedStateName === hub.state;
+                    const isHovered = (hoveredState?.name === hub.state || hoveredHub?.name === hub.name) && !isSelected;
 
                     return (
                       <g
@@ -249,7 +269,6 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                         onMouseLeave={() => setHoveredHub(null)}
                         onClick={() => {
                           handleStateClick(hub.state);
-                          scrollToDistrictRunner();
                         }}
                       >
                         {/* Outer Radar Pulse Ring */}
@@ -322,58 +341,91 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                 </g>
 
                 {/* Dynamically Pinned 3D Logo on Selected / Clicked State */}
-                {activePinnedState && activePinnedState.cx && activePinnedState.cy && (
-                  <g
-                    id="selected-state-logo-pin"
-                    className="pointer-events-none select-none transition-all duration-300"
-                  >
-                    {/* Glowing Radar Pulse Rings on Clicked State */}
-                    <circle
-                      cx={activePinnedState.cx}
-                      cy={activePinnedState.cy}
-                      r="22"
-                      className="fill-indigo-500/25 dark:fill-indigo-400/30 animate-ping origin-center"
-                      style={{ animationDuration: '2.4s' }}
-                    />
-                    <circle
-                      cx={activePinnedState.cx}
-                      cy={activePinnedState.cy}
-                      r="12"
-                      className="fill-indigo-500/35 dark:fill-indigo-400/40 blur-xs"
-                    />
+                {activePinnedState && activePinnedState.cx && activePinnedState.cy && (() => {
+                  const cx = activePinnedState.cx;
+                  const cy = activePinnedState.cy;
+                  const pillWidth = Math.max(76, (activePinnedState.name.length * 6.3) + 24);
+                  const isNearTop = cy < 130;
+                  const pillY = isNearTop ? cy + 24 : cy - 50;
 
-                    {/* 3D Glass Logo Standing Directly on Clicked State */}
-                    <image
-                      href="/skila_3d_glass.png"
-                      x={activePinnedState.cx - 20}
-                      y={activePinnedState.cy - 26}
-                      width="40"
-                      height="52"
-                      className="drop-shadow-xl"
-                      preserveAspectRatio="xMidYMid meet"
-                    />
-
-                    {/* Floating Pill Label for Clicked State */}
-                    <g className="filter drop-shadow-md">
-                      <rect
-                        x={activePinnedState.cx - 42}
-                        y={activePinnedState.cy - 44}
-                        width="84"
-                        height="16"
-                        rx="8"
-                        className="fill-slate-900/90 dark:fill-slate-950/95 stroke-indigo-400/80 stroke-1"
+                  return (
+                    <g
+                      key={activePinnedState.name}
+                      id="selected-state-logo-pin"
+                      className="pointer-events-none select-none pin-drop-anim"
+                    >
+                      {/* Ground Soft Contact Shadow */}
+                      <ellipse
+                        cx={cx}
+                        cy={cy + 16}
+                        rx="16"
+                        ry="5"
+                        className="fill-slate-900/35 dark:fill-black/60 blur-[1.5px]"
                       />
-                      <text
-                        x={activePinnedState.cx}
-                        y={activePinnedState.cy - 33}
-                        textAnchor="middle"
-                        className="text-[8px] font-extrabold fill-white tracking-wider uppercase"
-                      >
-                        {activePinnedState.name}
-                      </text>
+
+                      {/* Glowing Radar Pulse Rings */}
+                      <circle
+                        cx={cx}
+                        cy={cy + 16}
+                        r="20"
+                        className="fill-indigo-500/30 dark:fill-indigo-400/35 animate-ping origin-center"
+                        style={{ animationDuration: '2.4s' }}
+                      />
+                      <circle
+                        cx={cx}
+                        cy={cy + 16}
+                        r="10"
+                        className="fill-indigo-500/40 dark:fill-indigo-400/45 blur-xs"
+                      />
+
+                      {/* Focal Ground Anchor Beacon */}
+                      <circle
+                        cx={cx}
+                        cy={cy + 16}
+                        r="3.5"
+                        className="fill-white stroke-indigo-600 stroke-[1.8]"
+                      />
+
+                      {/* 3D Glass Emblem Standing at Clicked State */}
+                      <image
+                        href="/skila_3d_glass.png"
+                        x={cx - 21}
+                        y={cy - 34}
+                        width="42"
+                        height="52"
+                        className="drop-shadow-2xl"
+                        preserveAspectRatio="xMidYMid meet"
+                      />
+
+                      {/* Floating Badge Pill with State Name */}
+                      <g className="filter drop-shadow-md">
+                        <rect
+                          x={cx - pillWidth / 2}
+                          y={pillY}
+                          width={pillWidth}
+                          height="18"
+                          rx="9"
+                          className="fill-slate-900/95 dark:fill-slate-950/95 stroke-indigo-400/90 stroke-1"
+                        />
+                        {/* Live Status Indicator Dot */}
+                        <circle
+                          cx={cx - pillWidth / 2 + 9}
+                          cy={pillY + 9}
+                          r="2.5"
+                          className="fill-emerald-400 animate-pulse"
+                        />
+                        <text
+                          x={cx + 4}
+                          y={pillY + 12.5}
+                          textAnchor="middle"
+                          className="text-[8.5px] font-black fill-white tracking-wider uppercase font-sans"
+                        >
+                          {activePinnedState.name}
+                        </text>
+                      </g>
                     </g>
-                  </g>
-                )}
+                  );
+                })()}
               </svg>
             </div>
 
@@ -386,8 +438,13 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                 <div>
                   <div className="flex items-center gap-1.5">
                     <span className="font-bold text-slate-900 dark:text-white text-xs">
-                      {hoveredState?.name || selectedState || 'Pan-India Overview'}
+                      {hoveredState ? hoveredState.name : activePinnedStateName}
                     </span>
+                    {hoveredState && hoveredState.name !== activePinnedStateName && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-medium">
+                        Click to Pin
+                      </span>
+                    )}
                     {activeHubInfo && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 font-semibold">
                         {activeHubInfo.name}
@@ -395,7 +452,7 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                     )}
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    {activeHubInfo ? activeHubInfo.role : 'Select any state to inspect school density & AI adoption.'}
+                    {activeHubInfo ? activeHubInfo.role : 'Target this state for automated school discovery & AI deployment.'}
                   </p>
                 </div>
               </div>
@@ -405,10 +462,10 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                   if (hoveredState?.name) handleStateClick(hoveredState.name);
                   scrollToDistrictRunner();
                 }}
-                className="shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition cursor-pointer flex items-center gap-1"
+                className="shrink-0 text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition cursor-pointer flex items-center gap-1.5"
               >
-                <span>Select & Scan</span>
-                <ChevronRight className="w-3 h-3" />
+                <span>Launch Scanner</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
