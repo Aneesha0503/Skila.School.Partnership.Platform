@@ -153,18 +153,23 @@ export default function Header({
         <div className="flex justify-between items-center h-16">
           
           {/* Logo & Platform Brand */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-100 dark:shadow-none">
-              <School className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-lg text-slate-900 dark:text-white tracking-tight">Skila</span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700/50">
-                  Partnership Platform
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">School Intelligence & EdTech Partnership Portal</p>
+          <div className="flex items-center gap-3 select-none">
+            <div className="flex items-center gap-2.5">
+              {/* Light Mode Logo */}
+              <img
+                src="/skila_logo_transparent.png"
+                alt="Skila.ai powered by Tech Nirmaan"
+                className="h-10 w-auto object-contain dark:hidden"
+              />
+              {/* Dark Mode Logo */}
+              <img
+                src="/skila_logo_dark.png"
+                alt="Skila.ai powered by Tech Nirmaan"
+                className="h-10 w-auto object-contain hidden dark:block"
+              />
+              <span className="hidden sm:inline-flex text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/80 shadow-2xs">
+                Partnership Platform
+              </span>
             </div>
           </div>
 

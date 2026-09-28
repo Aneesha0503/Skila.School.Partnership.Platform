@@ -108,12 +108,12 @@ export default function LoginModal({ isOpen, onClose, initialMode = 'login' }) {
           </button>
           
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner border border-white/30 text-2xl font-bold">
-              ⚡
+            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-md p-1 border border-white/30">
+              <img src="/skila_icon.png" alt="Skila.ai" className="h-8 w-auto object-contain" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-black tracking-tight">Skila AI</h2>
+                <h2 className="text-xl font-black tracking-tight">Skila.ai</h2>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-400 text-emerald-950 uppercase tracking-widest">
                   Auth
                 </span>

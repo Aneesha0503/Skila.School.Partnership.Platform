@@ -60,9 +60,16 @@ export default function PartnershipCertificateModal({ school, formalities, onClo
 
             {/* Top Brand & Badge */}
             <div className="flex items-center justify-center gap-2 mb-3">
-              <span className="text-2xl sm:text-3xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-200 font-serif">
-                SKILA AI
-              </span>
+              <img
+                src="/skila_logo_dark.png"
+                alt="Skila.ai"
+                className="h-10 w-auto object-contain print:hidden"
+              />
+              <img
+                src="/skila_logo_clean.png"
+                alt="Skila.ai"
+                className="h-10 w-auto object-contain hidden print:block"
+              />
             </div>
 
             <p className="text-[11px] uppercase tracking-[0.3em] text-amber-400/90 font-bold mb-6">

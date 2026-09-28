@@ -63,14 +63,20 @@ export default function MOUPreviewModal({ school, formalities, onClose }) {
           {/* Agreement Letterhead */}
           <div className="border-b-2 border-indigo-600 pb-6 flex items-start justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-2xl font-black tracking-tight text-indigo-700 dark:text-indigo-400">SKILA</span>
-                <span className="text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300">
-                  AI Education
-                </span>
+              <div className="flex items-center gap-3 mb-2">
+                <img
+                  src="/skila_logo_transparent.png"
+                  alt="Skila.ai"
+                  className="h-9 w-auto object-contain dark:hidden print:block"
+                />
+                <img
+                  src="/skila_logo_dark.png"
+                  alt="Skila.ai"
+                  className="h-9 w-auto object-contain hidden dark:block print:hidden"
+                />
               </div>
               <p className="text-xs text-slate-500 font-medium">
-                Skila Edutech AI Private Limited • School Partnership Division
+                Skila.ai • School Partnership Division
               </p>
               <p className="text-[11px] text-slate-400">
                 Official Document Ref: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{mouNumber}</span>
