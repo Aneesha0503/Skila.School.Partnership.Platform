@@ -52,7 +52,7 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-indigo-500/10 dark:bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-amber-500/10 dark:bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center p-6 sm:p-8 lg:p-10">
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center p-4 sm:p-8 lg:p-10">
         
         {/* Left Column: Vision Statement & Action Controls */}
         <div className="lg:col-span-6 flex flex-col justify-center space-y-6">
@@ -430,13 +430,13 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
             </div>
 
             {/* Bottom Interactive State / Hub Hover Card */}
-            <div className="w-full mt-2 p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between text-xs">
+            <div className="w-full mt-2 p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 text-xs">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center p-1 shrink-0 shadow-2xs">
                   <img src="/skila_3d_glass.png" alt="Skila 3D" className="w-6 h-6 object-contain drop-shadow-xs" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="font-bold text-slate-900 dark:text-white text-xs">
                       {hoveredState ? hoveredState.name : activePinnedStateName}
                     </span>
@@ -462,7 +462,7 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                   if (hoveredState?.name) handleStateClick(hoveredState.name);
                   scrollToDistrictRunner();
                 }}
-                className="shrink-0 text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                className="w-full sm:w-auto justify-center shrink-0 text-[11px] font-semibold px-3.5 py-2 sm:py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition cursor-pointer flex items-center gap-1.5"
               >
                 <span>Launch Scanner</span>
                 <ChevronRight className="w-3.5 h-3.5" />

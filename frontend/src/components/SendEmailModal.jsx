@@ -450,13 +450,13 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/80 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2.5 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/80 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <button
               type="button"
               onClick={handleSendViaGmailWeb}
               disabled={sendSuccess}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-indigo-600 hover:from-red-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md shadow-red-600/20 transition cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-indigo-600 hover:from-red-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md shadow-red-600/20 transition cursor-pointer"
               title="Open Gmail Web in a new tab with recipient and proposal pre-filled (Bypasses network blocks)"
             >
               <Mail className="w-3.5 h-3.5" />
@@ -466,19 +466,19 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
             <button
               type="button"
               onClick={handleOpenMailClient}
-              className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition cursor-pointer shadow-xs"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition cursor-pointer shadow-xs"
               title="Open in your default desktop mail app (Outlook, Apple Mail, Thunderbird)"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              <span>Desktop App</span>
+              <span>Mail App</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-2 sm:ml-auto">
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-semibold transition cursor-pointer"
+              className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-semibold transition cursor-pointer text-center"
             >
               Cancel
             </button>
@@ -487,13 +487,13 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
               type="button"
               onClick={handleSendAutomatic}
               disabled={isSending || sendSuccess}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
               title="Attempt background delivery via SMTP port"
             >
               {isSending ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Sending via SMTP...</span>
+                  <span>Sending...</span>
                 </>
               ) : sendSuccess ? (
                 <>

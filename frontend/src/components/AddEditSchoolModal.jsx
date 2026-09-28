@@ -153,28 +153,28 @@ export default function AddEditSchoolModal({ initialData, onClose, onSaveSuccess
         </div>
 
         {/* Tab selection */}
-        <div className="flex items-center gap-1 px-5 pt-3 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold overflow-x-auto">
+        <div className="flex items-center gap-1 px-4 sm:px-5 pt-3 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold overflow-x-auto whitespace-nowrap scrollbar-none">
           <button
             onClick={() => setActiveTab('hierarchy')}
-            className={`py-2 px-3 rounded-t-lg transition flex items-center gap-1.5 ${activeTab === 'hierarchy' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+            className={`shrink-0 py-2 px-3 rounded-t-lg transition flex items-center gap-1.5 cursor-pointer ${activeTab === 'hierarchy' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
           >
             <MapPin className="w-3.5 h-3.5" /> 1. Hierarchy
           </button>
           <button
             onClick={() => setActiveTab('info')}
-            className={`py-2 px-3 rounded-t-lg transition flex items-center gap-1.5 ${activeTab === 'info' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+            className={`shrink-0 py-2 px-3 rounded-t-lg transition flex items-center gap-1.5 cursor-pointer ${activeTab === 'info' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
           >
             <Building2 className="w-3.5 h-3.5" /> 2. School Info
           </button>
           <button
             onClick={() => setActiveTab('tech')}
-            className={`py-2 px-3 rounded-t-lg transition flex items-center gap-1.5 ${activeTab === 'tech' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+            className={`shrink-0 py-2 px-3 rounded-t-lg transition flex items-center gap-1.5 cursor-pointer ${activeTab === 'tech' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
           >
             <Cpu className="w-3.5 h-3.5" /> 3. Technology
           </button>
           <button
             onClick={() => setActiveTab('sales')}
-            className={`py-2 px-3 rounded-t-lg transition flex items-center gap-1.5 ${activeTab === 'sales' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+            className={`shrink-0 py-2 px-3 rounded-t-lg transition flex items-center gap-1.5 cursor-pointer ${activeTab === 'sales' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
           >
             <DollarSign className="w-3.5 h-3.5" /> 4. Sales CRM
           </button>

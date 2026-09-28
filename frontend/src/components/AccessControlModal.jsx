@@ -190,8 +190,8 @@ export default function AccessControlModal({ isOpen, onClose, currentRole, onSel
 
         {/* Content Table */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
-            <table className="w-full text-left text-xs">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-x-auto shadow-xs">
+            <table className="w-full min-w-[420px] text-left text-xs">
               <thead className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold">
                 <tr>
                   <th className="py-3 px-4">Feature / Platform Capability</th>

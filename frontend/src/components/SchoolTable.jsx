@@ -54,7 +54,128 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
-      <div className="overflow-x-auto">
+      {/* MOBILE RESPONSIVE CARD VIEW (visible on < sm screens) */}
+      <div className="sm:hidden divide-y divide-slate-100 dark:divide-slate-800">
+        {schools.map((school, index) => {
+          const { hierarchy, info, technology, sales, tier, details_fetched } = school;
+          const tierBadge = getTierBadge(tier);
+          const isRunning = runningId === school.id;
+          const statusBadge = getLeadStatusBadge(sales?.lead_status, sales?.deal_closed);
+          const isDealClosed = Boolean(sales?.deal_closed || sales?.lead_status === 'Closed Won');
+          const form = school.formalities || sales?.formalities || {};
+          const isComp = form.progress_pct >= 100 || form.formalities_completed;
+
+          return (
+            <div
+              key={school.id}
+              onClick={() => onSelectSchool(school)}
+              className="p-3.5 hover:bg-indigo-50/30 dark:hover:bg-slate-800/50 transition cursor-pointer flex flex-col gap-2"
+            >
+              {/* Card Top Row: #, Tier, Status */}
+              <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500">
+                    #{index + 1}
+                  </span>
+                  <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${tierBadge.className}`}>
+                    {tierBadge.label}
+                  </span>
+                  {statusBadge && (
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full border shadow-2xs ${statusBadge.className}`}>
+                      <span>{statusBadge.icon}</span> {statusBadge.label}
+                    </span>
+                  )}
+                  {isDealClosed && isComp && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-600 text-white shadow-2xs">
+                      <span>🎓</span> Active Partner
+                    </span>
+                  )}
+                  {isDealClosed && !isComp && form.progress_pct > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs">
+                      <span>📜</span> {form.progress_pct}%
+                    </span>
+                  )}
+                </div>
+
+                {details_fetched ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> 49 Fields Ready
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
+                    ⚡ Basic Discovery
+                  </span>
+                )}
+              </div>
+
+              {/* School Name & Board */}
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm leading-snug">
+                  {info?.school_name}
+                </h4>
+                <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex-wrap">
+                  <span>{info?.board || 'CBSE'}</span>
+                  <span>•</span>
+                  <span>{info?.student_strength ? `${Number(info.student_strength).toLocaleString()} Students` : '1,000+ Students'}</span>
+                  {info?.udise_code && (
+                    <>
+                      <span>•</span>
+                      <span className="font-mono text-[10px]">UDISE: {info.udise_code}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Location & Agent */}
+              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 gap-2 flex-wrap">
+                <span className="flex items-center gap-1 truncate max-w-[200px]">
+                  <MapPin className="w-3 h-3 text-indigo-500 shrink-0" />
+                  <span className="truncate">
+                    {[hierarchy?.mandal, hierarchy?.district, hierarchy?.state].filter(Boolean).join(', ') || 'Location unavailable'}
+                  </span>
+                </span>
+
+                <span className="flex items-center gap-1 shrink-0">
+                  <User className="w-3 h-3 text-slate-400" />
+                  <span>{sales?.sales_owner || 'Unassigned'}</span>
+                </span>
+              </div>
+
+              {/* Action Buttons Row */}
+              <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100/80 dark:border-slate-800/80">
+                <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                  <span>View Details</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </span>
+
+                {!details_fetched && userRole === 'admin' && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleRunDetailsClick(e, school.id)}
+                    disabled={isRunning}
+                    className="px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-[11px] inline-flex items-center gap-1 shadow-xs cursor-pointer disabled:opacity-50"
+                  >
+                    {isRunning ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 animate-spin text-slate-950" />
+                        <span>Fetching...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-3 h-3 fill-current" />
+                        <span>Fetch 49 Fields</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* DESKTOP & TABLET DATA TABLE (hidden on < sm screens) */}
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase text-[10px] font-bold tracking-wider">

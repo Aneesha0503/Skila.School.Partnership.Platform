@@ -133,7 +133,7 @@ export default function DistrictRunner({
   };
 
   return (
-    <div id="district-runner-section" className="bg-slate-900 text-white rounded-xl p-5 mb-6 shadow-sm border border-slate-800 scroll-mt-6">
+    <div id="district-runner-section" className="bg-slate-900 text-white rounded-xl p-4 sm:p-5 mb-6 shadow-sm border border-slate-800 scroll-mt-6">
       {/* Agent Access Banner */}
       {userRole === 'agent' && (
         <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-center justify-between gap-3">
@@ -166,11 +166,11 @@ export default function DistrictRunner({
         </div>
 
         {/* Header Actions */}
-        <div className="flex items-center gap-3 self-start md:self-center flex-wrap">
+        <div className="flex items-center gap-2.5 sm:gap-3 self-stretch md:self-center flex-wrap">
           {userRole === 'admin' ? (
             <>
               <label 
-                className="inline-flex items-center gap-2 text-xs text-slate-300 hover:text-white cursor-pointer bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-700/80 transition"
+                className="inline-flex items-center gap-2 text-xs text-slate-300 hover:text-white cursor-pointer bg-slate-800/80 px-2.5 py-2 rounded-lg border border-slate-700/80 transition select-none"
                 title="Checks live websites again instead of loading schools already saved in the database"
               >
                 <input
@@ -187,7 +187,7 @@ export default function DistrictRunner({
                 type="button"
                 onClick={(e) => handleRunDistrict(e, true)}
                 disabled={isRunning || isScrapingMore}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600/30 to-violet-600/30 hover:from-indigo-600/50 hover:to-violet-600/50 text-indigo-100 text-xs font-semibold border border-indigo-400/40 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-indigo-600/30 to-violet-600/30 hover:from-indigo-600/50 hover:to-violet-600/50 text-indigo-100 text-xs font-semibold border border-indigo-400/40 transition disabled:opacity-50 cursor-pointer shadow-xs"
                 title="Crawls other mandals and rural areas in this district to find 25 new schools without duplicates"
               >
                 {isScrapingMore ? (
@@ -205,7 +205,7 @@ export default function DistrictRunner({
               </button>
             </>
           ) : (
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-xs font-medium">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-xs font-medium">
               <Lock className="w-3 h-3 text-amber-400" />
               <span>Scraper Controls (Admin Only)</span>
             </div>
@@ -286,12 +286,12 @@ export default function DistrictRunner({
         </div>
 
         {/* Submit */}
-        <div className="md:col-span-3">
+        <div className="sm:col-span-2 md:col-span-3">
           {userRole === 'admin' ? (
             <button
               type="submit"
               disabled={isRunning || isScrapingMore}
-              className="w-full h-[38px] inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition duration-150 disabled:opacity-50 cursor-pointer"
+              className="w-full h-[42px] min-h-[42px] inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition duration-150 disabled:opacity-50 cursor-pointer"
             >
               {isRunning ? (
                 <>
@@ -310,7 +310,7 @@ export default function DistrictRunner({
               type="button"
               disabled
               title="Admin authorization required to run automated district scraper"
-              className="w-full h-[38px] inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-slate-800 text-slate-400 text-xs font-semibold border border-slate-700 cursor-not-allowed"
+              className="w-full h-[42px] min-h-[42px] inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-slate-800 text-slate-400 text-xs font-semibold border border-slate-700 cursor-not-allowed"
             >
               <Lock className="w-3.5 h-3.5 text-amber-400" />
               <span>Admin Scraper Locked</span>

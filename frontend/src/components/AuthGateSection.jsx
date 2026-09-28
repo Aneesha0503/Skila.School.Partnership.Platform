@@ -30,11 +30,11 @@ export default function AuthGateSection({ onOpenLogin, onOpenRegister }) {
         </div>
 
         {/* Primary Call to Action Buttons */}
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 pt-2">
           <button
             type="button"
             onClick={onOpenLogin}
-            className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-extrabold text-sm shadow-md hover:shadow-indigo-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-extrabold text-sm shadow-md hover:shadow-indigo-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
           >
             <LogIn className="w-4 h-4" />
             <span>Sign In to Access Platform</span>
@@ -44,7 +44,7 @@ export default function AuthGateSection({ onOpenLogin, onOpenRegister }) {
           <button
             type="button"
             onClick={onOpenRegister}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-sm shadow-2xs transition-all cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-sm shadow-2xs transition-all cursor-pointer"
           >
             <UserPlus className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             <span>Register Team Member</span>

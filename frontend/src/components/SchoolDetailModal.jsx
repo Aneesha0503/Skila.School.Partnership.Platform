@@ -611,46 +611,103 @@ export default function SchoolDetailModal({
       
       {/* Minimal Sticky Modal Header */}
       <div className="bg-slate-900 text-white shrink-0 border-b border-slate-800 shadow-sm z-20">
-        <div className="w-full max-w-7xl 2xl:max-w-[1700px] mx-auto px-5 sm:px-8 py-3.5">
-          <div className="flex items-center justify-between gap-3 sm:gap-4">
-            
-            {/* Backward Navigation: Back to Directory */}
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700/80 text-xs font-semibold transition cursor-pointer shrink-0 shadow-2xs group"
-              title="Back to Schools Directory (or press Browser Back / Esc)"
-            >
-              <ArrowLeft className="w-4 h-4 text-indigo-400 group-hover:-translate-x-0.5 transition-transform" />
-              <span className="hidden sm:inline">Back to Directory</span>
-              <span className="sm:hidden">Back</span>
-            </button>
+        <div className="w-full max-w-7xl 2xl:max-w-[1700px] mx-auto px-3.5 sm:px-8 py-2.5 sm:py-3.5">
+          <div className="flex flex-col gap-2.5">
+            {/* Top Bar on Mobile / Desktop */}
+            <div className="flex items-center justify-between gap-2">
+              {/* Backward Navigation: Back to Directory */}
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700/80 text-xs font-semibold transition cursor-pointer shrink-0 shadow-2xs group"
+                title="Back to Schools Directory (or press Browser Back / Esc)"
+              >
+                <ArrowLeft className="w-4 h-4 text-indigo-400 group-hover:-translate-x-0.5 transition-transform" />
+                <span className="hidden sm:inline">Back to Directory</span>
+                <span className="sm:hidden">Back</span>
+              </button>
 
-            {/* Left: School Identity & Key Meta */}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white truncate">
+              {/* Right: Direct Actions & Close */}
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                {userRole === 'admin' && (
+                  <button
+                    onClick={() => onOpenEditModal(school)}
+                    className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition cursor-pointer"
+                    title="Edit School Data"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="hidden sm:inline">Edit</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={handleAiEnrich}
+                  disabled={isEnriching}
+                  title="Generate AI sales strategy"
+                  className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-purple-600/90 hover:bg-purple-600 text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50"
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${isEnriching ? 'animate-spin' : ''}`} />
+                  <span className="hidden md:inline">
+                    {isEnriching ? 'Analyzing...' : enrichSuccess ? 'Pitch Ready' : 'AI Pitch'}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setEmailModalOpen(true)}
+                  title="Send Proposal Email"
+                  className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Email</span>
+                </button>
+
+                <button
+                  onClick={() => setWhatsappModalOpen(true)}
+                  title="Send WhatsApp Message"
+                  className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">WhatsApp</span>
+                </button>
+
+                <div className="h-4 w-px bg-slate-800 mx-0.5 sm:mx-1 hidden sm:block" />
+
+                <button
+                  onClick={onClose}
+                  className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 text-xs font-medium transition cursor-pointer inline-flex items-center gap-1.5"
+                  title="Close (Esc)"
+                >
+                  <X className="w-4 h-4 text-slate-400 group-hover:text-white" />
+                  <span className="hidden sm:inline">Close</span>
+                </button>
+              </div>
+            </div>
+
+            {/* School Identity & Key Meta */}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+                <h2 className="text-lg sm:text-2xl font-bold tracking-tight text-white truncate max-w-full">
                   {info?.school_name}
                 </h2>
                 {tierBadge && (
-                  <span className={`text-[11px] px-2.5 py-0.5 rounded-full border font-semibold ${tierBadge.className}`}>
+                  <span className={`text-[10px] sm:text-[11px] px-2 sm:px-2.5 py-0.5 rounded-full border font-semibold ${tierBadge.className}`}>
                     {tierBadge.label}
                   </span>
                 )}
                 {info?.board && (
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-medium">
+                  <span className="text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-medium">
                     {info.board}
                   </span>
                 )}
                 {info?.udise_code && (
-                  <span className="font-mono text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/80">
+                  <span className="font-mono text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/80">
                     UDISE: <span className="text-slate-100 font-semibold">{info.udise_code}</span>
                   </span>
                 )}
 
                 {/* Deal Confirmed and Closed Header Checkbox Badge */}
                 <label 
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold transition-all cursor-pointer select-none shadow-2xs ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full border text-xs font-bold transition-all cursor-pointer select-none shadow-2xs ${
                     isDealClosed
                       ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-400 shadow-emerald-950/40 ring-2 ring-emerald-500/30'
                       : 'bg-slate-800 text-slate-300 hover:text-white border-slate-700 hover:border-emerald-500/60'
@@ -664,13 +721,13 @@ export default function SchoolDetailModal({
                     disabled={isTogglingDeal}
                     className="w-3.5 h-3.5 rounded text-emerald-500 bg-slate-900 border-slate-600 focus:ring-emerald-400 focus:ring-offset-slate-900 cursor-pointer accent-emerald-500"
                   />
-                  <span>{isDealClosed ? '🏆 Deal Confirmed & Closed' : 'Deal Confirmed & Closed'}</span>
+                  <span className="text-[11px] sm:text-xs">{isDealClosed ? '🏆 Deal Confirmed' : 'Deal Confirmed'}</span>
                 </label>
 
                 {!isDealClosed && (() => {
                   const badge = getLeadStatusBadge(leadStatus, false);
                   return (
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold shadow-2xs ${badge.className}`}>
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[11px] sm:text-xs font-bold shadow-2xs ${badge.className}`}>
                       <span>{badge.icon}</span>
                       <span>{badge.label}</span>
                     </span>
@@ -684,68 +741,13 @@ export default function SchoolDetailModal({
                 <span className="truncate">{getCleanLocation()}</span>
               </div>
             </div>
-
-            {/* Right: Direct Actions & Close */}
-            <div className="flex items-center gap-2 shrink-0">
-              {userRole === 'admin' && (
-                <button
-                  onClick={() => onOpenEditModal(school)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition cursor-pointer"
-                  title="Edit School Data"
-                >
-                  <Edit3 className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="hidden sm:inline">Edit</span>
-                </button>
-              )}
-
-              <button
-                onClick={handleAiEnrich}
-                disabled={isEnriching}
-                title="Generate AI sales strategy"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600/90 hover:bg-purple-600 text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50"
-              >
-                <Sparkles className={`w-3.5 h-3.5 ${isEnriching ? 'animate-spin' : ''}`} />
-                <span className="hidden md:inline">
-                  {isEnriching ? 'Analyzing...' : enrichSuccess ? 'Pitch Ready' : 'AI Pitch'}
-                </span>
-              </button>
-
-              <button
-                onClick={() => setEmailModalOpen(true)}
-                title="Send Proposal Email"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
-              >
-                <Mail className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Email</span>
-              </button>
-
-              <button
-                onClick={() => setWhatsappModalOpen(true)}
-                title="Send WhatsApp Message"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">WhatsApp</span>
-              </button>
-
-              <div className="h-4 w-px bg-slate-800 mx-1 hidden sm:block" />
-
-              <button
-                onClick={onClose}
-                className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 text-xs font-medium transition cursor-pointer inline-flex items-center gap-1.5"
-                title="Close (Esc)"
-              >
-                <X className="w-4 h-4 text-slate-400 group-hover:text-white" />
-                <span className="hidden sm:inline">Close</span>
-              </button>
-            </div>
           </div>
 
           {/* Minimal Navigation Tabs */}
-          <div className="flex items-center gap-2 mt-3 pt-2.5 border-t border-slate-800/80 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-1.5 sm:gap-2 mt-2.5 pt-2 border-t border-slate-800/80 overflow-x-auto scrollbar-none whitespace-nowrap">
             <button
               onClick={() => handleTabClick('info')}
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition cursor-pointer ${
+              className={`shrink-0 px-3 sm:px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 sm:gap-2 transition cursor-pointer ${
                 activeTab === 'info'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
@@ -757,7 +759,7 @@ export default function SchoolDetailModal({
 
             <button
               onClick={() => handleTabClick('tech')}
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition cursor-pointer ${
+              className={`shrink-0 px-3 sm:px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 sm:gap-2 transition cursor-pointer ${
                 activeTab === 'tech'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
@@ -769,7 +771,7 @@ export default function SchoolDetailModal({
 
             <button
               onClick={() => handleTabClick('sales')}
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition cursor-pointer ${
+              className={`shrink-0 px-3 sm:px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 sm:gap-2 transition cursor-pointer ${
                 activeTab === 'sales'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
@@ -781,7 +783,7 @@ export default function SchoolDetailModal({
 
             <button
               onClick={() => handleTabClick('notes')}
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition cursor-pointer ${
+              className={`shrink-0 px-3 sm:px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 sm:gap-2 transition cursor-pointer ${
                 activeTab === 'notes'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
@@ -802,7 +804,7 @@ export default function SchoolDetailModal({
 
             <button
               onClick={() => handleTabClick('formalities')}
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition cursor-pointer ${
+              className={`shrink-0 px-3 sm:px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 sm:gap-2 transition cursor-pointer ${
                 activeTab === 'formalities'
                   ? 'bg-amber-600 text-white shadow-xs'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
@@ -826,15 +828,15 @@ export default function SchoolDetailModal({
 
       {/* Deal Closure Confetti Notification Banner */}
       {dealCelebrationBanner && (
-        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 text-white px-5 sm:px-8 py-3 shadow-md flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-300 z-10 shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl animate-bounce">🎉</span>
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 text-white px-3.5 sm:px-8 py-2.5 sm:py-3 shadow-md flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-300 z-10 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl sm:text-2xl animate-bounce">🎉</span>
             <div>
               <div className="font-extrabold text-xs sm:text-sm flex items-center gap-2">
                 <span>Deal Confirmed and Closed!</span>
-                <span className="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-bold">🏆 Closed Won</span>
+                <span className="text-[10px] sm:text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-bold">🏆 Closed Won</span>
               </div>
-              <div className="text-[11px] text-emerald-100">
+              <div className="text-[10px] sm:text-[11px] text-emerald-100">
                 Congratulations! {info?.school_name} partnership has been officially confirmed and closed.
               </div>
             </div>
@@ -843,7 +845,7 @@ export default function SchoolDetailModal({
             <button
               type="button"
               onClick={() => triggerDealCelebration()}
-              className="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition cursor-pointer"
+              className="px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white text-[11px] sm:text-xs font-bold transition cursor-pointer"
             >
               More Confetti 🎊
             </button>
@@ -863,7 +865,7 @@ export default function SchoolDetailModal({
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto overscroll-contain scroll-smooth bg-slate-50/80 dark:bg-slate-950"
       >
-        <div className="w-full max-w-7xl 2xl:max-w-[1700px] mx-auto p-5 sm:p-8 space-y-6 pb-28">
+        <div className="w-full max-w-7xl 2xl:max-w-[1700px] mx-auto p-3.5 sm:p-6 lg:p-8 space-y-5 sm:space-y-6 pb-28">
           {!details_fetched ? (
             <div className="py-10 px-6 flex flex-col items-center justify-center text-center max-w-xl mx-auto bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs my-auto">
               <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-4 shadow-xs">
@@ -2188,7 +2190,7 @@ export default function SchoolDetailModal({
                       </div>
                     </div>
 
-                    <div className={`p-3 rounded-xl bg-white dark:bg-slate-900 border flex items-center gap-2 ${
+                    <div className={`p-3 rounded-xl bg-white dark:bg-slate-900 border flex items-center gap-2 col-span-2 sm:col-span-1 ${
                       formalities?.lab_readiness === 'Verified Ready' && formalities?.teacher_training_status === 'Completed'
                         ? 'border-emerald-300 dark:border-emerald-700/60'
                         : 'border-slate-200 dark:border-slate-800'

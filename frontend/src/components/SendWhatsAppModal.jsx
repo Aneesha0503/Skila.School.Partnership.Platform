@@ -343,13 +343,13 @@ Warm regards,
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/80 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2.5 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/80 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <button
               type="button"
               onClick={handleSendViaWhatsAppWeb}
               disabled={sendSuccess}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer"
               title="Open WhatsApp Web with this phone number and customized message pre-filled"
             >
               <ExternalLink className="w-3.5 h-3.5" />
@@ -357,11 +357,11 @@ Warm regards,
             </button>
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-2 sm:ml-auto">
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-semibold transition cursor-pointer"
+              className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-semibold transition cursor-pointer text-center"
             >
               Cancel
             </button>
@@ -370,13 +370,13 @@ Warm regards,
               type="button"
               onClick={handleSendViaMSG91}
               disabled={isSending || sendSuccess}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
               title="Dispatch automated message via MSG91 API (Requires IP whitelisted in MSG91)"
             >
               {isSending ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Dispatching via MSG91...</span>
+                  <span>Dispatching...</span>
                 </>
               ) : sendSuccess ? (
                 <>
@@ -386,7 +386,7 @@ Warm regards,
               ) : (
                 <>
                   <Send className="w-3.5 h-3.5" />
-                  <span>Send via MSG91 (Automated)</span>
+                  <span>Send via MSG91</span>
                 </>
               )}
             </button>

@@ -52,26 +52,26 @@ export default function ConfirmedSchoolsModal({
   }, [confirmedSchools, searchTerm, statusFilter]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-5xl max-h-[92vh] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-5 bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-5xl max-h-[96vh] sm:max-h-[92vh] rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden">
         
         {/* Modal Top Header */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-amber-500/10 via-indigo-500/5 to-transparent dark:from-amber-950/30 dark:via-slate-900">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-white shadow-md shadow-amber-500/20">
-                <Trophy className="w-6 h-6" />
+        <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-amber-500/10 via-indigo-500/5 to-transparent dark:from-amber-950/30 dark:via-slate-900">
+          <div className="flex items-start justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-white shadow-md shadow-amber-500/20 shrink-0">
+                <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-base sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
                     Confirmed Schools & Formalities Hub
                   </h1>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-extrabold border border-amber-300 dark:border-amber-700">
+                  <span className="text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-extrabold border border-amber-300 dark:border-amber-700">
                     {confirmedSchools.length} Deals
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 sm:line-clamp-none">
                   Track post-deal confirmation formalities: MOUs, commercial clearances, institutional SPOCs, and onboarding
                 </p>
               </div>
@@ -79,35 +79,35 @@ export default function ConfirmedSchoolsModal({
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer shrink-0"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
 
           {/* Quick Metrics Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
-            <div className="p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-2xs">
-              <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Total Confirmed</span>
-              <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{metrics.total_confirmed ?? confirmedSchools.length}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-4 sm:mt-5">
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-2xs">
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Total Confirmed</span>
+              <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-white mt-0.5">{metrics.total_confirmed ?? confirmedSchools.length}</p>
             </div>
-            <div className="p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 shadow-2xs">
-              <span className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 tracking-wider">100% Active Partners</span>
-              <p className="text-xl font-black text-emerald-700 dark:text-emerald-300 mt-0.5">{metrics.formalities_completed ?? 0}</p>
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 shadow-2xs">
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 tracking-wider">100% Active Partners</span>
+              <p className="text-lg sm:text-xl font-black text-emerald-700 dark:text-emerald-300 mt-0.5">{metrics.formalities_completed ?? 0}</p>
             </div>
-            <div className="p-3 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 shadow-2xs">
-              <span className="text-[10px] uppercase font-bold text-indigo-700 dark:text-indigo-400 tracking-wider">Pending MOU Signing</span>
-              <p className="text-xl font-black text-indigo-700 dark:text-indigo-300 mt-0.5">{metrics.pending_mou ?? 0}</p>
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 shadow-2xs">
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold text-indigo-700 dark:text-indigo-400 tracking-wider">Pending MOU Signing</span>
+              <p className="text-lg sm:text-xl font-black text-indigo-700 dark:text-indigo-300 mt-0.5">{metrics.pending_mou ?? 0}</p>
             </div>
-            <div className="p-3 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 shadow-2xs">
-              <span className="text-[10px] uppercase font-bold text-amber-700 dark:text-amber-400 tracking-wider">Pending Payment</span>
-              <p className="text-xl font-black text-amber-700 dark:text-amber-300 mt-0.5">{metrics.pending_payment ?? 0}</p>
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 shadow-2xs">
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold text-amber-700 dark:text-amber-400 tracking-wider">Pending Payment</span>
+              <p className="text-lg sm:text-xl font-black text-amber-700 dark:text-amber-300 mt-0.5">{metrics.pending_payment ?? 0}</p>
             </div>
           </div>
         </div>
 
         {/* Search & Filter Controls */}
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+        <div className="p-3.5 sm:p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -262,19 +262,19 @@ export default function ConfirmedSchoolsModal({
                   </div>
 
                   {/* Right Column: Actions */}
-                  <div className="flex sm:flex-col items-center sm:items-end gap-2 shrink-0">
+                  <div className="flex flex-col sm:flex-row md:flex-col items-stretch md:items-end gap-2 shrink-0 w-full md:w-auto">
                     <button
                       onClick={() => onOpenSchoolFormalities(s)}
-                      className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                      className="w-full md:w-auto px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>Manage Formalities</span>
                     </button>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full md:w-auto">
                       <button
                         onClick={() => onOpenMOU(s, form)}
-                        className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition flex items-center gap-1 cursor-pointer"
+                        className="flex-1 md:flex-initial px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition flex items-center justify-center gap-1 cursor-pointer"
                         title="View formal Memorandum of Understanding"
                       >
                         <FileText className="w-3.5 h-3.5 text-indigo-500" />
@@ -283,7 +283,7 @@ export default function ConfirmedSchoolsModal({
 
                       <button
                         onClick={() => onOpenCertificate(s, form)}
-                        className="px-3 py-1.5 rounded-lg border border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/50 text-amber-800 dark:text-amber-300 text-xs font-semibold transition flex items-center gap-1 cursor-pointer"
+                        className="flex-1 md:flex-initial px-3 py-2 rounded-lg border border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/50 text-amber-800 dark:text-amber-300 text-xs font-semibold transition flex items-center justify-center gap-1 cursor-pointer"
                         title="View Official Skila AI Partnership Certificate"
                       >
                         <Award className="w-3.5 h-3.5 text-amber-500" />

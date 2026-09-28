@@ -188,14 +188,14 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
           )}
         </div>
       ) : (
-        <div className="mb-3 p-2 rounded-lg bg-amber-50/70 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 flex items-center justify-between gap-2">
+        <div className="mb-3 p-2 sm:p-2.5 rounded-lg bg-amber-50/70 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
           <span>Click to run Skila AI 49-field profile</span>
           {userRole === 'admin' ? (
             <button
               type="button"
               onClick={handleRunDetailsClick}
               disabled={isRunning}
-              className="px-2.5 py-1 rounded-md bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-[11px] inline-flex items-center gap-1 shrink-0 shadow-xs cursor-pointer disabled:opacity-50"
+              className="w-full sm:w-auto justify-center px-2.5 py-1.5 sm:py-1 rounded-md bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-[11px] inline-flex items-center gap-1 shrink-0 shadow-xs cursor-pointer disabled:opacity-50"
             >
               {isRunning ? (
                 <>

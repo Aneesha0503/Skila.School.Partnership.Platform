@@ -32,22 +32,24 @@ export default function FilterBar({
         </div>
 
         {/* Quick Dropdown Filters */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full md:w-auto">
           {/* Agent Filter / Locked Scope Indicator */}
           {userRole === 'agent' ? (
             <div 
-              className="text-xs rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 py-1.5 px-2.5 font-semibold text-emerald-800 dark:text-emerald-200 inline-flex items-center gap-1.5 shadow-2xs"
+              className="col-span-2 sm:col-span-1 text-xs rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 py-2 px-2.5 font-semibold text-emerald-800 dark:text-emerald-200 inline-flex items-center justify-between sm:justify-start gap-1.5 shadow-2xs"
               title="Your view is strictly scoped to your assigned schools and field notes."
             >
-              <span>💼</span>
-              <span>Agent: {currentAgentName}</span>
-              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-200/60 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-bold uppercase tracking-wider">Scoped</span>
+              <div className="flex items-center gap-1.5 truncate">
+                <span>💼</span>
+                <span className="truncate">Agent: {currentAgentName}</span>
+              </div>
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-200/60 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-bold uppercase tracking-wider shrink-0">Scoped</span>
             </div>
           ) : (
             <select
               value={agent}
               onChange={(e) => onFilterChange('agent', e.target.value)}
-              className="text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2 px-2.5 font-medium text-slate-700 dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
+              className="w-full sm:w-auto text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2 px-2.5 font-medium text-slate-700 dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
               title="Filter by Field Agent (notes author or sales owner)"
             >
               <option value="All" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All Agents</option>
@@ -63,7 +65,7 @@ export default function FilterBar({
           <select
             value={board}
             onChange={(e) => onFilterChange('board', e.target.value)}
-            className="text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2 px-2.5 font-medium text-slate-700 dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
+            className="w-full sm:w-auto text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2 px-2.5 font-medium text-slate-700 dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
           >
             <option value="All" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All Boards</option>
             <option value="CBSE" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">CBSE</option>
@@ -76,9 +78,9 @@ export default function FilterBar({
           <select
             value={lead_status}
             onChange={(e) => onFilterChange('lead_status', e.target.value)}
-            className="text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2 px-2.5 font-medium text-slate-700 dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
+            className="w-full sm:w-auto text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2 px-2.5 font-medium text-slate-700 dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
           >
-            <option value="All" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All Lead Statuses</option>
+            <option value="All" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All Statuses</option>
             <option value="New" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">New</option>
             <option value="Contacted" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Contacted</option>
             <option value="Demo Scheduled" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Demo Scheduled</option>
@@ -92,9 +94,9 @@ export default function FilterBar({
           <select
             value={skila_ai_potential}
             onChange={(e) => onFilterChange('skila_ai_potential', e.target.value)}
-            className="text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2 px-2.5 font-medium text-slate-700 dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
+            className="w-full sm:w-auto text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2 px-2.5 font-medium text-slate-700 dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
           >
-            <option value="All" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All AI Potential</option>
+            <option value="All" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All Potential</option>
             <option value="High" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">High Potential</option>
             <option value="Medium" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Medium Potential</option>
             <option value="Low" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Low Potential</option>
@@ -104,9 +106,9 @@ export default function FilterBar({
           <select
             value={technology_adoption_level}
             onChange={(e) => onFilterChange('technology_adoption_level', e.target.value)}
-            className="text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2 px-2.5 font-medium text-slate-700 dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
+            className="w-full sm:w-auto text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2 px-2.5 font-medium text-slate-700 dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
           >
-            <option value="All" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All Tech Adoption</option>
+            <option value="All" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All Tech Level</option>
             <option value="Advanced" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Advanced Tech</option>
             <option value="High" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">High Tech</option>
             <option value="Medium" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Medium Tech</option>
@@ -114,17 +116,17 @@ export default function FilterBar({
           </select>
 
           {/* View mode toggle */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 ml-auto md:ml-0">
+          <div className="flex items-center justify-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 col-span-2 sm:col-span-1 sm:ml-auto">
             <button
               onClick={() => onViewModeChange('grid')}
-              className={`p-1.5 rounded-md transition cursor-pointer ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-2xs font-semibold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'}`}
-              title="Grid View"
+              className={`flex-1 sm:flex-initial p-1.5 rounded-md transition cursor-pointer flex items-center justify-center ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-2xs font-semibold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'}`}
+              title="Grid View (Recommended on Mobile)"
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
             <button
               onClick={() => onViewModeChange('table')}
-              className={`p-1.5 rounded-md transition cursor-pointer ${viewMode === 'table' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-2xs font-semibold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'}`}
+              className={`flex-1 sm:flex-initial p-1.5 rounded-md transition cursor-pointer flex items-center justify-center ${viewMode === 'table' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-2xs font-semibold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'}`}
               title="Table View"
             >
               <ListFilter className="w-4 h-4" />

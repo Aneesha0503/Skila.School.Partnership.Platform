@@ -78,14 +78,17 @@ export default function StatsBar({ stats, schools, onFilterConfirmedDeals, isCon
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-6">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5 sm:gap-3 mb-6">
       {items.map((it, idx) => {
         const Icon = it.icon;
+        const isDealsConfirmed = it.id === 'deals_confirmed';
         return (
           <div
             key={idx}
             onClick={it.isClickable ? onFilterConfirmedDeals : undefined}
-            className={`bg-white dark:bg-slate-900 p-3.5 rounded-xl border shadow-xs flex items-center gap-3 transition-all ${
+            className={`bg-white dark:bg-slate-900 p-2.5 sm:p-3.5 rounded-xl border shadow-xs flex items-center gap-2.5 sm:gap-3 transition-all ${
+              isDealsConfirmed ? 'col-span-2 sm:col-span-1' : ''
+            } ${
               it.isClickable ? 'cursor-pointer hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-sm' : ''
             } ${
               it.isActive 
@@ -94,12 +97,12 @@ export default function StatsBar({ stats, schools, onFilterConfirmedDeals, isCon
             }`}
             title={it.isClickable ? (it.isActive ? 'Viewing Confirmed Deals. Click to clear filter.' : 'Click to filter confirmed deals') : undefined}
           >
-            <div className={`w-10 h-10 rounded-lg ${it.bg} dark:bg-slate-800/80 ${it.border} dark:border-slate-700/60 border flex items-center justify-center shrink-0`}>
-              <Icon className={`w-5 h-5 ${it.color}`} />
+            <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg ${it.bg} dark:bg-slate-800/80 ${it.border} dark:border-slate-700/60 border flex items-center justify-center shrink-0`}>
+              <Icon className={`w-4.5 h-4.5 sm:w-5 sm:h-5 ${it.color}`} />
             </div>
-            <div>
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{it.label}</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-white">{it.value}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] sm:text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">{it.label}</p>
+              <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">{it.value}</p>
             </div>
           </div>
         );
