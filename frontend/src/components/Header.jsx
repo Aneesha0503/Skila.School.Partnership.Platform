@@ -369,8 +369,9 @@ export default function Header({
               )}
             </div>
 
-            {/* Admin Notifications Bell */}
-            <div className="relative" ref={notificationsRef}>
+            {/* Admin Notifications Bell - Only visible when signed in */}
+            {isAuthenticated && (
+              <div className="relative" ref={notificationsRef}>
               <button
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
                 className={`relative inline-flex items-center justify-center p-2 rounded-lg border text-xs font-medium transition cursor-pointer shadow-xs ${
@@ -695,6 +696,7 @@ export default function Header({
                 </div>
               )}
             </div>
+            )}
 
             {/* Light / Dark Mode Toggle */}
             <button
@@ -716,49 +718,54 @@ export default function Header({
               )}
             </button>
 
-            {/* Confirmed Schools & Formalities Button */}
-            <button
-              onClick={onOpenConfirmedModal}
-              title="View Confirmed Schools & Formalities Hub"
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/60 rounded-lg transition shadow-2xs cursor-pointer"
-            >
-              <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
-              <span className="hidden sm:inline">Confirmed Schools</span>
-              {confirmedCount !== undefined && confirmedCount > 0 && (
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-100 font-extrabold ml-0.5">
-                  {confirmedCount}
-                </span>
-              )}
-            </button>
+            {/* Authenticated-only Action Buttons */}
+            {isAuthenticated && (
+              <>
+                {/* Confirmed Schools & Formalities Button */}
+                <button
+                  onClick={onOpenConfirmedModal}
+                  title="View Confirmed Schools & Formalities Hub"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/60 rounded-lg transition shadow-2xs cursor-pointer"
+                >
+                  <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span className="hidden sm:inline">Confirmed Schools</span>
+                  {confirmedCount !== undefined && confirmedCount > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-100 font-extrabold ml-0.5">
+                      {confirmedCount}
+                    </span>
+                  )}
+                </button>
 
-            {/* Export Excel button */}
-            <button
-              onClick={handleExport}
-              title="Download directory as Microsoft Excel (.xlsx)"
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-lg transition shadow-2xs cursor-pointer"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span className="hidden sm:inline">Export Excel</span>
-            </button>
+                {/* Export Excel button */}
+                <button
+                  onClick={handleExport}
+                  title="Download directory as Microsoft Excel (.xlsx)"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-lg transition shadow-2xs cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="hidden sm:inline">Export Excel</span>
+                </button>
 
-            {/* Add School button - Admin Only or locked for Agent */}
-            {userRole === 'admin' ? (
-              <button
-                onClick={onOpenAddModal}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition shadow-sm shadow-indigo-200 dark:shadow-none cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add School</span>
-              </button>
-            ) : (
-              <button
-                disabled
-                title="Only Administrators can onboard new institutions"
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-200 dark:border-slate-700 cursor-not-allowed"
-              >
-                <Lock className="w-3.5 h-3.5" />
-                <span>Add School</span>
-              </button>
+                {/* Add School button - Admin Only or locked for Agent */}
+                {userRole === 'admin' ? (
+                  <button
+                    onClick={onOpenAddModal}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition shadow-sm shadow-indigo-200 dark:shadow-none cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add School</span>
+                  </button>
+                ) : (
+                  <button
+                    disabled
+                    title="Only Administrators can onboard new institutions"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-200 dark:border-slate-700 cursor-not-allowed"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Add School</span>
+                  </button>
+                )}
+              </>
             )}
 
           </div>

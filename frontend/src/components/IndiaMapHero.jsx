@@ -2,25 +2,37 @@ import React, { useState } from 'react';
 import { Sparkles, MapPin, Compass, ArrowDownRight, Layers, School, ChevronRight, CheckCircle2, Zap } from 'lucide-react';
 import { INDIA_STATES, MAJOR_HUBS, PAN_INDIA_STATS } from '../data/indiaMapData';
 
-export default function IndiaMapHero({ onSelectState, selectedState }) {
+export default function IndiaMapHero({ onSelectState, selectedState, isAuthenticated = true, onRequireAuth }) {
   const [hoveredState, setHoveredState] = useState(null);
   const [hoveredHub, setHoveredHub] = useState(null);
 
   const activeStateName = hoveredState?.name || selectedState || 'Telangana';
   const activeHubInfo = MAJOR_HUBS.find(h => h.state === activeStateName) || MAJOR_HUBS[0];
 
-  const handleStateClick = (stateName) => {
-    if (onSelectState) {
-      onSelectState(stateName);
+  const scrollToTarget = () => {
+    if (!isAuthenticated) {
+      const authEl = document.getElementById('auth-gate-section');
+      if (authEl) {
+        authEl.scrollIntoView({ behavior: 'smooth' });
+      } else if (onRequireAuth) {
+        onRequireAuth();
+      }
+      return;
     }
-  };
-
-  const scrollToDistrictRunner = () => {
     const el = document.getElementById('district-runner-section');
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
     }
   };
+
+  const handleStateClick = (stateName) => {
+    if (onSelectState) {
+      onSelectState(stateName);
+    }
+    scrollToTarget();
+  };
+
+  const scrollToDistrictRunner = scrollToTarget;
 
   return (
     <section className="relative overflow-hidden mb-8 rounded-3xl border border-indigo-100 dark:border-indigo-950/60 bg-gradient-to-br from-white via-indigo-50/20 to-slate-50 dark:from-slate-900 dark:via-slate-900/90 dark:to-indigo-950/20 shadow-xl transition-all">
@@ -138,7 +150,7 @@ export default function IndiaMapHero({ onSelectState, selectedState }) {
               onClick={scrollToDistrictRunner}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-semibold text-sm shadow-md hover:shadow-lg transition cursor-pointer active:scale-98"
             >
-              <span>Launch Regional District Runner</span>
+              <span>{isAuthenticated ? 'Launch Regional District Runner' : 'Sign In to Access District Discovery'}</span>
               <ArrowDownRight className="w-4 h-4" />
             </button>
 

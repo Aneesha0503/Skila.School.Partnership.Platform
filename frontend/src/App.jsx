@@ -15,6 +15,7 @@ import LoginModal from './components/LoginModal';
 import ConfirmedSchoolsModal from './components/ConfirmedSchoolsModal';
 import MOUPreviewModal from './components/MOUPreviewModal';
 import PartnershipCertificateModal from './components/PartnershipCertificateModal';
+import AuthGateSection from './components/AuthGateSection';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { School, RefreshCw } from 'lucide-react';
 import { 
@@ -25,7 +26,10 @@ import {
 } from './utils/navigation';
 
 function SkilaApp() {
-  const { token, user, loginModalOpen, setLoginModalOpen } = useAuth();
+  const { token, user, isAuthenticated, loginModalOpen, setLoginModalOpen } = useAuth();
+  const [loginModalMode, setLoginModalMode] = useState('login');
+  const handleOpenLogin = () => { setLoginModalMode('login'); setLoginModalOpen(true); };
+  const handleOpenRegister = () => { setLoginModalMode('register'); setLoginModalOpen(true); };
   const [schools, setSchools] = useState([]);
   const [stats, setStats] = useState(null);
   const [statusInfo, setStatusInfo] = useState(null);
@@ -389,10 +393,14 @@ function SkilaApp() {
   };
 
   useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 20000);
-    return () => clearInterval(interval);
-  }, [userRole, currentAgentName]);
+    if (isAuthenticated) {
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 20000);
+      return () => clearInterval(interval);
+    } else {
+      setNotifications([]);
+    }
+  }, [isAuthenticated, userRole, currentAgentName]);
 
   const handleNotificationClick = async (notif) => {
     try {
@@ -425,14 +433,23 @@ function SkilaApp() {
   // Fetch initial status and metadata
   useEffect(() => {
     fetchStatus();
-    fetchStats();
-  }, [userRole, currentAgentName]);
+    if (isAuthenticated) {
+      fetchStats();
+    } else {
+      setStats(null);
+    }
+  }, [isAuthenticated, userRole, currentAgentName]);
 
   // Fetch hierarchy options when administrative selection changes
   useEffect(() => {
-    fetchHierarchyOptions();
-    fetchSchools();
-  }, [selectedHierarchy, filters, userRole, currentAgentName]);
+    if (isAuthenticated) {
+      fetchHierarchyOptions();
+      fetchSchools();
+    } else {
+      setSchools([]);
+      setLoading(false);
+    }
+  }, [isAuthenticated, selectedHierarchy, filters, userRole, currentAgentName]);
 
   const fetchStatus = async () => {
     try {
@@ -549,8 +566,12 @@ function SkilaApp() {
   };
 
   useEffect(() => {
-    fetchConfirmedSchools();
-  }, [schools]);
+    if (isAuthenticated) {
+      fetchConfirmedSchools();
+    } else {
+      setConfirmedData({ schools: [], metrics: {} });
+    }
+  }, [isAuthenticated, schools]);
 
   const handleOpenConfirmedModal = () => {
     fetchConfirmedSchools();
@@ -854,117 +875,129 @@ function SkilaApp() {
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
         
-        {/* Pan-India Vision & Interactive Vector Map Hero */}
+        {/* Pan-India Vision & Interactive Vector Map Hero - Visible to All */}
         <IndiaMapHero
           onSelectState={handleSelectState}
           selectedState={selectedHierarchy.state}
+          isAuthenticated={isAuthenticated}
+          onRequireAuth={handleOpenLogin}
         />
 
-        {/* KPI Summary Cards */}
-        <StatsBar 
-          stats={stats} 
-          schools={schools} 
-          onFilterConfirmedDeals={handleToggleConfirmedOnly}
-          isConfirmedOnly={confirmedOnly}
-        />
+        {/* Without sign in, except hero section, every functionality is invisible */}
+        {isAuthenticated ? (
+          <>
+            {/* KPI Summary Cards */}
+            <StatsBar 
+              stats={stats} 
+              schools={schools} 
+              onFilterConfirmedDeals={handleToggleConfirmedOnly}
+              isConfirmedOnly={confirmedOnly}
+            />
 
-        {/* Automated District Discovery & AI Scraper */}
-        <DistrictRunner
-          onDistrictRunComplete={handleDistrictRunComplete}
-          currentState={selectedHierarchy.state}
-          currentDistrict={selectedHierarchy.district}
-          totalSchoolsLoaded={schools.length}
-          userRole={userRole}
-        />
+            {/* Automated District Discovery & AI Scraper */}
+            <DistrictRunner
+              onDistrictRunComplete={handleDistrictRunComplete}
+              currentState={selectedHierarchy.state}
+              currentDistrict={selectedHierarchy.district}
+              totalSchoolsLoaded={schools.length}
+              userRole={userRole}
+            />
 
-        {/* Administrative Hierarchy Cascading Drill-Down */}
-        <HierarchyNavigator
-          hierarchyData={hierarchyData}
-          selectedHierarchy={selectedHierarchy}
-          onHierarchyChange={handleHierarchyChange}
-          onResetHierarchy={handleResetHierarchy}
-          onStepBackHierarchy={handleStepBackHierarchy}
-          totalMatchingSchools={schools.length}
-        />
+            {/* Administrative Hierarchy Cascading Drill-Down */}
+            <HierarchyNavigator
+              hierarchyData={hierarchyData}
+              selectedHierarchy={selectedHierarchy}
+              onHierarchyChange={handleHierarchyChange}
+              onResetHierarchy={handleResetHierarchy}
+              onStepBackHierarchy={handleStepBackHierarchy}
+              totalMatchingSchools={schools.length}
+            />
 
-        {/* Search & Attribute Filters */}
-        <FilterBar
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          availableAgents={availableAgents}
-          userRole={userRole}
-          currentAgentName={currentAgentName}
-          confirmedOnly={confirmedOnly}
-          onToggleConfirmedOnly={handleToggleConfirmedOnly}
-        />
+            {/* Search & Attribute Filters */}
+            <FilterBar
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              availableAgents={availableAgents}
+              userRole={userRole}
+              currentAgentName={currentAgentName}
+              confirmedOnly={confirmedOnly}
+              onToggleConfirmedOnly={handleToggleConfirmedOnly}
+            />
 
-        {/* Schools Listing */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-            <RefreshCw className="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-spin mb-3" />
-            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Loading school details...</p>
-          </div>
-        ) : displayedSchools.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 shadow-xs">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-100 to-indigo-100 dark:from-slate-800 dark:to-indigo-950 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-700 dark:text-indigo-400 mx-auto mb-3 shadow-xs">
-              <School className="w-7 h-7" />
-            </div>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
-              {confirmedOnly ? 'No Confirmed Deals in Current Scope' : 'No Schools Loaded'}
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-4">
-              {confirmedOnly
-                ? 'Toggle off "Confirmed Deals Only" or mark a school as Deal Closed in its profile to start formal onboarding.'
-                : 'Select a State and District above and click Discover Schools to load regional directory records.'}
-            </p>
-            {confirmedOnly ? (
-              <button
-                onClick={handleToggleConfirmedOnly}
-                className="text-xs font-semibold px-4 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-300 dark:border-amber-800 transition cursor-pointer"
-              >
-                Clear Confirmed Deals Filter
-              </button>
-            ) : selectedHierarchy.district ? (
-              <button
-                onClick={() => {
-                  handleResetHierarchy();
-                  setFilters({ search: '', tier: 'All', board: 'All', lead_status: 'All', skila_ai_potential: 'All', technology_adoption_level: 'All' });
-                }}
-                className="text-xs font-semibold px-4 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-transparent dark:border-indigo-800 transition cursor-pointer"
-              >
-                Clear District Selection
-              </button>
-            ) : null}
-          </div>
-        ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {displayedSchools.map((school, idx) => (
-              <SchoolCard
-                key={school.id}
-                school={school}
-                index={idx}
+            {/* Schools Listing */}
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                <RefreshCw className="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-spin mb-3" />
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Loading school details...</p>
+              </div>
+            ) : displayedSchools.length === 0 ? (
+              <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 shadow-xs">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-100 to-indigo-100 dark:from-slate-800 dark:to-indigo-950 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-700 dark:text-indigo-400 mx-auto mb-3 shadow-xs">
+                  <School className="w-7 h-7" />
+                </div>
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
+                  {confirmedOnly ? 'No Confirmed Deals in Current Scope' : 'No Schools Loaded'}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-4">
+                  {confirmedOnly
+                    ? 'Toggle off "Confirmed Deals Only" or mark a school as Deal Closed in its profile to start formal onboarding.'
+                    : 'Select a State and District above and click Discover Schools to load regional directory records.'}
+                </p>
+                {confirmedOnly ? (
+                  <button
+                    onClick={handleToggleConfirmedOnly}
+                    className="text-xs font-semibold px-4 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-300 dark:border-amber-800 transition cursor-pointer"
+                  >
+                    Clear Confirmed Deals Filter
+                  </button>
+                ) : selectedHierarchy.district ? (
+                  <button
+                    onClick={() => {
+                      handleResetHierarchy();
+                      setFilters({ search: '', tier: 'All', board: 'All', lead_status: 'All', skila_ai_potential: 'All', technology_adoption_level: 'All' });
+                    }}
+                    className="text-xs font-semibold px-4 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-transparent dark:border-indigo-800 transition cursor-pointer"
+                  >
+                    Clear District Selection
+                  </button>
+                ) : null}
+              </div>
+            ) : viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {displayedSchools.map((school, idx) => (
+                  <SchoolCard
+                    key={school.id}
+                    school={school}
+                    index={idx}
+                    onSelectSchool={(s) => handleSelectSchool(s, 'info')}
+                    onRunSchoolDetails={handleRunSchoolDetails}
+                    userRole={userRole}
+                    currentAgentName={currentAgentName}
+                  />
+                ))}
+              </div>
+            ) : (
+              <SchoolTable
+                schools={displayedSchools}
                 onSelectSchool={(s) => handleSelectSchool(s, 'info')}
                 onRunSchoolDetails={handleRunSchoolDetails}
                 userRole={userRole}
                 currentAgentName={currentAgentName}
               />
-            ))}
-          </div>
+            )}
+          </>
         ) : (
-          <SchoolTable
-            schools={displayedSchools}
-            onSelectSchool={(s) => handleSelectSchool(s, 'info')}
-            onRunSchoolDetails={handleRunSchoolDetails}
-            userRole={userRole}
-            currentAgentName={currentAgentName}
+          <AuthGateSection 
+            onOpenLogin={handleOpenLogin} 
+            onOpenRegister={handleOpenRegister} 
           />
         )}
       </main>
 
       {/* School Detail Modal */}
-      {selectedSchool && (
+      {isAuthenticated && selectedSchool && (
         <SchoolDetailModal
           school={selectedSchool}
           initialTab={activeModalTab}
@@ -986,7 +1019,7 @@ function SkilaApp() {
       )}
 
       {/* Add / Edit School Modal - Admin Only */}
-      {addEditModalOpen && userRole === 'admin' && (
+      {isAuthenticated && addEditModalOpen && userRole === 'admin' && (
         <AddEditSchoolModal
           initialData={editingSchool}
           onClose={handleCloseAddEditModal}
@@ -995,7 +1028,7 @@ function SkilaApp() {
       )}
 
       {/* Skila AI Scraper Modal */}
-      {skilaScraperModalOpen && (
+      {isAuthenticated && skilaScraperModalOpen && (
         <SkilaScraperModal
           onClose={handleCloseScraperModal}
           onImportSuccess={() => {
@@ -1008,21 +1041,24 @@ function SkilaApp() {
       )}
 
       {/* Role-Based Access Control Matrix Modal */}
-      <AccessControlModal
-        isOpen={accessModalOpen}
-        onClose={handleCloseAccessModal}
-        currentRole={userRole}
-        onSelectRole={setUserRole}
-      />
+      {isAuthenticated && (
+        <AccessControlModal
+          isOpen={accessModalOpen}
+          onClose={handleCloseAccessModal}
+          currentRole={userRole}
+          onSelectRole={setUserRole}
+        />
+      )}
 
       {/* Authentication & User Management Login Modal */}
       <LoginModal
         isOpen={loginModalOpen}
         onClose={() => setLoginModalOpen(false)}
+        initialMode={loginModalMode}
       />
 
       {/* Confirmed Schools & Formalities Hub Modal */}
-      {confirmedSchoolsModalOpen && (
+      {isAuthenticated && confirmedSchoolsModalOpen && (
         <ConfirmedSchoolsModal
           confirmedSchools={confirmedData?.schools || []}
           metrics={confirmedData?.metrics || {}}
@@ -1034,7 +1070,7 @@ function SkilaApp() {
       )}
 
       {/* Memorandum of Understanding (MOU) Printable Document Modal */}
-      {mouModalOpen && selectedSchoolForDoc && (
+      {isAuthenticated && mouModalOpen && selectedSchoolForDoc && (
         <MOUPreviewModal
           school={selectedSchoolForDoc}
           formalities={formalitiesForDoc}
@@ -1047,7 +1083,7 @@ function SkilaApp() {
       )}
 
       {/* Official Partnership Certificate Printable Document Modal */}
-      {certificateModalOpen && selectedSchoolForDoc && (
+      {isAuthenticated && certificateModalOpen && selectedSchoolForDoc && (
         <PartnershipCertificateModal
           school={selectedSchoolForDoc}
           formalities={formalitiesForDoc}

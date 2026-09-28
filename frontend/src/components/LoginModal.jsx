@@ -2,9 +2,17 @@ import React, { useState } from 'react';
 import { X, Lock, Mail, User, ShieldCheck, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight, UserPlus, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export default function LoginModal({ isOpen, onClose }) {
+export default function LoginModal({ isOpen, onClose, initialMode = 'login' }) {
   const { login, register, isAdmin, isAuthenticated } = useAuth();
-  const [mode, setMode] = useState('login'); // 'login' | 'register'
+  const [mode, setMode] = useState(initialMode); // 'login' | 'register'
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+      setErrorMsg('');
+      setSuccessMsg('');
+    }
+  }, [isOpen, initialMode]);
   
   // Login form state
   const [email, setEmail] = useState('');
