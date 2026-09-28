@@ -48,7 +48,7 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
           
           {/* Eyebrow badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-indigo-500/10 border border-indigo-200/80 dark:border-indigo-800/80 text-indigo-700 dark:text-indigo-300 text-xs font-semibold w-fit tracking-wide shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" style={{ animationDuration: '8s' }} />
+            <img src="/skila_icon.png" alt="Skila.ai" className="w-4 h-4 object-contain animate-pulse" />
             <span>Pan-India School Intelligence & AI Pipeline</span>
           </div>
 
@@ -170,10 +170,7 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
             {/* Map Top Bar */}
             <div className="w-full flex items-center justify-between px-2 pt-1 pb-2 border-b border-slate-100 dark:border-slate-800 text-xs">
               <div className="flex items-center gap-2">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                </span>
+                <img src="/skila_icon.png" alt="Skila.ai" className="w-4.5 h-4.5 object-contain" />
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
                   Interactive Pan-India Coverage Map
                 </span>
@@ -197,6 +194,19 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                     <stop offset="100%" stopColor="#4338ca" />
                   </radialGradient>
                 </defs>
+
+                {/* Central Transparent Skila Logo Watermark behind States */}
+                <g id="skila-central-watermark" className="pointer-events-none select-none">
+                  <image
+                    href="/skila_icon.png"
+                    x="290"
+                    y="320"
+                    width="440"
+                    height="440"
+                    className="opacity-[0.06] dark:opacity-[0.14]"
+                    preserveAspectRatio="xMidYMid meet"
+                  />
+                </g>
 
                 {/* State Vector Paths */}
                 <g id="india-states-layer">
@@ -277,12 +287,25 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                         />
 
                         {/* Center Beacon Dot */}
-                        <circle
-                          cx={hub.x}
-                          cy={hub.y}
-                          r={hub.name === 'Hyderabad' ? "3.5" : "2.5"}
-                          className={hub.name === 'Hyderabad' ? 'fill-slate-900' : 'fill-white'}
-                        />
+                        {/* Center Beacon Dot */}
+                        {hub.name === 'Hyderabad' ? (
+                          <image
+                            href="/skila_icon.png"
+                            x={hub.x - 7}
+                            y={hub.y - 7}
+                            width="14"
+                            height="14"
+                            className="pointer-events-none drop-shadow-xs"
+                            preserveAspectRatio="xMidYMid meet"
+                          />
+                        ) : (
+                          <circle
+                            cx={hub.x}
+                            cy={hub.y}
+                            r="2.5"
+                            className="fill-white"
+                          />
+                        )}
 
                         {/* City Label for Prominent Hubs */}
                         {(isSelected || isHovered || ['Hyderabad', 'Delhi NCR', 'Bengaluru', 'Mumbai'].includes(hub.name)) && (
@@ -302,14 +325,45 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                     );
                   })}
                 </g>
+
+                {/* Official Skila AI Bay of Bengal Cartographic Watermark */}
+                <g id="skila-bay-of-bengal-seal" className="pointer-events-none select-none">
+                  {/* Subtle backdrop glow */}
+                  <circle cx="685" cy="710" r="58" className="fill-indigo-500/5 dark:fill-indigo-400/10 blur-xs" />
+                  <image
+                    href="/skila_icon.png"
+                    x="640"
+                    y="650"
+                    width="90"
+                    height="90"
+                    className="opacity-80 dark:opacity-90 drop-shadow-md"
+                    preserveAspectRatio="xMidYMid meet"
+                  />
+                  <text
+                    x="685"
+                    y="758"
+                    textAnchor="middle"
+                    className="text-[10px] font-black tracking-widest fill-indigo-700 dark:fill-indigo-300 uppercase"
+                  >
+                    Skila AI
+                  </text>
+                  <text
+                    x="685"
+                    y="771"
+                    textAnchor="middle"
+                    className="text-[7.5px] font-bold tracking-wider fill-slate-500 dark:fill-slate-400 uppercase"
+                  >
+                    National Network
+                  </text>
+                </g>
               </svg>
             </div>
 
             {/* Bottom Interactive State / Hub Hover Card */}
             <div className="w-full mt-2 p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-xl bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
-                  <MapPin className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center p-1 shrink-0 shadow-2xs">
+                  <img src="/skila_icon.png" alt="Skila AI" className="w-5 h-5 object-contain" />
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
