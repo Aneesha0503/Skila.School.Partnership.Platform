@@ -11,6 +11,8 @@ import SkilaScraperModal from './components/SkilaScraperModal';
 import DistrictRunner from './components/DistrictRunner';
 import IndiaMapHero from './components/IndiaMapHero';
 import AccessControlModal from './components/AccessControlModal';
+import LoginModal from './components/LoginModal';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { School, RefreshCw } from 'lucide-react';
 import { 
   parseSearchParams, 
@@ -19,7 +21,8 @@ import {
   computeStepBackHierarchy 
 } from './utils/navigation';
 
-export default function App() {
+function SkilaApp() {
+  const { token, user, loginModalOpen, setLoginModalOpen } = useAuth();
   const [schools, setSchools] = useState([]);
   const [stats, setStats] = useState(null);
   const [statusInfo, setStatusInfo] = useState(null);
@@ -114,14 +117,31 @@ export default function App() {
     localStorage.setItem('skila_current_agent', currentAgentName);
   }, [currentAgentName]);
 
-  // Authenticated fetch wrapper passing active role and agent name headers
+  // Synchronize authenticated user identity with active role & agent name
+  useEffect(() => {
+    if (user) {
+      if (user.role && user.role !== userRole) {
+        setUserRole(user.role);
+      }
+      if (user.role === 'agent' && user.full_name && user.full_name !== currentAgentName) {
+        setCurrentAgentName(user.full_name);
+      }
+    }
+  }, [user]);
+
+  // Authenticated fetch wrapper passing JWT token, active role, and agent name headers
   const fetchWithRole = (url, options = {}) => {
+    const authHeaders = {};
+    if (token) {
+      authHeaders['Authorization'] = `Bearer ${token}`;
+    }
     return fetch(url, {
       ...options,
       headers: {
         ...(options.headers || {}),
-        'X-User-Role': userRole,
-        'X-Agent-Name': currentAgentName
+        'X-User-Role': user?.role || userRole,
+        'X-Agent-Name': user?.role === 'agent' ? (user?.full_name || currentAgentName) : currentAgentName,
+        ...authHeaders
       }
     });
   };
@@ -907,6 +927,20 @@ export default function App() {
         currentRole={userRole}
         onSelectRole={setUserRole}
       />
+
+      {/* Authentication & User Management Login Modal */}
+      <LoginModal
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+      />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <SkilaApp />
+    </AuthProvider>
   );
 }

@@ -16,7 +16,11 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 from firebase_config import get_db, is_live_firebase
-from models import SchoolModel, SchoolCreateUpdate, AgentNoteCreate, AgentNoteModel, DealToggleRequest
+from models import (
+    SchoolModel, SchoolCreateUpdate, AgentNoteCreate, AgentNoteModel, DealToggleRequest,
+    UserRegisterRequest, UserLoginRequest, UserProfile, TokenResponse, UserUpdateRequest
+)
+from auth_utils import hash_password, verify_password, create_access_token, decode_access_token
 
 app = FastAPI(title="Skila School Partnership Platform API", version="1.0.0")
 
@@ -34,16 +38,35 @@ from mistral_scraper import get_school_tier
 db = get_db()
 
 # ==========================================
-# ROLE-BASED ACCESS CONTROL (RBAC) HELPERS
+# AUTHENTICATION & ROLE-BASED ACCESS CONTROL
 # ==========================================
-def get_current_role(x_user_role: Optional[str] = Header(None)) -> str:
-    """Extracts and validates user role from X-User-Role header. Defaults to 'admin'."""
-    if not x_user_role:
-        return "admin"
-    role = x_user_role.strip().lower()
-    if role not in ("admin", "agent"):
-        return "admin"
-    return role
+def extract_token_from_header(authorization: Optional[str] = Header(None)) -> Optional[Dict[str, Any]]:
+    """Extracts and verifies JWT payload from Authorization: Bearer <token> header."""
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[7:].strip()
+        return decode_access_token(token)
+    return None
+
+def get_current_role(
+    authorization: Optional[str] = Header(None),
+    x_user_role: Optional[str] = Header(None)
+) -> str:
+    """
+    Extracts and validates user role.
+    1. Cryptographically verified from JWT Bearer token if provided.
+    2. Falls back to X-User-Role header or defaults to 'admin'.
+    """
+    payload = extract_token_from_header(authorization)
+    if payload and payload.get("role"):
+        role = payload["role"].strip().lower()
+        if role in ("admin", "agent"):
+            return role
+            
+    if x_user_role:
+        role = x_user_role.strip().lower()
+        if role in ("admin", "agent"):
+            return role
+    return "admin"
 
 def require_admin(role: str = Depends(get_current_role)) -> str:
     """Enforces that only users with 'admin' role can access the route."""
@@ -54,8 +77,21 @@ def require_admin(role: str = Depends(get_current_role)) -> str:
         )
     return role
 
-def get_current_agent_name(x_agent_name: Optional[str] = Header(None)) -> Optional[str]:
-    """Extracts agent identity from X-Agent-Name header for agent isolation."""
+def get_current_agent_name(
+    authorization: Optional[str] = Header(None),
+    x_agent_name: Optional[str] = Header(None)
+) -> Optional[str]:
+    """
+    Extracts agent identity for strict confidentiality and scoping.
+    1. Cryptographically verified from JWT Bearer token 'name'/'full_name' if provided.
+    2. Falls back to X-Agent-Name header if present.
+    """
+    payload = extract_token_from_header(authorization)
+    if payload:
+        name = payload.get("name") or payload.get("full_name")
+        if name and name.strip():
+            return name.strip()
+            
     if x_agent_name and x_agent_name.strip():
         return x_agent_name.strip()
     return None
@@ -100,6 +136,191 @@ def get_roles_matrix(role: str = Depends(get_current_role)):
             }
         }
     }
+
+
+# ==========================================
+# DEFAULT ACCOUNTS & AUTHENTICATION ENDPOINTS
+# ==========================================
+def ensure_default_users():
+    """Initializes standard default administrator and field agent accounts if none exist."""
+    try:
+        col = db.collection("users")
+        existing = list(col.stream())
+        if len(existing) == 0:
+            now = datetime.now(timezone.utc).isoformat()
+            default_users = [
+                {
+                    "id": str(uuid.uuid4()),
+                    "email": "admin@skila.ai",
+                    "full_name": "Skila Administrator",
+                    "role": "admin",
+                    "password_hash": hash_password("admin123"),
+                    "is_active": True,
+                    "created_at": now,
+                    "last_login": None
+                },
+                {
+                    "id": str(uuid.uuid4()),
+                    "email": "agent@skila.ai",
+                    "full_name": "Field Agent",
+                    "role": "agent",
+                    "password_hash": hash_password("agent123"),
+                    "is_active": True,
+                    "created_at": now,
+                    "last_login": None
+                }
+            ]
+            for u in default_users:
+                col.document(u["id"]).set(u)
+            print("[Auth] Initialized default accounts: admin@skila.ai / agent@skila.ai")
+    except Exception as e:
+        print(f"[Auth] Could not initialize default users: {e}")
+
+@app.on_event("startup")
+def on_startup():
+    ensure_default_users()
+
+@app.post("/api/auth/login", response_model=TokenResponse)
+def auth_login(payload: UserLoginRequest):
+    """Authenticates credentials, updates last login, and returns signed JWT token."""
+    email = payload.email.strip().lower()
+    password = payload.password.strip()
+    
+    col = db.collection("users")
+    docs = list(col.stream())
+    target_user = None
+    for d in docs:
+        u = d.to_dict()
+        if u.get("email", "").lower() == email:
+            target_user = u
+            if not target_user.get("id"):
+                target_user["id"] = d.id
+            break
+            
+    if not target_user or not verify_password(password, target_user.get("password_hash", "")):
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
+        
+    if not target_user.get("is_active", True):
+        raise HTTPException(status_code=403, detail="Account is deactivated. Please contact an administrator.")
+        
+    now = datetime.now(timezone.utc).isoformat()
+    try:
+        col.document(target_user["id"]).update({"last_login": now})
+    except Exception:
+        pass
+    
+    token_payload = {
+        "sub": target_user["id"],
+        "email": target_user["email"],
+        "name": target_user.get("full_name", "User"),
+        "role": target_user.get("role", "agent")
+    }
+    token = create_access_token(token_payload)
+    
+    user_profile = UserProfile(
+        id=target_user["id"],
+        email=target_user["email"],
+        full_name=target_user.get("full_name", "User"),
+        role=target_user.get("role", "agent"),
+        is_active=target_user.get("is_active", True),
+        created_at=target_user.get("created_at"),
+        last_login=now
+    )
+    return TokenResponse(access_token=token, token_type="bearer", user=user_profile)
+
+@app.post("/api/auth/register", response_model=UserProfile)
+def auth_register(
+    payload: UserRegisterRequest,
+    role: str = Depends(get_current_role)
+):
+    """Registers a new user account. Restricted to Administrators (unless 0 users exist)."""
+    col = db.collection("users")
+    docs = list(col.stream())
+    if len(docs) > 0 and role != "admin":
+        raise HTTPException(status_code=403, detail="Access Denied: Only administrators can register new team members.")
+        
+    email = payload.email.strip().lower()
+    for d in docs:
+        if d.to_dict().get("email", "").lower() == email:
+            raise HTTPException(status_code=400, detail="A user with this email address already exists.")
+            
+    user_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    user_data = {
+        "id": user_id,
+        "email": email,
+        "full_name": payload.full_name.strip() or "User",
+        "role": payload.role if payload.role in ("admin", "agent") else "agent",
+        "password_hash": hash_password(payload.password),
+        "is_active": True,
+        "created_at": now,
+        "last_login": None
+    }
+    col.document(user_id).set(user_data)
+    
+    return UserProfile(
+        id=user_id,
+        email=email,
+        full_name=user_data["full_name"],
+        role=user_data["role"],
+        is_active=True,
+        created_at=now,
+        last_login=None
+    )
+
+@app.get("/api/auth/me", response_model=UserProfile)
+def auth_me(authorization: Optional[str] = Header(None)):
+    """Returns profile for currently authenticated user via JWT token."""
+    payload = extract_token_from_header(authorization)
+    if not payload or not payload.get("sub"):
+        raise HTTPException(status_code=401, detail="Authentication token required or expired.")
+        
+    user_id = payload["sub"]
+    doc = db.collection("users").document(user_id).get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="User account not found.")
+        
+    u = doc.to_dict()
+    return UserProfile(
+        id=user_id,
+        email=u.get("email", ""),
+        full_name=u.get("full_name", "User"),
+        role=u.get("role", "agent"),
+        is_active=u.get("is_active", True),
+        created_at=u.get("created_at"),
+        last_login=u.get("last_login")
+    )
+
+@app.get("/api/auth/users", response_model=List[UserProfile])
+def auth_list_users(role: str = Depends(require_admin)):
+    """Admin only: Lists all platform user accounts."""
+    col = db.collection("users")
+    docs = col.stream()
+    users = []
+    for d in docs:
+        u = d.to_dict()
+        uid = u.get("id") or d.id
+        users.append(UserProfile(
+            id=uid,
+            email=u.get("email", ""),
+            full_name=u.get("full_name", "User"),
+            role=u.get("role", "agent"),
+            is_active=u.get("is_active", True),
+            created_at=u.get("created_at"),
+            last_login=u.get("last_login")
+        ))
+    users.sort(key=lambda x: x.email)
+    return users
+
+@app.delete("/api/auth/users/{user_id}")
+def auth_delete_user(user_id: str, role: str = Depends(require_admin)):
+    """Admin only: Deactivates or removes a user."""
+    doc_ref = db.collection("users").document(user_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="User not found.")
+    doc_ref.delete()
+    return {"message": "User deleted successfully", "id": user_id}
 
 
 def get_all_schools_raw() -> List[Dict[str, Any]]:

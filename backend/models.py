@@ -127,3 +127,38 @@ class SchoolCreateUpdate(BaseModel):
     sales: Optional[SalesCRM] = None
     agent_notes: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
 
+# ==========================================
+# AUTHENTICATION & USER MANAGEMENT MODELS
+# ==========================================
+class UserRegisterRequest(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    email: str
+    password: str
+    full_name: str
+    role: Optional[str] = "agent"  # "admin" | "agent"
+
+class UserLoginRequest(BaseModel):
+    email: str
+    password: str
+
+class UserProfile(BaseModel):
+    id: str
+    email: str
+    full_name: str
+    role: str
+    is_active: bool = True
+    created_at: Optional[str] = None
+    last_login: Optional[str] = None
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserProfile
+
+class UserUpdateRequest(BaseModel):
+    full_name: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+    password: Optional[str] = None
+
+
