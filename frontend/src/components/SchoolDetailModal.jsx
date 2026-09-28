@@ -321,23 +321,51 @@ export default function SchoolDetailModal({
     }
   }, [activeTab]);
 
-  // Lock background scroll when modal is active, and listen for Escape key
+  // Backward navigation handler (synchronizes browser history and modal state)
+  const hasPoppedRef = useRef(false);
+
+  const handleBackNavigation = () => {
+    if (hasPoppedRef.current) return;
+    hasPoppedRef.current = true;
+    if (window.history.state?.modalOpen) {
+      window.history.back();
+    } else {
+      onClose();
+    }
+  };
+
+  // Lock background scroll when modal is active, listen for Escape key and Browser Back button
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
+    // Push browser history state so native backward navigation button closes modal gracefully
+    window.history.pushState({ modalOpen: true, schoolId: school?.id }, '');
+
+    const handlePopState = () => {
+      hasPoppedRef.current = true;
+      onClose();
+    };
+
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        onClose();
+        handleBackNavigation();
       }
     };
+
+    window.addEventListener('popstate', handlePopState);
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
       document.body.style.overflow = originalOverflow;
+      window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('keydown', handleKeyDown);
+      if (!hasPoppedRef.current && window.history.state?.modalOpen) {
+        hasPoppedRef.current = true;
+        window.history.back();
+      }
     };
-  }, [onClose]);
+  }, [onClose, school?.id]);
 
   if (!school) return null;
 
@@ -496,35 +524,104 @@ export default function SchoolDetailModal({
       {/* Minimal Sticky Modal Header */}
       <div className="bg-slate-900 text-white shrink-0 border-b border-slate-800 shadow-sm z-20">
         <div className="w-full max-w-7xl 2xl:max-w-[1700px] mx-auto px-5 sm:px-8 py-3.5">
+          
+          {/* Top Backward Navigation Bar & Breadcrumb Trail */}
+          <div className="flex items-center justify-between gap-3 mb-2.5 pb-2.5 border-b border-slate-800/80">
+            <div className="flex items-center gap-2 text-xs">
+              <button
+                type="button"
+                onClick={handleBackNavigation}
+                className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/90 hover:bg-indigo-600 text-slate-200 hover:text-white border border-slate-700 hover:border-indigo-500 font-semibold transition-all cursor-pointer shadow-2xs"
+                title="Back to Schools Directory (Esc or Back)"
+              >
+                <ArrowLeft className="w-4 h-4 text-indigo-400 group-hover:text-white group-hover:-translate-x-1 transition-transform" />
+                <span>Back to Schools</span>
+              </button>
+
+              <span className="text-slate-600 font-light hidden sm:inline">/</span>
+
+              {/* Breadcrumb Trail */}
+              <nav className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 truncate">
+                <span 
+                  onClick={handleBackNavigation}
+                  className="hover:text-indigo-400 cursor-pointer transition font-medium text-slate-300"
+                >
+                  Directory
+                </span>
+                {hierarchy?.state && (
+                  <>
+                    <span className="text-slate-600 font-light">/</span>
+                    <span className="text-slate-300 font-medium">{hierarchy.state}</span>
+                  </>
+                )}
+                {hierarchy?.district && (
+                  <>
+                    <span className="text-slate-600 font-light">/</span>
+                    <span className="text-slate-300 font-medium">{hierarchy.district}</span>
+                  </>
+                )}
+                <span className="text-slate-600 font-light">/</span>
+                <span className="text-indigo-300 font-semibold truncate max-w-xs">{info?.school_name}</span>
+              </nav>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-medium text-slate-400 hidden md:inline-flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                Institutional Profile
+              </span>
+              <button
+                type="button"
+                onClick={handleBackNavigation}
+                className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white hover:bg-slate-800 px-2.5 py-1 rounded-lg transition cursor-pointer"
+                title="Close and return to directory (Esc)"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Close</span>
+              </button>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between gap-4">
             
-            {/* Left: School Identity & Key Meta */}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white truncate">
-                  {info?.school_name}
-                </h2>
-                {tierBadge && (
-                  <span className={`text-[11px] px-2.5 py-0.5 rounded-full border font-semibold ${tierBadge.className}`}>
-                    {tierBadge.label}
-                  </span>
-                )}
-                {info?.board && (
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-medium">
-                    {info.board}
-                  </span>
-                )}
-                {info?.udise_code && (
-                  <span className="font-mono text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/80">
-                    UDISE: <span className="text-slate-100 font-semibold">{info.udise_code}</span>
-                  </span>
-                )}
-              </div>
+            {/* Left: Backward arrow + School Identity & Key Meta */}
+            <div className="min-w-0 flex-1 flex items-start gap-3">
+              <button
+                type="button"
+                onClick={handleBackNavigation}
+                className="mt-0.5 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition cursor-pointer shadow-2xs group shrink-0"
+                title="Back to Schools Directory (Esc)"
+              >
+                <ArrowLeft className="w-4 h-4 text-indigo-400 group-hover:text-white group-hover:-translate-x-0.5 transition-transform" />
+              </button>
 
-              {/* Clean single-line Location */}
-              <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-1">
-                <MapPin className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                <span className="truncate">{getCleanLocation()}</span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white truncate">
+                    {info?.school_name}
+                  </h2>
+                  {tierBadge && (
+                    <span className={`text-[11px] px-2.5 py-0.5 rounded-full border font-semibold ${tierBadge.className}`}>
+                      {tierBadge.label}
+                    </span>
+                  )}
+                  {info?.board && (
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-medium">
+                      {info.board}
+                    </span>
+                  )}
+                  {info?.udise_code && (
+                    <span className="font-mono text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/80">
+                      UDISE: <span className="text-slate-100 font-semibold">{info.udise_code}</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Clean single-line Location */}
+                <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-1">
+                  <MapPin className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                  <span className="truncate">{getCleanLocation()}</span>
+                </div>
               </div>
             </div>
 
@@ -574,9 +671,9 @@ export default function SchoolDetailModal({
               <div className="h-4 w-px bg-slate-800 mx-1 hidden sm:block" />
 
               <button
-                onClick={onClose}
+                onClick={handleBackNavigation}
                 className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 text-xs font-medium transition cursor-pointer inline-flex items-center gap-1.5"
-                title="Close (Esc)"
+                title="Back to Schools Directory (Esc)"
               >
                 <X className="w-4 h-4 text-slate-400 group-hover:text-white" />
                 <span className="hidden sm:inline">Close</span>
