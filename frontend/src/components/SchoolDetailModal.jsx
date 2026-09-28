@@ -8,7 +8,7 @@ import {
 import SendEmailModal from './SendEmailModal';
 import SendWhatsAppModal from './SendWhatsAppModal';
 import { triggerDealCelebration } from '../utils/confetti';
-import { formatRemarksToCleanText } from '../utils/formatters';
+import { formatRemarksToCleanText, getLeadStatusBadge } from '../utils/formatters';
 
 export default function SchoolDetailModal({ 
   school, 
@@ -666,6 +666,16 @@ export default function SchoolDetailModal({
                   />
                   <span>{isDealClosed ? '🏆 Deal Confirmed & Closed' : 'Deal Confirmed & Closed'}</span>
                 </label>
+
+                {!isDealClosed && (() => {
+                  const badge = getLeadStatusBadge(leadStatus, false);
+                  return (
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold shadow-2xs ${badge.className}`}>
+                      <span>{badge.icon}</span>
+                      <span>{badge.label}</span>
+                    </span>
+                  );
+                })()}
               </div>
 
               {/* Clean single-line Location */}
@@ -1529,14 +1539,16 @@ export default function SchoolDetailModal({
                       onChange={(e) => handleLeadStatusChange(e.target.value)}
                       className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                     >
-                      <option value="New">New</option>
-                      <option value="Contacted">Contacted</option>
-                      <option value="Meeting Scheduled">Meeting Scheduled</option>
-                      <option value="Demo Completed">Demo Completed</option>
-                      <option value="Proposal Shared">Proposal Shared</option>
-                      <option value="Pilot Running">Pilot Running</option>
-                      <option value="Closed Won">Closed Won</option>
-                      <option value="Not Interested">Not Interested</option>
+                      <option value="New">✨ New</option>
+                      <option value="Contacted">📞 Contacted</option>
+                      <option value="Demo Scheduled">📅 Demo Scheduled</option>
+                      <option value="Proposal Shared">📄 Proposal Shared</option>
+                      <option value="Pilot Started">🚀 Pilot Started</option>
+                      <option value="Closed Won">🏆 Closed Won</option>
+                      <option value="Closed Lost">❌ Closed Lost</option>
+                      {['Meeting Scheduled', 'Demo Completed', 'Pilot Running', 'Not Interested'].includes(leadStatus) && (
+                        <option value={leadStatus}>{leadStatus}</option>
+                      )}
                     </select>
                   </div>
 

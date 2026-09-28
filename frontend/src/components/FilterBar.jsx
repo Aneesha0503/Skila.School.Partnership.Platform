@@ -85,6 +85,7 @@ export default function FilterBar({
             <option value="Proposal Shared" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Proposal Shared</option>
             <option value="Pilot Started" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Pilot Started</option>
             <option value="Closed Won" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Closed Won</option>
+            <option value="Closed Lost" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Closed Lost</option>
           </select>
 
           {/* Skila AI Potential */}
