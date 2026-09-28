@@ -69,9 +69,30 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
             </span>
           )}
           {(sales?.deal_closed || sales?.lead_status === 'Closed Won') && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shadow-2xs">
-              <span>🏆</span> Deal Closed
-            </span>
+            <>
+              <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shadow-2xs">
+                <span>🏆</span> Deal Closed
+              </span>
+              {(() => {
+                const form = school.formalities || sales?.formalities || {};
+                const isComp = form.progress_pct >= 100 || form.formalities_completed;
+                if (isComp) {
+                  return (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-600 text-white shadow-2xs">
+                      <span>🎓</span> Active Partner
+                    </span>
+                  );
+                }
+                if (form.progress_pct > 0) {
+                  return (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs">
+                      <span>📜</span> {form.progress_pct}%
+                    </span>
+                  );
+                }
+                return null;
+              })()}
+            </>
           )}
         </div>
 

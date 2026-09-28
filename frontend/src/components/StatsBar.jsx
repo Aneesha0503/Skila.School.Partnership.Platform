@@ -1,7 +1,7 @@
 import React from 'react';
 import { Building2, Award, GraduationCap, BookOpen, Layers, Users, Trophy } from 'lucide-react';
 
-export default function StatsBar({ stats, schools }) {
+export default function StatsBar({ stats, schools, onFilterConfirmedDeals, isConfirmedOnly = false }) {
   // Compute live stats directly from schools array when available, or fallback to backend stats
   const activeStats = (schools && schools.length > 0) ? {
     total_schools: schools.length,
@@ -65,12 +65,15 @@ export default function StatsBar({ stats, schools }) {
       border: 'border-emerald-100',
     },
     {
+      id: 'deals_confirmed',
       label: 'Deals Confirmed',
       value: activeStats.deals_closed || 0,
       icon: Trophy,
       color: 'text-amber-500',
       bg: 'bg-amber-50',
       border: 'border-amber-200',
+      isClickable: true,
+      isActive: isConfirmedOnly,
     },
   ];
 
@@ -81,7 +84,15 @@ export default function StatsBar({ stats, schools }) {
         return (
           <div
             key={idx}
-            className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3 transition-colors"
+            onClick={it.isClickable ? onFilterConfirmedDeals : undefined}
+            className={`bg-white dark:bg-slate-900 p-3.5 rounded-xl border shadow-xs flex items-center gap-3 transition-all ${
+              it.isClickable ? 'cursor-pointer hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-sm' : ''
+            } ${
+              it.isActive 
+                ? 'border-amber-400 dark:border-amber-500 ring-2 ring-amber-400/30 bg-amber-50/40 dark:bg-amber-950/20' 
+                : 'border-slate-200 dark:border-slate-800'
+            }`}
+            title={it.isClickable ? (it.isActive ? 'Viewing Confirmed Deals. Click to clear filter.' : 'Click to filter confirmed deals') : undefined}
           >
             <div className={`w-10 h-10 rounded-lg ${it.bg} dark:bg-slate-800/80 ${it.border} dark:border-slate-700/60 border flex items-center justify-center shrink-0`}>
               <Icon className={`w-5 h-5 ${it.color}`} />

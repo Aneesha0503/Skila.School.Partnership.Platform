@@ -77,9 +77,81 @@ class SalesCRM(BaseModel):
     sent_emails: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     sent_whatsapp: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     agent_notes: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    formalities: Optional[Dict[str, Any]] = None
 
 class DealToggleRequest(BaseModel):
     deal_closed: bool
+
+class FormalitiesData(BaseModel):
+    model_config = ConfigDict(extra="allow", coerce_numbers_to_str=True)
+    status: Optional[str] = "In Progress"  # Drafting MOU, MOU Sent, Signed & Countersigned, Commercials Cleared, Onboarding Complete
+    progress_pct: Optional[int] = 20
+    formalities_completed: Optional[bool] = False
+    formalities_completed_at: Optional[str] = ""
+    # Stage 1: Commercials & Agreement Scope
+    partnership_tier: Optional[str] = "Skila AI Pioneer Partner"
+    academic_year: Optional[str] = "2026-2027"
+    contract_value: Optional[str] = "₹2,50,000"
+    payment_terms: Optional[str] = "Annual Upfront"  # Annual Upfront, 50-50 Split, Quarterly, Per Student
+    # Stage 2: Legal & MOU
+    mou_number: Optional[str] = ""
+    mou_date: Optional[str] = ""
+    mou_validity: Optional[str] = "June 2026 - May 2027"
+    mou_signatory_name: Optional[str] = ""
+    mou_signatory_designation: Optional[str] = "Principal"
+    mou_status: Optional[str] = "Drafting"  # Drafting, Sent for Signing, Signed by School, Fully Executed
+    mou_signed_date: Optional[str] = ""
+    # Stage 3: Billing & Invoicing
+    invoice_number: Optional[str] = ""
+    invoice_date: Optional[str] = ""
+    invoice_status: Optional[str] = "Pending Invoice"  # Pending Invoice, Invoice Dispatched, Advance Paid, Fully Paid
+    payment_ref_no: Optional[str] = ""
+    payment_received_date: Optional[str] = ""
+    # Stage 4: Academic SPOC & Roster
+    school_spoc_name: Optional[str] = ""
+    school_spoc_designation: Optional[str] = "AI Coordinator"
+    school_spoc_phone: Optional[str] = ""
+    school_spoc_email: Optional[str] = ""
+    roster_status: Optional[str] = "Pending"  # Pending, Uploaded, Verified
+    # Stage 5: Tech Lab Readiness & Training
+    lab_readiness: Optional[str] = "Pending"  # Pending, Verified Ready
+    teacher_training_date: Optional[str] = ""
+    teacher_training_status: Optional[str] = "Scheduled"  # Scheduled, Completed, Pending
+    rollout_target_date: Optional[str] = ""
+    # Audit trail
+    formalities_updated_by: Optional[str] = ""
+    formalities_updated_at: Optional[str] = ""
+
+class FormalitiesUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="allow", coerce_numbers_to_str=True)
+    status: Optional[str] = None
+    progress_pct: Optional[int] = None
+    formalities_completed: Optional[bool] = None
+    partnership_tier: Optional[str] = None
+    academic_year: Optional[str] = None
+    contract_value: Optional[str] = None
+    payment_terms: Optional[str] = None
+    mou_number: Optional[str] = None
+    mou_date: Optional[str] = None
+    mou_validity: Optional[str] = None
+    mou_signatory_name: Optional[str] = None
+    mou_signatory_designation: Optional[str] = None
+    mou_status: Optional[str] = None
+    mou_signed_date: Optional[str] = None
+    invoice_number: Optional[str] = None
+    invoice_date: Optional[str] = None
+    invoice_status: Optional[str] = None
+    payment_ref_no: Optional[str] = None
+    payment_received_date: Optional[str] = None
+    school_spoc_name: Optional[str] = None
+    school_spoc_designation: Optional[str] = None
+    school_spoc_phone: Optional[str] = None
+    school_spoc_email: Optional[str] = None
+    roster_status: Optional[str] = None
+    lab_readiness: Optional[str] = None
+    teacher_training_date: Optional[str] = None
+    teacher_training_status: Optional[str] = None
+    rollout_target_date: Optional[str] = None
 
 class AgentNoteCreate(BaseModel):
     model_config = ConfigDict(extra="allow", coerce_numbers_to_str=True)
@@ -113,6 +185,7 @@ class SchoolModel(BaseModel):
     info: Optional[SchoolInfo] = None
     technology: Optional[TechnologyUsage] = None
     sales: Optional[SalesCRM] = None
+    formalities: Optional[Dict[str, Any]] = None
     agent_notes: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -125,6 +198,7 @@ class SchoolCreateUpdate(BaseModel):
     info: Optional[SchoolInfo] = None
     technology: Optional[TechnologyUsage] = None
     sales: Optional[SalesCRM] = None
+    formalities: Optional[Dict[str, Any]] = None
     agent_notes: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
 
 # ==========================================

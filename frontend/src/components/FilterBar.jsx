@@ -9,7 +9,9 @@ export default function FilterBar({
   onClearFilters,
   availableAgents = [],
   userRole = 'admin',
-  currentAgentName = 'Field Agent'
+  currentAgentName = 'Field Agent',
+  confirmedOnly = false,
+  onToggleConfirmedOnly
 }) {
   const { search, board, lead_status, skila_ai_potential, technology_adoption_level, tier = 'All', agent = 'All' } = filters;
 
@@ -189,6 +191,28 @@ export default function FilterBar({
           }`}
         >
           ⚪ State Board - Low (&lt;500)
+        </button>
+
+        <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block" />
+
+        {/* Quick Confirmed Deals Only Toggle */}
+        <button
+          type="button"
+          onClick={onToggleConfirmedOnly}
+          className={`px-3 py-1 rounded-lg font-bold transition text-xs flex items-center gap-1.5 cursor-pointer ${
+            confirmedOnly
+              ? 'bg-amber-500 text-white shadow-xs'
+              : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 hover:bg-amber-100 dark:hover:bg-amber-900/60'
+          }`}
+          title="Filter only schools with confirmed and closed deals"
+        >
+          <span>🏆</span>
+          <span>Confirmed Deals Only</span>
+          {confirmedOnly && (
+            <span className="text-[10px] ml-0.5 bg-white/20 px-1.5 py-0.2 rounded-full font-bold">
+              ON
+            </span>
+          )}
         </button>
       </div>
     </div>

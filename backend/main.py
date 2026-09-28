@@ -18,7 +18,8 @@ from openpyxl.utils import get_column_letter
 from firebase_config import get_db, is_live_firebase
 from models import (
     SchoolModel, SchoolCreateUpdate, AgentNoteCreate, AgentNoteModel, DealToggleRequest,
-    UserRegisterRequest, UserLoginRequest, UserProfile, TokenResponse, UserUpdateRequest
+    UserRegisterRequest, UserLoginRequest, UserProfile, TokenResponse, UserUpdateRequest,
+    FormalitiesData, FormalitiesUpdateRequest
 )
 from auth_utils import hash_password, verify_password, create_access_token, decode_access_token
 
@@ -485,6 +486,147 @@ def list_schools(
     ))
     return filtered
 
+def get_default_formalities_dict(school_id: str, existing: Dict[str, Any], user_name: str = "System") -> Dict[str, Any]:
+    """Generates complete baseline formalities dictionary with intelligent defaults."""
+    info = existing.get("info") or {}
+    sales = existing.get("sales") or {}
+    principal = info.get("principal_name") or info.get("correspondent_name") or "School Principal"
+    now_iso = datetime.now(timezone.utc).isoformat()
+    return {
+        "status": "In Progress",
+        "progress_pct": 20,
+        "formalities_completed": False,
+        "formalities_completed_at": "",
+        "partnership_tier": "Skila AI Pioneer Partner",
+        "academic_year": "2026-2027",
+        "contract_value": sales.get("annual_fee_range") or "₹2,50,000",
+        "payment_terms": "Annual Upfront",
+        "mou_number": f"SKILA-MOU-2026-{school_id[:6].upper()}",
+        "mou_date": now_iso[:10],
+        "mou_validity": "June 2026 - May 2027",
+        "mou_signatory_name": principal,
+        "mou_signatory_designation": "Principal / Correspondent",
+        "mou_status": "Drafting",
+        "mou_signed_date": "",
+        "invoice_number": f"INV-SKILA-{school_id[:5].upper()}",
+        "invoice_date": now_iso[:10],
+        "invoice_status": "Pending Invoice",
+        "payment_ref_no": "",
+        "payment_received_date": "",
+        "school_spoc_name": principal,
+        "school_spoc_designation": "Institutional Coordinator",
+        "school_spoc_phone": info.get("mobile", ""),
+        "school_spoc_email": info.get("email", ""),
+        "roster_status": "Pending",
+        "lab_readiness": "Pending Inspection" if existing.get("technology", {}).get("computer_lab") == "Yes" else "Setup Required",
+        "teacher_training_date": "",
+        "teacher_training_status": "Scheduled",
+        "rollout_target_date": "",
+        "formalities_updated_by": user_name,
+        "formalities_updated_at": now_iso
+    }
+
+def compute_formalities_progress(f: Dict[str, Any]) -> int:
+    """Computes completion percentage (0 - 100) across the 5 formal stages."""
+    if not f:
+        return 0
+    score = 0
+    # Stage 1: Commercial terms established (20%)
+    if f.get("contract_value") and f.get("payment_terms"):
+        score += 20
+    elif f.get("contract_value") or f.get("payment_terms"):
+        score += 10
+
+    # Stage 2: Legal MOU executed (20%)
+    mou_st = f.get("mou_status", "")
+    if mou_st in ["Signed by School", "Fully Executed"]:
+        score += 20
+    elif mou_st == "Sent for Signing":
+        score += 10
+    elif mou_st == "Drafting":
+        score += 5
+
+    # Stage 3: Billing & Payment clearance (20%)
+    inv_st = f.get("invoice_status", "")
+    if inv_st == "Fully Paid":
+        score += 20
+    elif inv_st == "Advance Paid":
+        score += 15
+    elif inv_st == "Invoice Dispatched":
+        score += 10
+    elif inv_st == "Pending Invoice":
+        score += 5
+
+    # Stage 4: Institutional SPOC & Student Roster (20%)
+    has_spoc = bool(f.get("school_spoc_name"))
+    roster_st = f.get("roster_status", "")
+    if has_spoc and roster_st in ["Uploaded", "Verified"]:
+        score += 20
+    elif has_spoc or roster_st in ["Uploaded", "Verified"]:
+        score += 10
+
+    # Stage 5: Tech Lab readiness & Teacher training (20%)
+    lab_ready = f.get("lab_readiness") == "Verified Ready"
+    training_done = f.get("teacher_training_status") == "Completed"
+    if lab_ready and training_done:
+        score += 20
+    elif lab_ready or training_done:
+        score += 10
+
+    return min(100, max(0, score))
+
+@app.get("/api/schools/confirmed")
+def get_confirmed_schools(
+    role: str = Depends(get_current_role),
+    current_agent: Optional[str] = Depends(get_current_agent_name)
+):
+    """
+    Returns all schools where deal has been confirmed and closed,
+    along with calculated pipeline metrics and formalities progress.
+    """
+    schools = get_all_schools_raw()
+    confirmed = []
+    completed_count = 0
+    pending_mou = 0
+    pending_payment = 0
+
+    for s in schools:
+        sales = s.get("sales") or {}
+        is_closed = bool(sales.get("deal_closed") or sales.get("lead_status") == "Closed Won")
+        if not is_closed:
+            continue
+
+        formalities = s.get("formalities") or sales.get("formalities") or {}
+        if not formalities:
+            formalities = get_default_formalities_dict(s.get("id", "SCH"), s, "System")
+
+        pct = compute_formalities_progress(formalities)
+        formalities["progress_pct"] = pct
+        is_done = pct >= 100 or formalities.get("formalities_completed", False)
+        formalities["formalities_completed"] = is_done
+        if is_done:
+            completed_count += 1
+            formalities["status"] = "Completed & Active Partner"
+
+        if formalities.get("mou_status") not in ["Signed by School", "Fully Executed"]:
+            pending_mou += 1
+        if formalities.get("invoice_status") != "Fully Paid":
+            pending_payment += 1
+
+        s["formalities"] = formalities
+        confirmed.append(s)
+
+    return {
+        "schools": confirmed,
+        "metrics": {
+            "total_confirmed": len(confirmed),
+            "formalities_completed": completed_count,
+            "pending_mou": pending_mou,
+            "pending_payment": pending_payment,
+            "in_progress": len(confirmed) - completed_count
+        }
+    }
+
 @app.get("/api/schools/{school_id}")
 def get_school(
     school_id: str,
@@ -606,6 +748,50 @@ def toggle_deal_closed(
         sales["deal_closed_by"] = agent_display
         sales["lead_status"] = "Closed Won"
 
+        # Auto-initialize baseline formalities data if missing
+        current_formalities = existing.get("formalities") or sales.get("formalities") or {}
+        if not current_formalities:
+            info = existing.get("info", {})
+            principal = info.get("principal_name") or info.get("correspondent_name") or "School Principal"
+            mou_num = f"SKILA-MOU-2026-{school_id[:6].upper()}"
+            inv_num = f"INV-SKILA-{school_id[:5].upper()}"
+            current_formalities = {
+                "status": "In Progress",
+                "progress_pct": 20,
+                "formalities_completed": False,
+                "formalities_completed_at": "",
+                "partnership_tier": "Skila AI Pioneer Partner",
+                "academic_year": "2026-2027",
+                "contract_value": sales.get("annual_fee_range") or "₹2,50,000",
+                "payment_terms": "Annual Upfront",
+                "mou_number": mou_num,
+                "mou_date": now[:10],
+                "mou_validity": "June 2026 - May 2027",
+                "mou_signatory_name": principal,
+                "mou_signatory_designation": "Principal / Correspondent",
+                "mou_status": "Drafting",
+                "mou_signed_date": "",
+                "invoice_number": inv_num,
+                "invoice_date": now[:10],
+                "invoice_status": "Pending Invoice",
+                "payment_ref_no": "",
+                "payment_received_date": "",
+                "school_spoc_name": principal,
+                "school_spoc_designation": "Institutional Coordinator",
+                "school_spoc_phone": info.get("mobile", ""),
+                "school_spoc_email": info.get("email", ""),
+                "roster_status": "Pending",
+                "lab_readiness": "Pending Inspection" if existing.get("technology", {}).get("computer_lab") == "Yes" else "Setup Required",
+                "teacher_training_date": "",
+                "teacher_training_status": "Scheduled",
+                "rollout_target_date": "",
+                "formalities_updated_by": agent_display,
+                "formalities_updated_at": now
+            }
+            current_formalities["progress_pct"] = compute_formalities_progress(current_formalities)
+            existing["formalities"] = current_formalities
+            sales["formalities"] = current_formalities
+
         # Dispatches celebration alert notification
         try:
             notif_id = f"notif_{uuid.uuid4().hex[:10]}"
@@ -642,6 +828,99 @@ def toggle_deal_closed(
         ]
 
     return existing
+
+@app.get("/api/schools/{school_id}/formalities")
+def get_school_formalities(
+    school_id: str,
+    role: str = Depends(get_current_role),
+    current_agent: Optional[str] = Depends(get_current_agent_name)
+):
+    """Fetches formalities details for a specific school with baseline auto-fill."""
+    doc_ref = db.collection("schools").document(school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+
+    data = doc.to_dict()
+    formalities = data.get("formalities") or data.get("sales", {}).get("formalities") or {}
+    if not formalities:
+        formalities = get_default_formalities_dict(school_id, data, current_agent if role == "agent" else "Admin")
+
+    pct = compute_formalities_progress(formalities)
+    formalities["progress_pct"] = pct
+    return formalities
+
+@app.put("/api/schools/{school_id}/formalities")
+def update_school_formalities(
+    school_id: str,
+    payload: FormalitiesUpdateRequest,
+    role: str = Depends(get_current_role),
+    current_agent: Optional[str] = Depends(get_current_agent_name)
+):
+    """
+    Updates formalities for a confirmed school, recalculates progress percentage,
+    and creates high-urgency notifications upon completion.
+    """
+    doc_ref = db.collection("schools").document(school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+
+    existing = doc.to_dict()
+    updater = (current_agent or "Field Agent") if role == "agent" else "Admin"
+    current_f = existing.get("formalities") or existing.get("sales", {}).get("formalities") or {}
+    if not current_f:
+        current_f = get_default_formalities_dict(school_id, existing, updater)
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Merge incoming updates
+    updates = payload.model_dump(exclude_unset=True)
+    current_f.update(updates)
+
+    # Recalculate progress
+    pct = compute_formalities_progress(current_f)
+    current_f["progress_pct"] = pct
+    current_f["formalities_updated_by"] = updater
+    current_f["formalities_updated_at"] = now
+
+    is_now_completed = pct >= 100 or current_f.get("formalities_completed", False)
+    school_name = existing.get("info", {}).get("school_name", "School")
+
+    if is_now_completed:
+        current_f["formalities_completed"] = True
+        if not current_f.get("formalities_completed_at"):
+            current_f["formalities_completed_at"] = now
+        current_f["status"] = "Completed & Active Partner"
+    elif not current_f.get("status"):
+        current_f["status"] = "In Progress"
+
+    if is_now_completed:
+        # Dispatch celebration alert notification
+        try:
+            notif_id = f"notif_{uuid.uuid4().hex[:10]}"
+            notif_data = {
+                "id": notif_id,
+                "school_id": school_id,
+                "school_name": school_name,
+                "agent_name": updater,
+                "category": "Formalities Completed",
+                "urgency": "High",
+                "message": f"🎓 Formalities 100% Completed! {school_name} is now an Active Skila Partner School.",
+                "timestamp": now,
+                "is_read": False
+            }
+            db.collection("notifications").document(notif_id).set(notif_data)
+        except Exception as e:
+            print(f"[Notifications] Could not write formalities completed alert: {e}")
+
+    existing["formalities"] = current_f
+    if "sales" in existing:
+        existing["sales"]["formalities"] = current_f
+    existing["updated_at"] = now
+    doc_ref.set(existing)
+
+    return current_f
 
 @app.post("/api/schools/{school_id}/agent-notes")
 def add_agent_note(
@@ -906,6 +1185,8 @@ def get_stats(state: Optional[str] = None, district: Optional[str] = None):
     demos_done = sum(1 for s in schools if s.get("sales", {}).get("demo_done") == "Yes")
     proposals_shared = sum(1 for s in schools if s.get("sales", {}).get("proposal_shared") == "Yes")
     pilots_started = sum(1 for s in schools if s.get("sales", {}).get("pilot_started") == "Yes")
+    deals_closed = sum(1 for s in schools if s.get("sales", {}).get("deal_closed") or s.get("sales", {}).get("lead_status") == "Closed Won")
+    formalities_completed = sum(1 for s in schools if (s.get("formalities") or {}).get("formalities_completed") or (s.get("sales", {}).get("formalities") or {}).get("formalities_completed"))
     
     return {
         "total_schools": total,
@@ -918,7 +1199,9 @@ def get_stats(state: Optional[str] = None, district: Optional[str] = None):
         "high_ai_potential": high_potential,
         "demos_done": demos_done,
         "proposals_shared": proposals_shared,
-        "pilots_started": pilots_started
+        "pilots_started": pilots_started,
+        "deals_closed": deals_closed,
+        "formalities_completed": formalities_completed
     }
 
 def build_schools_excel(schools: List[Dict[str, Any]]) -> bytes:

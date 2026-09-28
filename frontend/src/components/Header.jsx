@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   School, FileSpreadsheet, Plus, Sun, Moon, 
   ShieldCheck, ChevronDown, Check, Lock, UserCheck, Crown, Briefcase, Bell, Clock,
-  LogOut, LogIn, UserPlus, User
+  LogOut, LogIn, UserPlus, User, Trophy, Award
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -21,7 +21,9 @@ export default function Header({
   onOpenAccessModal,
   notifications = [],
   onNotificationClick,
-  onMarkAllNotificationsRead
+  onMarkAllNotificationsRead,
+  onOpenConfirmedModal,
+  confirmedCount = 0
 }) {
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -711,6 +713,21 @@ export default function Header({
                   <Moon className="w-4 h-4 text-slate-700 fill-slate-700" />
                   <span className="hidden md:inline">Dark</span>
                 </>
+              )}
+            </button>
+
+            {/* Confirmed Schools & Formalities Button */}
+            <button
+              onClick={onOpenConfirmedModal}
+              title="View Confirmed Schools & Formalities Hub"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/60 rounded-lg transition shadow-2xs cursor-pointer"
+            >
+              <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
+              <span className="hidden sm:inline">Confirmed Schools</span>
+              {confirmedCount !== undefined && confirmedCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-100 font-extrabold ml-0.5">
+                  {confirmedCount}
+                </span>
               )}
             </button>
 

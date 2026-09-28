@@ -96,9 +96,30 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
                     <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 flex-wrap">
                       <span>{info?.school_name}</span>
                       {(sales?.deal_closed || sales?.lead_status === 'Closed Won') && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shadow-2xs">
-                          <span>🏆</span> Deal Closed
-                        </span>
+                        <>
+                          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shadow-2xs">
+                            <span>🏆</span> Deal Closed
+                          </span>
+                          {(() => {
+                            const form = school.formalities || sales?.formalities || {};
+                            const isComp = form.progress_pct >= 100 || form.formalities_completed;
+                            if (isComp) {
+                              return (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-600 text-white shadow-2xs">
+                                  <span>🎓</span> Active Partner
+                                </span>
+                              );
+                            }
+                            if (form.progress_pct > 0) {
+                              return (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs">
+                                  <span>📜</span> Formalities: {form.progress_pct}%
+                                </span>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </>
                       )}
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">

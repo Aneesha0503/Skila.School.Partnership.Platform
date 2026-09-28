@@ -17,7 +17,9 @@ export default function SchoolDetailModal({
   userRole = 'admin',
   currentAgentName = 'Field Agent',
   initialTab = 'info',
-  onTabChange
+  onTabChange,
+  onOpenMOU,
+  onOpenCertificate
 }) {
   const formatRemarks = (val) => {
     if (!val) return '';
@@ -242,6 +244,86 @@ export default function SchoolDetailModal({
   const [runDetailsError, setRunDetailsError] = useState('');
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
+
+  // Formalities State & Sync
+  const initialFormalities = school?.formalities || school?.sales?.formalities || {};
+  const [formalities, setFormalities] = useState(initialFormalities);
+  const [isSavingFormalities, setIsSavingFormalities] = useState(false);
+  const [formalitiesSuccess, setFormalitiesSuccess] = useState('');
+  const [formalitiesError, setFormalitiesError] = useState('');
+
+  useEffect(() => {
+    if (school?.id) {
+      fetch(`/api/schools/${school.id}/formalities`, {
+        headers: {
+          'X-User-Role': userRole,
+          'X-Agent-Name': currentAgentName
+        }
+      })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data) {
+            setFormalities(data);
+          }
+        })
+        .catch(err => console.error('Error loading formalities:', err));
+    }
+  }, [school?.id]);
+
+  const handleFormalitiesFieldChange = (field, value) => {
+    setFormalities(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSaveFormalities = async (e) => {
+    if (e) e.preventDefault();
+    setIsSavingFormalities(true);
+    setFormalitiesSuccess('');
+    setFormalitiesError('');
+
+    try {
+      const res = await fetch(`/api/schools/${school.id}/formalities`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Role': userRole,
+          'X-Agent-Name': currentAgentName
+        },
+        body: JSON.stringify(formalities)
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update formalities');
+      }
+
+      const updated = await res.json();
+      setFormalities(updated);
+      setFormalitiesSuccess('Formalities updated and synchronized successfully!');
+
+      if (updated.progress_pct >= 100 || updated.formalities_completed) {
+        triggerDealCelebration();
+      }
+
+      if (onUpdateSchool) {
+        onUpdateSchool({
+          ...school,
+          formalities: updated,
+          sales: {
+            ...(school.sales || {}),
+            formalities: updated
+          }
+        });
+      }
+
+      setTimeout(() => setFormalitiesSuccess(''), 4000);
+    } catch (err) {
+      setFormalitiesError(err.message || 'Error saving formalities');
+    } finally {
+      setIsSavingFormalities(false);
+    }
+  };
 
   const scrollContainerRef = useRef(null);
   const remarksTextareaRef = useRef(null);
@@ -787,6 +869,27 @@ export default function SchoolDetailModal({
                 </span>
               )}
             </button>
+
+            <button
+              onClick={() => handleTabClick('formalities')}
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition cursor-pointer ${
+                activeTab === 'formalities'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              }`}
+            >
+              <Award className="w-3.5 h-3.5 text-amber-400" />
+              <span>Partnership Formalities</span>
+              {isDealClosed && (
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  (formalities?.progress_pct >= 100 || formalities?.formalities_completed)
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                }`}>
+                  {(formalities?.progress_pct >= 100 || formalities?.formalities_completed) ? '100%' : `${formalities?.progress_pct || 20}%`}
+                </span>
+              )}
+            </button>
           </div>
         </div>
       </div>
@@ -1324,15 +1427,27 @@ export default function SchoolDetailModal({
                   </div>
 
                   {isDealClosed && (
-                    <button
-                      type="button"
-                      onClick={() => triggerDealCelebration()}
-                      className="self-start sm:self-center px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm hover:shadow transition-all inline-flex items-center gap-2 cursor-pointer shrink-0"
-                      title="Trigger celebratory confetti!"
-                    >
-                      <span>🎉</span>
-                      <span>Celebrate Again!</span>
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleTabClick('formalities')}
+                        className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold shadow-xs transition inline-flex items-center gap-1.5 cursor-pointer"
+                        title="Proceed to Partnership Formalities (MOU, Invoicing, Onboarding)"
+                      >
+                        <Award className="w-3.5 h-3.5" />
+                        <span>Manage Formalities ({formalities?.progress_pct ?? 20}%)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => triggerDealCelebration()}
+                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm hover:shadow transition inline-flex items-center gap-2 cursor-pointer"
+                        title="Trigger celebratory confetti!"
+                      >
+                        <span>🎉</span>
+                        <span>Celebrate!</span>
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1936,6 +2051,563 @@ export default function SchoolDetailModal({
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* TAB 5: PARTNERSHIP FORMALITIES & ONBOARDING */}
+          {activeTab === 'formalities' && (
+            <div className="space-y-6">
+              {!isDealClosed ? (
+                <div className="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent dark:from-amber-950/40 dark:via-slate-900 border border-amber-300 dark:border-amber-700/60 rounded-3xl p-8 sm:p-10 text-center space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center mx-auto text-3xl shadow-inner">
+                    🏆
+                  </div>
+                  <div className="max-w-md mx-auto">
+                    <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                      Deal Confirmation Required
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+                      Partnership formalities (MOU legal drafting, invoicing, institutional SPOC assignment, and official certification) are unlocked once the partnership deal has been confirmed and closed.
+                    </p>
+                  </div>
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleToggleDealClosed}
+                      disabled={isTogglingDeal}
+                      className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md transition inline-flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      <span>🏆</span>
+                      <span>Confirm & Close Deal Now</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Top Progress & Milestone Header */}
+                  <div className="bg-gradient-to-r from-amber-500/10 via-indigo-500/5 to-emerald-500/10 dark:from-amber-950/30 dark:via-slate-900 dark:to-emerald-950/30 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                            <span>Partnership Onboarding & Formalities</span>
+                          </h3>
+                          <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
+                            (formalities?.progress_pct >= 100 || formalities?.formalities_completed)
+                              ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700'
+                              : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700'
+                          }`}>
+                            {(formalities?.progress_pct >= 100 || formalities?.formalities_completed) ? '🎓 100% Active Partner' : `In Progress • ${formalities?.progress_pct || 20}%`}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          Track formal agreement execution, commercials, designated institutional coordinator, and campus launch readiness.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {onOpenMOU && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenMOU(school, formalities)}
+                            className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                            title="View official formal Memorandum of Understanding"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                            <span>Preview MOU</span>
+                          </button>
+                        )}
+
+                        {onOpenCertificate && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenCertificate(school, formalities)}
+                            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 text-xs font-black transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                            title="Generate Official Skila AI Certificate of Partnership"
+                          >
+                            <Award className="w-3.5 h-3.5" />
+                            <span>Certificate</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="mt-4 pt-3 border-t border-slate-200/80 dark:border-slate-800/80">
+                      <div className="flex items-center justify-between text-xs font-bold mb-1.5">
+                        <span className="text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                          <span>Overall Formalities Progress</span>
+                          <span className="text-[10px] text-slate-400 font-normal">({formalities?.progress_pct || 20}% of 5 stages completed)</span>
+                        </span>
+                        <span className={(formalities?.progress_pct >= 100 || formalities?.formalities_completed) ? 'text-emerald-600 dark:text-emerald-400 font-extrabold' : 'text-amber-600 dark:text-amber-400'}>
+                          {formalities?.progress_pct || 20}%
+                        </span>
+                      </div>
+                      <div className="w-full h-2.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-500 rounded-full ${
+                            (formalities?.progress_pct >= 100 || formalities?.formalities_completed)
+                              ? 'bg-emerald-500' 
+                              : 'bg-gradient-to-r from-amber-500 to-indigo-500'
+                          }`}
+                          style={{ width: `${formalities?.progress_pct || 20}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notification Banners */}
+                  {formalitiesSuccess && (
+                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-200">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>{formalitiesSuccess}</span>
+                    </div>
+                  )}
+
+                  {formalitiesError && (
+                    <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-200">
+                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                      <span>{formalitiesError}</span>
+                    </div>
+                  )}
+
+                  {/* 5-Stage Step Indicators */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                    <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700/60 flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center font-bold text-[11px] shrink-0">
+                        ✓
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-slate-900 dark:text-white text-[11px] truncate">1. Deal Closed</div>
+                        <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Won & Confirmed</div>
+                      </div>
+                    </div>
+
+                    <div className={`p-3 rounded-xl bg-white dark:bg-slate-900 border flex items-center gap-2 ${
+                      ['Signed by School', 'Fully Executed'].includes(formalities?.mou_status)
+                        ? 'border-emerald-300 dark:border-emerald-700/60'
+                        : 'border-slate-200 dark:border-slate-800'
+                    }`}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[11px] shrink-0 ${
+                        ['Signed by School', 'Fully Executed'].includes(formalities?.mou_status)
+                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                      }`}>
+                        {['Signed by School', 'Fully Executed'].includes(formalities?.mou_status) ? '✓' : '2'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-slate-900 dark:text-white text-[11px] truncate">2. Legal MOU</div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{formalities?.mou_status || 'Drafting'}</div>
+                      </div>
+                    </div>
+
+                    <div className={`p-3 rounded-xl bg-white dark:bg-slate-900 border flex items-center gap-2 ${
+                      formalities?.invoice_status === 'Fully Paid'
+                        ? 'border-emerald-300 dark:border-emerald-700/60'
+                        : 'border-slate-200 dark:border-slate-800'
+                    }`}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[11px] shrink-0 ${
+                        formalities?.invoice_status === 'Fully Paid'
+                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                      }`}>
+                        {formalities?.invoice_status === 'Fully Paid' ? '✓' : '3'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-slate-900 dark:text-white text-[11px] truncate">3. Commercials</div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{formalities?.invoice_status || 'Pending'}</div>
+                      </div>
+                    </div>
+
+                    <div className={`p-3 rounded-xl bg-white dark:bg-slate-900 border flex items-center gap-2 ${
+                      formalities?.roster_status === 'Verified'
+                        ? 'border-emerald-300 dark:border-emerald-700/60'
+                        : 'border-slate-200 dark:border-slate-800'
+                    }`}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[11px] shrink-0 ${
+                        formalities?.roster_status === 'Verified'
+                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                      }`}>
+                        {formalities?.roster_status === 'Verified' ? '✓' : '4'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-slate-900 dark:text-white text-[11px] truncate">4. SPOC & Roster</div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{formalities?.roster_status || 'Pending'}</div>
+                      </div>
+                    </div>
+
+                    <div className={`p-3 rounded-xl bg-white dark:bg-slate-900 border flex items-center gap-2 ${
+                      formalities?.lab_readiness === 'Verified Ready' && formalities?.teacher_training_status === 'Completed'
+                        ? 'border-emerald-300 dark:border-emerald-700/60'
+                        : 'border-slate-200 dark:border-slate-800'
+                    }`}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[11px] shrink-0 ${
+                        formalities?.lab_readiness === 'Verified Ready' && formalities?.teacher_training_status === 'Completed'
+                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                      }`}>
+                        {formalities?.lab_readiness === 'Verified Ready' && formalities?.teacher_training_status === 'Completed' ? '✓' : '5'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-slate-900 dark:text-white text-[11px] truncate">5. Lab & Launch</div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{formalities?.teacher_training_status || 'Scheduled'}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 1: Agreement & Legal MOU */}
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                      <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-indigo-500" />
+                        <span>Stage 1: Legal Memorandum of Understanding (MOU)</span>
+                      </h4>
+                      {onOpenMOU && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenMOU(school, formalities)}
+                          className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>Open Printable MOU</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">MOU Reference Number</label>
+                        <input
+                          type="text"
+                          value={formalities.mou_number || ''}
+                          onChange={(e) => handleFormalitiesFieldChange('mou_number', e.target.value)}
+                          placeholder="SKILA-MOU-2026-XXXX"
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono focus:ring-1 focus:ring-indigo-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Execution Date</label>
+                        <input
+                          type="date"
+                          value={formalities.mou_date || ''}
+                          onChange={(e) => handleFormalitiesFieldChange('mou_date', e.target.value)}
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">MOU Execution Status</label>
+                        <select
+                          value={formalities.mou_status || 'Drafting'}
+                          onChange={(e) => handleFormalitiesFieldChange('mou_status', e.target.value)}
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold cursor-pointer focus:ring-1 focus:ring-indigo-500"
+                        >
+                          <option value="Drafting">Drafting Agreement</option>
+                          <option value="Sent for Signing">Sent to Principal / Signatory</option>
+                          <option value="Signed by School">Signed by School</option>
+                          <option value="Fully Executed">Fully Executed & Countersigned</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Authorized School Signatory</label>
+                        <input
+                          type="text"
+                          value={formalities.mou_signatory_name || ''}
+                          onChange={(e) => handleFormalitiesFieldChange('mou_signatory_name', e.target.value)}
+                          placeholder="Principal / Correspondent Name"
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Signatory Designation</label>
+                        <input
+                          type="text"
+                          value={formalities.mou_signatory_designation || 'Principal'}
+                          onChange={(e) => handleFormalitiesFieldChange('mou_signatory_designation', e.target.value)}
+                          placeholder="Principal / Director / Trustee"
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Agreement Tenure Validity</label>
+                        <input
+                          type="text"
+                          value={formalities.mou_validity || 'June 2026 - May 2027'}
+                          onChange={(e) => handleFormalitiesFieldChange('mou_validity', e.target.value)}
+                          placeholder="June 2026 – May 2027"
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 2: Commercial Terms & Invoicing */}
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                      <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-emerald-500" />
+                        <span>Stage 2: Commercial Clearance & Invoicing</span>
+                      </h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Agreed Annual Contract Value</label>
+                        <input
+                          type="text"
+                          value={formalities.contract_value || ''}
+                          onChange={(e) => handleFormalitiesFieldChange('contract_value', e.target.value)}
+                          placeholder="₹2,50,000"
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-emerald-600 dark:text-emerald-400 focus:ring-1 focus:ring-emerald-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Payment Structure</label>
+                        <select
+                          value={formalities.payment_terms || 'Annual Upfront'}
+                          onChange={(e) => handleFormalitiesFieldChange('payment_terms', e.target.value)}
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium cursor-pointer"
+                        >
+                          <option value="Annual Upfront">100% Annual Upfront</option>
+                          <option value="50-50 Split">50% Advance / 50% Post-Launch</option>
+                          <option value="Quarterly">Quarterly Installments</option>
+                          <option value="Per Student">Per Student License Model</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Invoicing Status</label>
+                        <select
+                          value={formalities.invoice_status || 'Pending Invoice'}
+                          onChange={(e) => handleFormalitiesFieldChange('invoice_status', e.target.value)}
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold cursor-pointer"
+                        >
+                          <option value="Pending Invoice">Pending Invoice Generation</option>
+                          <option value="Invoice Dispatched">Invoice Sent to School Accounts</option>
+                          <option value="Advance Paid">Partial Advance Received</option>
+                          <option value="Fully Paid">100% Paid & Cleared</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Invoice Number</label>
+                        <input
+                          type="text"
+                          value={formalities.invoice_number || ''}
+                          onChange={(e) => handleFormalitiesFieldChange('invoice_number', e.target.value)}
+                          placeholder="INV-SKILA-2026-XXXX"
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Payment Reference / UTR No.</label>
+                        <input
+                          type="text"
+                          value={formalities.payment_ref_no || ''}
+                          onChange={(e) => handleFormalitiesFieldChange('payment_ref_no', e.target.value)}
+                          placeholder="UTR / Cheque / Transaction ID"
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Partnership Tier Category</label>
+                        <select
+                          value={formalities.partnership_tier || 'Skila AI Pioneer Partner'}
+                          onChange={(e) => handleFormalitiesFieldChange('partnership_tier', e.target.value)}
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium cursor-pointer"
+                        >
+                          <option value="Skila AI Pioneer Partner">👑 Skila AI Pioneer Partner</option>
+                          <option value="STEM Excellence Partner">🔬 STEM Excellence Partner</option>
+                          <option value="Standard EdTech Partner">💻 Standard EdTech Partner</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 3: Institutional SPOC & Roster Handover */}
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                      <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-purple-500" />
+                        <span>Stage 3: School SPOC & Academic Roster</span>
+                      </h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Designated School SPOC Name</label>
+                        <input
+                          type="text"
+                          value={formalities.school_spoc_name || ''}
+                          onChange={(e) => handleFormalitiesFieldChange('school_spoc_name', e.target.value)}
+                          placeholder="Primary Institutional Coordinator"
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">SPOC Designation</label>
+                        <input
+                          type="text"
+                          value={formalities.school_spoc_designation || 'AI Coordinator'}
+                          onChange={(e) => handleFormalitiesFieldChange('school_spoc_designation', e.target.value)}
+                          placeholder="Head of Computer Science / Academic Coordinator"
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">SPOC Phone / WhatsApp</label>
+                        <input
+                          type="text"
+                          value={formalities.school_spoc_phone || ''}
+                          onChange={(e) => handleFormalitiesFieldChange('school_spoc_phone', e.target.value)}
+                          placeholder="+91 98765 43210"
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">SPOC Email</label>
+                        <input
+                          type="email"
+                          value={formalities.school_spoc_email || ''}
+                          onChange={(e) => handleFormalitiesFieldChange('school_spoc_email', e.target.value)}
+                          placeholder="spoc@school.edu.in"
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Student & Faculty Roster Handover</label>
+                        <select
+                          value={formalities.roster_status || 'Pending'}
+                          onChange={(e) => handleFormalitiesFieldChange('roster_status', e.target.value)}
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium cursor-pointer"
+                        >
+                          <option value="Pending">Pending Roster Handover</option>
+                          <option value="Uploaded">Roster Excel Uploaded</option>
+                          <option value="Verified">Roster Verified & Enrolled in Portal</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Academic Year</label>
+                        <input
+                          type="text"
+                          value={formalities.academic_year || '2026-2027'}
+                          onChange={(e) => handleFormalitiesFieldChange('academic_year', e.target.value)}
+                          placeholder="2026-2027"
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 4: Lab Readiness & Teacher Enablement */}
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                      <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-amber-500" />
+                        <span>Stage 4: Lab Readiness & Teacher Training</span>
+                      </h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Lab / Devices Readiness</label>
+                        <select
+                          value={formalities.lab_readiness || 'Pending'}
+                          onChange={(e) => handleFormalitiesFieldChange('lab_readiness', e.target.value)}
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium cursor-pointer"
+                        >
+                          <option value="Pending">Pending Inspection</option>
+                          <option value="Setup Required">Setup & Configuration Required</option>
+                          <option value="Verified Ready">Verified Ready for Student Deployment</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Faculty AI Training Status</label>
+                        <select
+                          value={formalities.teacher_training_status || 'Scheduled'}
+                          onChange={(e) => handleFormalitiesFieldChange('teacher_training_status', e.target.value)}
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium cursor-pointer"
+                        >
+                          <option value="Scheduled">Orientation Scheduled</option>
+                          <option value="Completed">Teacher Training Completed</option>
+                          <option value="Postponed">Postponed / Awaiting School Calendar</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Student Rollout Kick-off Date</label>
+                        <input
+                          type="date"
+                          value={formalities.rollout_target_date || ''}
+                          onChange={(e) => handleFormalitiesFieldChange('rollout_target_date', e.target.value)}
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 5: Official Partnership Certificate */}
+                  <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent dark:from-amber-950/40 dark:via-slate-900 rounded-2xl border border-amber-300 dark:border-amber-700/60 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center text-2xl shrink-0">
+                        🏆
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                          Official Certificate of Partnership
+                        </h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          Issued under Skila Institutional Alliance Charter for academic session {formalities.academic_year || '2026-2027'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {onOpenCertificate && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenCertificate(school, formalities)}
+                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs shadow-md transition flex items-center gap-2 cursor-pointer shrink-0"
+                      >
+                        <Award className="w-4 h-4" />
+                        <span>Generate & Print Certificate</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Save Formalities Action Bar */}
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                      {formalities.formalities_updated_at && (
+                        <span>Last updated: {new Date(formalities.formalities_updated_at).toLocaleString()} by {formalities.formalities_updated_by || 'Admin'}</span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSaveFormalities}
+                      disabled={isSavingFormalities}
+                      className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md hover:shadow-lg transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>{isSavingFormalities ? 'Synchronizing...' : 'Save Formalities Changes'}</span>
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </>
