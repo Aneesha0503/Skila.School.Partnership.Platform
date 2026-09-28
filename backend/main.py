@@ -1379,7 +1379,7 @@ def api_log_school_email(school_id: str, req: SendEmailRequest):
     sender_type = (req.sender_type or "personal").lower()
     
     sender_label = os.getenv("PERSONAL_EMAIL_NAME", "Skila AI") if sender_type == "personal" else os.getenv("COMPANY_EMAIL_NAME", "Skila AI Partnerships")
-    sender_email = os.getenv("PERSONAL_EMAIL_ADDRESS", "skila.udaymerugu@gmail.com") if sender_type == "personal" else os.getenv("COMPANY_EMAIL_ADDRESS", "partnerships@skila.ai")
+    sender_email = os.getenv("PERSONAL_EMAIL_ADDRESS", "partnerships@skila.ai") if sender_type == "personal" else os.getenv("COMPANY_EMAIL_ADDRESS", "partnerships@skila.ai")
 
     sales = school_data.setdefault("sales", {})
     sales["lead_status"] = "Contacted"

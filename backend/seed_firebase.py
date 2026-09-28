@@ -41,8 +41,8 @@ if os.path.exists(LOCAL_STORE):
         print(f"Could not load local_firestore.json: {e}")
 
 if not schools_to_upload:
-    schools_to_upload = generate_sample_schools()
-    print(f"Using {len(schools_to_upload)} default generated sample schools")
+    print("[INFO] No schools found to upload. Hardcoded schools have been removed.")
+    sys.exit(0)
 
 col = live_db.collection("schools")
 print(f"Uploading {len(schools_to_upload)} schools directly to live Firebase Firestore 'schools' collection...")

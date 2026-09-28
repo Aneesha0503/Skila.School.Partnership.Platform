@@ -107,7 +107,7 @@ export default function App() {
 
   // Current active agent identity (when in Agent Level)
   const [currentAgentName, setCurrentAgentName] = useState(() => {
-    return localStorage.getItem('skila_current_agent') || 'Uday';
+    return localStorage.getItem('skila_current_agent') || 'Field Agent';
   });
 
   useEffect(() => {
@@ -722,7 +722,10 @@ export default function App() {
   };
 
   const availableAgents = React.useMemo(() => {
-    const set = new Set(['Uday', 'Agent Sneha', 'Karthik V']);
+    const set = new Set();
+    if (currentAgentName && currentAgentName.trim() && currentAgentName.trim() !== 'Field Agent') {
+      set.add(currentAgentName.trim());
+    }
     schools.forEach((s) => {
       if (s.sales?.sales_owner && s.sales.sales_owner !== 'Unassigned') {
         set.add(s.sales.sales_owner.trim());
@@ -738,8 +741,8 @@ export default function App() {
         set.add(n.agent_name.trim());
       }
     });
-    return Array.from(set).sort();
-  }, [schools, notifications]);
+    return Array.from(set).filter(Boolean).sort();
+  }, [schools, notifications, currentAgentName]);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
@@ -754,6 +757,7 @@ export default function App() {
         onRoleChange={setUserRole}
         currentAgentName={currentAgentName}
         onAgentNameChange={setCurrentAgentName}
+        availableAgents={availableAgents}
         onOpenAccessModal={handleOpenAccessModal}
         notifications={notifications}
         onNotificationClick={handleNotificationClick}

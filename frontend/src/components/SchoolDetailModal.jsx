@@ -15,7 +15,7 @@ export default function SchoolDetailModal({
   onUpdateSchool, 
   onOpenEditModal,
   userRole = 'admin',
-  currentAgentName = 'Uday',
+  currentAgentName = 'Field Agent',
   initialTab = 'info',
   onTabChange
 }) {
@@ -1535,7 +1535,7 @@ export default function SchoolDetailModal({
                       type="text"
                       value={salesOwner}
                       onChange={(e) => setSalesOwner(e.target.value)}
-                      placeholder="e.g. Rahul Sharma"
+                      placeholder="Enter representative name..."
                       className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>

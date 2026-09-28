@@ -4,7 +4,7 @@ import {
   Sparkles, Calendar, ChevronRight, Phone, Award, ShieldCheck, Layers, Play, RefreshCw, CheckCircle2, Zap, Lock 
 } from 'lucide-react';
 
-export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails, index, userRole = 'admin', currentAgentName = 'Uday' }) {
+export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails, index, userRole = 'admin', currentAgentName = 'Field Agent' }) {
   const { hierarchy, info, technology, sales, tier, details_fetched } = school;
   const [isRunning, setIsRunning] = useState(false);
 

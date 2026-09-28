@@ -65,7 +65,7 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
         if (data.personal?.is_configured) {
           setSenderType('personal');
           const pName = data.personal?.name || 'Skila AI';
-          const pEmail = data.personal?.email || 'skila.udaymerugu@gmail.com';
+          const pEmail = data.personal?.email || 'partnerships@skila.ai';
           const pSig = `Warm regards,\n\n${pName}\nEducational Partnership Lead, Skila AI\nEmail: ${pEmail}`;
           setBody(b => {
             if (b.includes('Warm regards,')) {
@@ -333,7 +333,7 @@ Email: partnerships@skila.ai | Website: https://skila.ai`;
               className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-xs"
             >
               <option value="personal">
-                👤 Personal Account: {emailConfig?.personal?.name || 'Skila AI'} ({emailConfig?.personal?.email || 'skila.udaymerugu@gmail.com'}) {emailConfig?.personal?.is_configured ? '✓ [Ready for 1-Click Send]' : ''}
+                👤 Personal Account: {emailConfig?.personal?.name || 'Skila AI'} ({emailConfig?.personal?.email || 'partnerships@skila.ai'}) {emailConfig?.personal?.is_configured ? '✓ [Ready for 1-Click Send]' : ''}
               </option>
               <option value="company">
                 🏢 Company Account: {emailConfig?.company?.name || 'Skila AI Partnerships'} ({emailConfig?.company?.email || 'partnerships@skila.ai'}) {emailConfig?.company?.is_configured ? '✓ [Ready]' : '(Not Configured)'}

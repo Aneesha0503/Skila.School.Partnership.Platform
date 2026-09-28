@@ -73,7 +73,7 @@ export default function AddEditSchoolModal({ initialData, onClose, onSaveSuccess
       pilot_started: initialData?.sales?.pilot_started || 'No',
       last_contact_date: initialData?.sales?.last_contact_date || '',
       next_follow_up_date: initialData?.sales?.next_follow_up_date || '',
-      sales_owner: initialData?.sales?.sales_owner || 'Rahul Verma',
+      sales_owner: initialData?.sales?.sales_owner || '',
       deal_closed: initialData?.sales?.deal_closed || false,
       deal_closed_at: initialData?.sales?.deal_closed_at || '',
       deal_closed_by: initialData?.sales?.deal_closed_by || '',
@@ -574,6 +574,7 @@ export default function AddEditSchoolModal({ initialData, onClose, onSaveSuccess
                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Sales Owner</label>
                 <input
                   type="text"
+                  placeholder="Enter sales representative or owner..."
                   value={formData.sales.sales_owner}
                   onChange={(e) => handleChange('sales', 'sales_owner', e.target.value)}
                   className="w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800"

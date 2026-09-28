@@ -9,7 +9,7 @@ export default function FilterBar({
   onClearFilters,
   availableAgents = [],
   userRole = 'admin',
-  currentAgentName = 'Uday'
+  currentAgentName = 'Field Agent'
 }) {
   const { search, board, lead_status, skila_ai_potential, technology_adoption_level, tier = 'All', agent = 'All' } = filters;
 

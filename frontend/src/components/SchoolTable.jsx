@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, ChevronRight, MapPin, Award, Layers, Zap, RefreshCw, CheckCircle2, Lock, User } from 'lucide-react';
 
-export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetails, userRole = 'admin', currentAgentName = 'Uday' }) {
+export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetails, userRole = 'admin', currentAgentName = 'Field Agent' }) {
   const [runningId, setRunningId] = useState(null);
 
   const getTierBadge = (tierObj) => {

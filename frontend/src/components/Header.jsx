@@ -13,8 +13,9 @@ export default function Header({
   onToggleTheme,
   userRole = 'admin',
   onRoleChange,
-  currentAgentName = 'Uday',
+  currentAgentName = 'Field Agent',
   onAgentNameChange,
+  availableAgents = [],
   onOpenAccessModal,
   notifications = [],
   onNotificationClick,
@@ -232,7 +233,7 @@ export default function Header({
                         {userRole === 'agent' && <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
                       </div>
 
-                      {/* Agent Persona Quick-Switch */}
+                      {/* Dynamic Agent Identity Manager */}
                       {userRole === 'agent' && (
                         <div className="mt-2.5 pt-2 border-t border-emerald-200/60 dark:border-emerald-800/60">
                           <div className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 mb-1.5 flex items-center justify-between">
@@ -241,25 +242,39 @@ export default function Header({
                               Private Scope
                             </span>
                           </div>
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            {['Uday', 'Agent Sneha', 'Karthik V'].map((name) => (
-                              <button
-                                key={name}
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (onAgentNameChange) onAgentNameChange(name);
-                                }}
-                                className={`text-[10px] px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
-                                  currentAgentName === name
-                                    ? 'bg-emerald-700 text-white shadow-2xs'
-                                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-emerald-400'
-                                }`}
-                              >
-                                {name}
-                              </button>
-                            ))}
+                          
+                          {/* Agent Name Custom Input */}
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <input
+                              type="text"
+                              value={currentAgentName}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => {
+                                if (onAgentNameChange) onAgentNameChange(e.target.value);
+                              }}
+                              placeholder="Enter agent name..."
+                              className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold focus:outline-hidden focus:ring-1 focus:ring-emerald-500 shadow-2xs"
+                            />
                           </div>
+
+                          {/* Dynamic Active Agent Badges (from real database records) */}
+                          {availableAgents.filter((a) => a !== currentAgentName).length > 0 && (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {availableAgents.filter((a) => a !== currentAgentName).map((name) => (
+                                <button
+                                  key={name}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onAgentNameChange) onAgentNameChange(name);
+                                  }}
+                                  className="text-[10px] px-2.5 py-1 rounded-lg font-bold transition cursor-pointer bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-emerald-400"
+                                >
+                                  {name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
