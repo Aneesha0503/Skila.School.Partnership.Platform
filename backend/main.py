@@ -16,7 +16,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 from firebase_config import get_db, is_live_firebase
-from models import SchoolModel, SchoolCreateUpdate, AgentNoteCreate, AgentNoteModel
+from models import SchoolModel, SchoolCreateUpdate, AgentNoteCreate, AgentNoteModel, DealToggleRequest
 
 app = FastAPI(title="Skila School Partnership Platform API", version="1.0.0")
 
@@ -354,6 +354,73 @@ def update_school(school_id: str, payload: SchoolCreateUpdate, role: str = Depen
         
     doc_ref.set(record)
     return record
+
+@app.post("/api/schools/{school_id}/toggle-deal")
+def toggle_deal_closed(
+    school_id: str,
+    payload: DealToggleRequest,
+    role: str = Depends(get_current_role),
+    current_agent: Optional[str] = Depends(get_current_agent_name)
+):
+    """
+    Toggle deal confirmed and closed status for a school.
+    Accessible to both Admin and Field Agents.
+    When deal is confirmed & closed, marks lead_status as 'Closed Won'
+    and triggers a celebratory alert notification.
+    """
+    doc_ref = db.collection("schools").document(school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+
+    existing = doc.to_dict()
+    sales = existing.get("sales", {})
+    now = datetime.now(timezone.utc).isoformat()
+    school_name = existing.get("info", {}).get("school_name", "School")
+    agent_display = (current_agent or "Field Agent") if role == "agent" else "Admin"
+
+    if payload.deal_closed:
+        sales["deal_closed"] = True
+        sales["deal_closed_at"] = now
+        sales["deal_closed_by"] = agent_display
+        sales["lead_status"] = "Closed Won"
+
+        # Dispatches celebration alert notification
+        try:
+            notif_id = f"notif_{uuid.uuid4().hex[:10]}"
+            notif_data = {
+                "id": notif_id,
+                "school_id": school_id,
+                "school_name": school_name,
+                "agent_name": agent_display,
+                "category": "Deal Closed",
+                "urgency": "High",
+                "message": f"🎉 Deal Confirmed & Closed! {school_name} partnership finalized by {agent_display}.",
+                "timestamp": now,
+                "is_read": False
+            }
+            db.collection("notifications").document(notif_id).set(notif_data)
+        except Exception as e:
+            print(f"[Notifications] Could not write celebration alert: {e}")
+    else:
+        sales["deal_closed"] = False
+        sales["deal_closed_at"] = ""
+        sales["deal_closed_by"] = ""
+        if sales.get("lead_status") == "Closed Won":
+            sales["lead_status"] = "Proposal Shared"
+
+    existing["sales"] = sales
+    existing["updated_at"] = now
+    doc_ref.set(existing)
+
+    if role == "agent" and current_agent:
+        active_lower = current_agent.lower().strip()
+        existing["agent_notes"] = [
+            n for n in (existing.get("agent_notes") or [])
+            if n.get("agent_name", "").lower().strip() == active_lower
+        ]
+
+    return existing
 
 @app.post("/api/schools/{school_id}/agent-notes")
 def add_agent_note(

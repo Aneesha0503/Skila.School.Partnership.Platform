@@ -3,10 +3,11 @@ import {
   X, Building2, Cpu, DollarSign, MapPin, Phone, Mail, 
   Globe, User, CheckCircle2, XCircle, Edit3, Save, Sparkles, ExternalLink,
   Play, RefreshCw, Zap, Layers, Lock, ShieldCheck, UserCheck, ArrowLeft, Send, MessageSquare, AlertCircle,
-  FileText, Clock, Tag, Bell, CheckCheck
+  FileText, Clock, Tag, Bell, CheckCheck, Award, PartyPopper
 } from 'lucide-react';
 import SendEmailModal from './SendEmailModal';
 import SendWhatsAppModal from './SendWhatsAppModal';
+import { triggerDealCelebration } from '../utils/confetti';
 
 export default function SchoolDetailModal({ 
   school, 
@@ -227,6 +228,11 @@ export default function SchoolDetailModal({
   const [nextFollowUpDate, setNextFollowUpDate] = useState(school?.sales?.next_follow_up_date || '');
   const [salesOwner, setSalesOwner] = useState(school?.sales?.sales_owner || '');
   const [remarks, setRemarks] = useState(() => formatRemarks(school?.sales?.remarks));
+  const [isDealClosed, setIsDealClosed] = useState(() => {
+    return Boolean(school?.sales?.deal_closed || school?.sales?.lead_status === 'Closed Won');
+  });
+  const [isTogglingDeal, setIsTogglingDeal] = useState(false);
+  const [dealCelebrationBanner, setDealCelebrationBanner] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -302,10 +308,107 @@ export default function SchoolDetailModal({
       setNextFollowUpDate(school.sales.next_follow_up_date || '');
       setSalesOwner(school.sales.sales_owner || '');
       setRemarks(formatRemarks(school.sales.remarks));
+      setIsDealClosed(Boolean(school.sales.deal_closed || school.sales.lead_status === 'Closed Won'));
       setSaveError('');
       setSaveSuccess(false);
     }
-  }, [school?.id]);
+  }, [school?.id, school?.sales?.deal_closed, school?.sales?.lead_status]);
+
+  const handleToggleDealClosed = async (e) => {
+    const nextState = e ? e.target.checked : !isDealClosed;
+    setIsDealClosed(nextState);
+
+    if (nextState) {
+      setLeadStatus('Closed Won');
+      setDealCelebrationBanner(true);
+      triggerDealCelebration();
+    } else {
+      setDealCelebrationBanner(false);
+      if (leadStatus === 'Closed Won') {
+        setLeadStatus('Proposal Shared');
+      }
+    }
+
+    setIsTogglingDeal(true);
+    try {
+      const res = await fetch(`/api/schools/${school.id}/toggle-deal`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Role': userRole,
+          'X-Agent-Name': currentAgentName
+        },
+        body: JSON.stringify({ deal_closed: nextState })
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        onUpdateSchool(updated);
+      } else {
+        const updatedPayload = {
+          hierarchy: school.hierarchy,
+          info: school.info,
+          technology: school.technology,
+          sales: {
+            ...school.sales,
+            deal_closed: nextState,
+            deal_closed_at: nextState ? new Date().toISOString() : '',
+            deal_closed_by: nextState ? (userRole === 'agent' ? currentAgentName : 'Admin') : '',
+            lead_status: nextState ? 'Closed Won' : (leadStatus === 'Closed Won' ? 'Proposal Shared' : leadStatus)
+          }
+        };
+        const putRes = await fetch(`/api/schools/${school.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Role': userRole,
+            'X-Agent-Name': currentAgentName
+          },
+          body: JSON.stringify(updatedPayload)
+        });
+        if (putRes.ok) {
+          const saved = await putRes.json();
+          onUpdateSchool(saved);
+        }
+      }
+    } catch (err) {
+      console.error('Error toggling deal closed:', err);
+    } finally {
+      setIsTogglingDeal(false);
+    }
+  };
+
+  const handleLeadStatusChange = (newStatus) => {
+    setLeadStatus(newStatus);
+    if (newStatus === 'Closed Won' && !isDealClosed) {
+      setIsDealClosed(true);
+      setDealCelebrationBanner(true);
+      triggerDealCelebration();
+      fetch(`/api/schools/${school.id}/toggle-deal`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Role': userRole,
+          'X-Agent-Name': currentAgentName
+        },
+        body: JSON.stringify({ deal_closed: true })
+      }).then(res => res.ok ? res.json() : null)
+        .then(updated => { if (updated) onUpdateSchool(updated); });
+    } else if (newStatus !== 'Closed Won' && isDealClosed) {
+      setIsDealClosed(false);
+      setDealCelebrationBanner(false);
+      fetch(`/api/schools/${school.id}/toggle-deal`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Role': userRole,
+          'X-Agent-Name': currentAgentName
+        },
+        body: JSON.stringify({ deal_closed: false })
+      }).then(res => res.ok ? res.json() : null)
+        .then(updated => { if (updated) onUpdateSchool(updated); });
+    }
+  };
 
   // Auto-resize remarks textarea so notes are completely visible and never restricted
   useEffect(() => {
@@ -425,7 +528,10 @@ export default function SchoolDetailModal({
           interest_level: interestLevel,
           next_follow_up_date: nextFollowUpDate,
           sales_owner: salesOwner,
-          remarks: remarks
+          remarks: remarks,
+          deal_closed: isDealClosed,
+          deal_closed_at: isDealClosed ? (school.sales?.deal_closed_at || new Date().toISOString()) : '',
+          deal_closed_by: isDealClosed ? (school.sales?.deal_closed_by || (userRole === 'agent' ? currentAgentName : 'Admin')) : ''
         }
       };
 
@@ -539,6 +645,25 @@ export default function SchoolDetailModal({
                     UDISE: <span className="text-slate-100 font-semibold">{info.udise_code}</span>
                   </span>
                 )}
+
+                {/* Deal Confirmed and Closed Header Checkbox Badge */}
+                <label 
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold transition-all cursor-pointer select-none shadow-2xs ${
+                    isDealClosed
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-400 shadow-emerald-950/40 ring-2 ring-emerald-500/30'
+                      : 'bg-slate-800 text-slate-300 hover:text-white border-slate-700 hover:border-emerald-500/60'
+                  }`}
+                  title={isDealClosed ? "Deal Confirmed and Closed! Click to uncheck." : "Click to mark Deal Confirmed and Closed"}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isDealClosed}
+                    onChange={handleToggleDealClosed}
+                    disabled={isTogglingDeal}
+                    className="w-3.5 h-3.5 rounded text-emerald-500 bg-slate-900 border-slate-600 focus:ring-emerald-400 focus:ring-offset-slate-900 cursor-pointer accent-emerald-500"
+                  />
+                  <span>{isDealClosed ? '🏆 Deal Confirmed & Closed' : 'Deal Confirmed & Closed'}</span>
+                </label>
               </div>
 
               {/* Clean single-line Location */}
@@ -665,6 +790,40 @@ export default function SchoolDetailModal({
           </div>
         </div>
       </div>
+
+      {/* Deal Closure Confetti Notification Banner */}
+      {dealCelebrationBanner && (
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 text-white px-5 sm:px-8 py-3 shadow-md flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-300 z-10 shrink-0">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl animate-bounce">🎉</span>
+            <div>
+              <div className="font-extrabold text-xs sm:text-sm flex items-center gap-2">
+                <span>Deal Confirmed and Closed!</span>
+                <span className="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-bold">🏆 Closed Won</span>
+              </div>
+              <div className="text-[11px] text-emerald-100">
+                Congratulations! {info?.school_name} partnership has been officially confirmed and closed.
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => triggerDealCelebration()}
+              className="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition cursor-pointer"
+            >
+              More Confetti 🎊
+            </button>
+            <button
+              type="button"
+              onClick={() => setDealCelebrationBanner(false)}
+              className="p-1 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Fullscreen Modal Body with Smooth Momentum Scroll */}
       <div 
@@ -1114,6 +1273,70 @@ export default function SchoolDetailModal({
           {/* TAB 3: SALES & CRM PIPELINE */}
           {activeTab === 'sales' && (
             <div className="space-y-6">
+              {/* Top: Deal Confirmed and Closed Dedicated Milestone Card */}
+              <div className={`rounded-2xl border p-5 sm:p-6 transition-all duration-300 shadow-xs ${
+                isDealClosed
+                  ? 'bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent dark:from-emerald-950/40 dark:via-teal-950/20 dark:to-slate-900 border-emerald-300 dark:border-emerald-700/70 shadow-emerald-500/5'
+                  : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800'
+              }`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <label className="relative flex items-center justify-center cursor-pointer pt-0.5">
+                      <input
+                        type="checkbox"
+                        checked={isDealClosed}
+                        onChange={handleToggleDealClosed}
+                        disabled={isTogglingDeal}
+                        className="w-6 h-6 rounded-lg text-emerald-600 bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-emerald-500 cursor-pointer accent-emerald-600 transition"
+                      />
+                    </label>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                          <span>Deal Confirmed and Closed</span>
+                          {isDealClosed && (
+                            <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 font-bold border border-emerald-300 dark:border-emerald-700 inline-flex items-center gap-1">
+                              <span>🏆</span> Partnership Finalized
+                            </span>
+                          )}
+                        </h3>
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
+                        {isDealClosed
+                          ? "This school partnership is officially confirmed, signed, and closed! Lead status is marked as Closed Won."
+                          : "Check this box once the school administration has agreed, confirmed, or signed the Skila partnership deal."}
+                      </p>
+
+                      {isDealClosed && (
+                        <div className="flex items-center gap-3 mt-3 flex-wrap text-xs">
+                          <span className="text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 inline-flex items-center gap-1.5">
+                            <span>🎉</span> Closed by {sales?.deal_closed_by || (userRole === 'agent' ? currentAgentName : 'Admin')}
+                          </span>
+                          {sales?.deal_closed_at && (
+                            <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                              Confirmed: {new Date(sales.deal_closed_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {isDealClosed && (
+                    <button
+                      type="button"
+                      onClick={() => triggerDealCelebration()}
+                      className="self-start sm:self-center px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm hover:shadow transition-all inline-flex items-center gap-2 cursor-pointer shrink-0"
+                      title="Trigger celebratory confetti!"
+                    >
+                      <span>🎉</span>
+                      <span>Celebrate Again!</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* Sales Opportunity & Decision Maker Card */}
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
                 <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex-wrap gap-3">
@@ -1126,7 +1349,7 @@ export default function SchoolDetailModal({
                       <span className="text-[11px] font-bold text-indigo-900 dark:text-indigo-200">Status:</span>
                       <select
                         value={leadStatus}
-                        onChange={(e) => setLeadStatus(e.target.value)}
+                        onChange={(e) => handleLeadStatusChange(e.target.value)}
                         className="text-xs font-bold bg-transparent text-indigo-900 dark:text-indigo-200 focus:outline-none cursor-pointer"
                       >
                         <option value="New" className="dark:bg-slate-900 dark:text-slate-100">New</option>
@@ -1260,7 +1483,7 @@ export default function SchoolDetailModal({
                     </label>
                     <select
                       value={leadStatus}
-                      onChange={(e) => setLeadStatus(e.target.value)}
+                      onChange={(e) => handleLeadStatusChange(e.target.value)}
                       className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                     >
                       <option value="New">New</option>

@@ -71,9 +71,15 @@ class SalesCRM(BaseModel):
     next_follow_up_date: Optional[str] = ""
     sales_owner: Optional[str] = "Unassigned"
     remarks: Optional[Union[str, Dict[str, Any], List[Any]]] = ""
+    deal_closed: Optional[bool] = False
+    deal_closed_at: Optional[str] = ""
+    deal_closed_by: Optional[str] = ""
     sent_emails: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     sent_whatsapp: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     agent_notes: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+
+class DealToggleRequest(BaseModel):
+    deal_closed: bool
 
 class AgentNoteCreate(BaseModel):
     model_config = ConfigDict(extra="allow", coerce_numbers_to_str=True)

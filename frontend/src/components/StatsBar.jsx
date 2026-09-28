@@ -1,10 +1,11 @@
 import React from 'react';
-import { Building2, Award, GraduationCap, BookOpen, Layers, Users } from 'lucide-react';
+import { Building2, Award, GraduationCap, BookOpen, Layers, Users, Trophy } from 'lucide-react';
 
 export default function StatsBar({ stats, schools }) {
   // Compute live stats directly from schools array when available, or fallback to backend stats
   const activeStats = (schools && schools.length > 0) ? {
     total_schools: schools.length,
+    deals_closed: schools.filter(s => s.sales?.deal_closed || s.sales?.lead_status === 'Closed Won').length,
     high_range: schools.filter(s => s.tier?.tier === 'High Range').length,
     state_high: schools.filter(s => s.tier?.tier === 'State Board - High Strength').length,
     state_mid: schools.filter(s => s.tier?.tier === 'State Board - Mid Strength').length,
@@ -63,10 +64,18 @@ export default function StatsBar({ stats, schools }) {
       bg: 'bg-emerald-50',
       border: 'border-emerald-100',
     },
+    {
+      label: 'Deals Confirmed',
+      value: activeStats.deals_closed || 0,
+      icon: Trophy,
+      color: 'text-amber-500',
+      bg: 'bg-amber-50',
+      border: 'border-amber-200',
+    },
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-6">
       {items.map((it, idx) => {
         const Icon = it.icon;
         return (

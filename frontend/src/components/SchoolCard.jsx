@@ -68,6 +68,11 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
               {tierBadge.label}
             </span>
           )}
+          {(sales?.deal_closed || sales?.lead_status === 'Closed Won') && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shadow-2xs">
+              <span>🏆</span> Deal Closed
+            </span>
+          )}
         </div>
 
         {details_fetched ? (

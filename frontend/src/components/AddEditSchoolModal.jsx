@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Save, Building2, Cpu, DollarSign, MapPin } from 'lucide-react';
+import { triggerDealCelebration } from '../utils/confetti';
 
 export default function AddEditSchoolModal({ initialData, onClose, onSaveSuccess }) {
   const isEditing = Boolean(initialData?.id);
@@ -73,6 +74,9 @@ export default function AddEditSchoolModal({ initialData, onClose, onSaveSuccess
       last_contact_date: initialData?.sales?.last_contact_date || '',
       next_follow_up_date: initialData?.sales?.next_follow_up_date || '',
       sales_owner: initialData?.sales?.sales_owner || 'Rahul Verma',
+      deal_closed: initialData?.sales?.deal_closed || false,
+      deal_closed_at: initialData?.sales?.deal_closed_at || '',
+      deal_closed_by: initialData?.sales?.deal_closed_by || '',
       remarks: initialData?.sales?.remarks || ''
     }
   });
@@ -507,6 +511,37 @@ export default function AddEditSchoolModal({ initialData, onClose, onSaveSuccess
                   className="w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800"
                 />
               </div>
+              {/* Deal Confirmed and Closed Checkbox */}
+              <div className="col-span-full p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/30">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(formData.sales.deal_closed || formData.sales.lead_status === 'Closed Won')}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      handleChange('sales', 'deal_closed', checked);
+                      if (checked) {
+                        handleChange('sales', 'lead_status', 'Closed Won');
+                        triggerDealCelebration();
+                      } else {
+                        if (formData.sales.lead_status === 'Closed Won') {
+                          handleChange('sales', 'lead_status', 'Proposal Shared');
+                        }
+                      }
+                    }}
+                    className="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
+                  />
+                  <div>
+                    <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm flex items-center gap-2">
+                      <span>🏆</span> Deal Confirmed and Closed
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                      Mark this box once the school partnership deal has been confirmed and closed.
+                    </span>
+                  </div>
+                </label>
+              </div>
+
               <div>
                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Lead Status</label>
                 <select

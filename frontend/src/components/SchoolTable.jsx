@@ -93,8 +93,13 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
                     )}
                   </td>
                   <td className="py-3 px-4">
-                    <div className="font-semibold text-slate-900 dark:text-slate-100">
-                      {info?.school_name}
+                    <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 flex-wrap">
+                      <span>{info?.school_name}</span>
+                      {(sales?.deal_closed || sales?.lead_status === 'Closed Won') && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shadow-2xs">
+                          <span>🏆</span> Deal Closed
+                        </span>
+                      )}
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                       {info?.school_category} • {info?.management_type}
