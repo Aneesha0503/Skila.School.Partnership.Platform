@@ -49,6 +49,18 @@ except Exception as e:
 # Local Firestore fallback store
 LOCAL_STORE_PATH = os.path.join(os.path.dirname(__file__), "local_firestore.json")
 
+# In serverless environments like Vercel (AWS Lambda), root filesystem is read-only.
+# We copy/initialize to /tmp if running under Vercel/Lambda.
+if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+    tmp_path = "/tmp/local_firestore.json"
+    if not os.path.exists(tmp_path) and os.path.exists(LOCAL_STORE_PATH):
+        try:
+            import shutil
+            shutil.copyfile(LOCAL_STORE_PATH, tmp_path)
+        except Exception:
+            pass
+    LOCAL_STORE_PATH = tmp_path
+
 class LocalDocumentRef:
     def __init__(self, doc_id: str, collection_store: dict, file_save_cb):
         self.id = doc_id
@@ -120,8 +132,11 @@ class LocalFirestoreDB:
             self._data = {}
 
     def save(self):
-        with open(self.filepath, "w", encoding="utf-8") as f:
-            json.dump(self._data, f, indent=2, ensure_ascii=False)
+        try:
+            with open(self.filepath, "w", encoding="utf-8") as f:
+                json.dump(self._data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"[LocalFirestore] Notice: could not persist to disk ({e})")
 
     def collection(self, col_name: str):
         return LocalCollectionRef(col_name, self._data, self.save)
