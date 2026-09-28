@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import StatsBar from './components/StatsBar';
 import HierarchyNavigator from './components/HierarchyNavigator';
@@ -12,6 +12,12 @@ import DistrictRunner from './components/DistrictRunner';
 import IndiaMapHero from './components/IndiaMapHero';
 import AccessControlModal from './components/AccessControlModal';
 import { School, RefreshCw } from 'lucide-react';
+import { 
+  parseSearchParams, 
+  buildSearchParams, 
+  computeNextHierarchy, 
+  computeStepBackHierarchy 
+} from './utils/navigation';
 
 export default function App() {
   const [schools, setSchools] = useState([]);
@@ -62,6 +68,19 @@ export default function App() {
   const [notifications, setNotifications] = useState([]);
   const [activeModalTab, setActiveModalTab] = useState('info');
 
+  const isPopStateRef = useRef(false);
+  const pendingSchoolIdRef = useRef(null);
+  const pendingEditIdRef = useRef(null);
+
+  const schoolsRef = useRef(schools);
+  schoolsRef.current = schools;
+
+  const selectedHierarchyRef = useRef(selectedHierarchy);
+  selectedHierarchyRef.current = selectedHierarchy;
+
+  const selectedSchoolRef = useRef(selectedSchool);
+  selectedSchoolRef.current = selectedSchool;
+
   // Light / Dark Theme State
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('skila_theme');
@@ -107,6 +126,223 @@ export default function App() {
     });
   };
 
+  // ----------------------------------------------------
+  // Backward Navigation & URL Query History Integration
+  // ----------------------------------------------------
+  const updateHierarchyWithHistory = (nextHierarchy, action = 'push') => {
+    setSelectedHierarchy(nextHierarchy);
+    if (isPopStateRef.current) return;
+
+    const query = buildSearchParams({ hierarchy: nextHierarchy });
+    const url = query ? `?${query}` : window.location.pathname;
+    const historyState = { type: 'hierarchy', hierarchy: nextHierarchy };
+
+    if (action === 'push') {
+      window.history.pushState(historyState, '', url);
+    } else {
+      window.history.replaceState(historyState, '', url);
+    }
+  };
+
+  const handleHierarchyChange = (level, value) => {
+    const next = computeNextHierarchy(selectedHierarchyRef.current, level, value);
+    updateHierarchyWithHistory(next, 'push');
+  };
+
+  const handleResetHierarchy = () => {
+    const next = {
+      state: '',
+      district: '',
+      revenue_division: '',
+      mandal: '',
+      local_body_name: '',
+      village_locality_ward: ''
+    };
+    updateHierarchyWithHistory(next, 'push');
+  };
+
+  const handleStepBackHierarchy = () => {
+    const next = computeStepBackHierarchy(selectedHierarchyRef.current);
+    updateHierarchyWithHistory(next, 'push');
+  };
+
+  const handleSelectState = (stateName) => {
+    const next = {
+      state: stateName,
+      district: '',
+      revenue_division: '',
+      mandal: '',
+      local_body_name: '',
+      village_locality_ward: ''
+    };
+    updateHierarchyWithHistory(next, 'push');
+  };
+
+  const handleSelectSchool = (school, tab = 'info') => {
+    setSelectedSchool(school);
+    setActiveModalTab(tab);
+
+    if (isPopStateRef.current) return;
+
+    const query = buildSearchParams({
+      hierarchy: selectedHierarchyRef.current,
+      schoolId: school.id,
+      tab: tab
+    });
+    const url = query ? `?${query}` : window.location.pathname;
+
+    window.history.pushState({
+      type: 'school',
+      hierarchy: selectedHierarchyRef.current,
+      schoolId: school.id,
+      tab: tab
+    }, '', url);
+  };
+
+  const handleModalTabChange = (newTab) => {
+    setActiveModalTab(newTab);
+    const curr = selectedSchoolRef.current;
+    if (!curr) return;
+
+    if (isPopStateRef.current) return;
+
+    const query = buildSearchParams({
+      hierarchy: selectedHierarchyRef.current,
+      schoolId: curr.id,
+      tab: newTab
+    });
+    const url = query ? `?${query}` : window.location.pathname;
+
+    window.history.replaceState({
+      type: 'school',
+      hierarchy: selectedHierarchyRef.current,
+      schoolId: curr.id,
+      tab: newTab
+    }, '', url);
+  };
+
+  const handleCloseSchoolModal = () => {
+    if (window.history.state?.type === 'school') {
+      window.history.back();
+    } else {
+      setSelectedSchool(null);
+      setActiveModalTab('info');
+      const query = buildSearchParams({ hierarchy: selectedHierarchyRef.current });
+      const url = query ? `?${query}` : window.location.pathname;
+      window.history.replaceState({
+        type: 'hierarchy',
+        hierarchy: selectedHierarchyRef.current
+      }, '', url);
+    }
+  };
+
+  const handleOpenAccessModal = () => {
+    setAccessModalOpen(true);
+    const query = buildSearchParams({
+      hierarchy: selectedHierarchyRef.current,
+      modal: 'access'
+    });
+    window.history.pushState({
+      type: 'modal',
+      hierarchy: selectedHierarchyRef.current,
+      modal: 'access'
+    }, '', `?${query}`);
+  };
+
+  const handleCloseAccessModal = () => {
+    if (window.history.state?.type === 'modal' && window.history.state?.modal === 'access') {
+      window.history.back();
+    } else {
+      setAccessModalOpen(false);
+      const query = buildSearchParams({ hierarchy: selectedHierarchyRef.current });
+      window.history.replaceState({
+        type: 'hierarchy',
+        hierarchy: selectedHierarchyRef.current
+      }, '', query ? `?${query}` : window.location.pathname);
+    }
+  };
+
+  const handleOpenAddModal = () => {
+    if (userRole !== 'admin') {
+      handleOpenAccessModal();
+      return;
+    }
+    setEditingSchool(null);
+    setAddEditModalOpen(true);
+
+    const query = buildSearchParams({
+      hierarchy: selectedHierarchyRef.current,
+      modal: 'add_school'
+    });
+    window.history.pushState({
+      type: 'modal',
+      hierarchy: selectedHierarchyRef.current,
+      modal: 'add_school'
+    }, '', `?${query}`);
+  };
+
+  const handleOpenEditModal = (school) => {
+    if (userRole !== 'admin') {
+      handleOpenAccessModal();
+      return;
+    }
+    setSelectedSchool(null);
+    setEditingSchool(school);
+    setAddEditModalOpen(true);
+
+    const query = buildSearchParams({
+      hierarchy: selectedHierarchyRef.current,
+      modal: 'edit_school',
+      editId: school.id
+    });
+    window.history.pushState({
+      type: 'modal',
+      hierarchy: selectedHierarchyRef.current,
+      modal: 'edit_school',
+      editId: school.id
+    }, '', `?${query}`);
+  };
+
+  const handleCloseAddEditModal = () => {
+    if (window.history.state?.type === 'modal' && (window.history.state?.modal === 'add_school' || window.history.state?.modal === 'edit_school')) {
+      window.history.back();
+    } else {
+      setAddEditModalOpen(false);
+      setEditingSchool(null);
+      const query = buildSearchParams({ hierarchy: selectedHierarchyRef.current });
+      window.history.replaceState({
+        type: 'hierarchy',
+        hierarchy: selectedHierarchyRef.current
+      }, '', query ? `?${query}` : window.location.pathname);
+    }
+  };
+
+  const handleOpenScraperModal = () => {
+    setSkilaScraperModalOpen(true);
+    const query = buildSearchParams({
+      hierarchy: selectedHierarchyRef.current,
+      modal: 'scraper'
+    });
+    window.history.pushState({
+      type: 'modal',
+      hierarchy: selectedHierarchyRef.current,
+      modal: 'scraper'
+    }, '', `?${query}`);
+  };
+
+  const handleCloseScraperModal = () => {
+    if (window.history.state?.type === 'modal' && window.history.state?.modal === 'scraper') {
+      window.history.back();
+    } else {
+      setSkilaScraperModalOpen(false);
+      const query = buildSearchParams({ hierarchy: selectedHierarchyRef.current });
+      window.history.replaceState({
+        type: 'hierarchy',
+        hierarchy: selectedHierarchyRef.current
+      }, '', query ? `?${query}` : window.location.pathname);
+    }
+  };
+
   // Fetch notifications for Admin alert bell / Agent alerts
   const fetchNotifications = async () => {
     try {
@@ -143,8 +379,7 @@ export default function App() {
     }
 
     if (targetSchool) {
-      setActiveModalTab('notes');
-      setSelectedSchool(targetSchool);
+      handleSelectSchool(targetSchool, 'notes');
     }
   };
 
@@ -233,6 +468,34 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         setSchools(data);
+
+        // If there was a pending school ID from initial URL parse, resolve it now
+        if (pendingSchoolIdRef.current) {
+          const targetId = pendingSchoolIdRef.current;
+          pendingSchoolIdRef.current = null;
+          const found = data.find((s) => String(s.id) === String(targetId));
+          if (found) {
+            setSelectedSchool(found);
+          } else {
+            try {
+              const sRes = await fetchWithRole(`/api/schools/${targetId}`);
+              if (sRes.ok) {
+                const sData = await sRes.json();
+                setSelectedSchool(sData);
+              }
+            } catch (err) {}
+          }
+        }
+
+        if (pendingEditIdRef.current) {
+          const editId = pendingEditIdRef.current;
+          pendingEditIdRef.current = null;
+          const found = data.find((s) => String(s.id) === String(editId));
+          if (found) {
+            setEditingSchool(found);
+            setAddEditModalOpen(true);
+          }
+        }
       }
     } catch (err) {
       console.error('Error fetching schools:', err);
@@ -241,72 +504,155 @@ export default function App() {
     }
   };
 
-  const handleHierarchyChange = (level, value) => {
-    setSelectedHierarchy((prev) => {
-      const next = { ...prev, [level]: value };
-      if (level === 'state') {
-        next.district = '';
-        next.revenue_division = '';
-        next.mandal = '';
-        next.local_body_name = '';
-        next.village_locality_ward = '';
-      } else if (level === 'district') {
-        next.revenue_division = '';
-        next.mandal = '';
-        next.local_body_name = '';
-        next.village_locality_ward = '';
-      } else if (level === 'revenue_division') {
-        next.mandal = '';
-        next.local_body_name = '';
-        next.village_locality_ward = '';
-      } else if (level === 'mandal') {
-        next.local_body_name = '';
-        next.village_locality_ward = '';
-      } else if (level === 'local_body_name') {
-        next.village_locality_ward = '';
-      }
-      return next;
-    });
-  };
+  // Browser History and URL Query Synchronization (Backward / Forward Navigation)
+  useEffect(() => {
+    const parsed = parseSearchParams(window.location.search);
 
-  const handleResetHierarchy = () => {
-    setSelectedHierarchy({
-      state: '',
-      district: '',
-      revenue_division: '',
-      mandal: '',
-      local_body_name: '',
-      village_locality_ward: ''
-    });
-  };
+    // 1. Restore hierarchy if in URL
+    if (parsed.state || parsed.district || parsed.revenue_division || parsed.mandal || parsed.local_body_name || parsed.village_locality_ward) {
+      setSelectedHierarchy({
+        state: parsed.state,
+        district: parsed.district,
+        revenue_division: parsed.revenue_division,
+        mandal: parsed.mandal,
+        local_body_name: parsed.local_body_name,
+        village_locality_ward: parsed.village_locality_ward
+      });
+    }
+
+    // 2. Restore School modal if in URL
+    if (parsed.schoolId) {
+      pendingSchoolIdRef.current = parsed.schoolId;
+      if (parsed.tab) {
+        setActiveModalTab(parsed.tab);
+      }
+    }
+
+    // 3. Restore Modals if in URL
+    if (parsed.modal === 'add_school') {
+      setAddEditModalOpen(true);
+      setEditingSchool(null);
+    } else if (parsed.modal === 'edit_school' && parsed.editId) {
+      pendingEditIdRef.current = parsed.editId;
+    } else if (parsed.modal === 'access') {
+      setAccessModalOpen(true);
+    } else if (parsed.modal === 'scraper') {
+      setSkilaScraperModalOpen(true);
+    }
+
+    // 4. Baseline history state for accurate popstate transitions
+    const currentQuery = window.location.search;
+    window.history.replaceState({
+      type: parsed.schoolId ? 'school' : parsed.modal ? 'modal' : 'hierarchy',
+      hierarchy: {
+        state: parsed.state,
+        district: parsed.district,
+        revenue_division: parsed.revenue_division,
+        mandal: parsed.mandal,
+        local_body_name: parsed.local_body_name,
+        village_locality_ward: parsed.village_locality_ward
+      },
+      schoolId: parsed.schoolId,
+      tab: parsed.tab,
+      modal: parsed.modal,
+      editId: parsed.editId
+    }, '', currentQuery || window.location.pathname);
+
+    // 5. Popstate event listener for browser Back (←) and Forward (→) buttons
+    const handlePopState = async () => {
+      isPopStateRef.current = true;
+      try {
+        const urlParams = parseSearchParams(window.location.search);
+
+        // Synchronize Hierarchy
+        setSelectedHierarchy({
+          state: urlParams.state,
+          district: urlParams.district,
+          revenue_division: urlParams.revenue_division,
+          mandal: urlParams.mandal,
+          local_body_name: urlParams.local_body_name,
+          village_locality_ward: urlParams.village_locality_ward
+        });
+
+        // Synchronize School Detail Modal
+        if (urlParams.schoolId) {
+          setActiveModalTab(urlParams.tab || 'info');
+          const currentSchool = selectedSchoolRef.current;
+          if (!currentSchool || String(currentSchool.id) !== String(urlParams.schoolId)) {
+            const found = schoolsRef.current.find((s) => String(s.id) === String(urlParams.schoolId));
+            if (found) {
+              setSelectedSchool(found);
+            } else {
+              try {
+                const res = await fetchWithRole(`/api/schools/${urlParams.schoolId}`);
+                if (res.ok) {
+                  const s = await res.json();
+                  setSelectedSchool(s);
+                }
+              } catch (e) {}
+            }
+          }
+        } else {
+          setSelectedSchool(null);
+          setActiveModalTab('info');
+        }
+
+        // Synchronize Add/Edit Modal
+        if (urlParams.modal === 'add_school') {
+          setEditingSchool(null);
+          setAddEditModalOpen(true);
+        } else if (urlParams.modal === 'edit_school' && urlParams.editId) {
+          const found = schoolsRef.current.find((s) => String(s.id) === String(urlParams.editId));
+          if (found) {
+            setEditingSchool(found);
+            setAddEditModalOpen(true);
+          } else {
+            try {
+              const res = await fetchWithRole(`/api/schools/${urlParams.editId}`);
+              if (res.ok) {
+                const s = await res.json();
+                setEditingSchool(s);
+                setAddEditModalOpen(true);
+              }
+            } catch (e) {}
+          }
+        } else {
+          setAddEditModalOpen(false);
+          setEditingSchool(null);
+        }
+
+        // Synchronize Access Modal
+        if (urlParams.modal === 'access') {
+          setAccessModalOpen(true);
+        } else {
+          setAccessModalOpen(false);
+        }
+
+        // Synchronize Scraper Modal
+        if (urlParams.modal === 'scraper') {
+          setSkilaScraperModalOpen(true);
+        } else {
+          setSkilaScraperModalOpen(false);
+        }
+      } finally {
+        setTimeout(() => {
+          isPopStateRef.current = false;
+        }, 60);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleOpenAddModal = () => {
-    if (userRole !== 'admin') {
-      setAccessModalOpen(true);
-      return;
-    }
-    setEditingSchool(null);
-    setAddEditModalOpen(true);
-  };
-
-  const handleOpenEditModal = (school) => {
-    if (userRole !== 'admin') {
-      setAccessModalOpen(true);
-      return;
-    }
-    setSelectedSchool(null);
-    setEditingSchool(school);
-    setAddEditModalOpen(true);
-  };
-
   const handleSchoolSaved = (savedSchool) => {
     fetchSchools();
     fetchStats();
-    setSelectedSchool(savedSchool);
+    handleSelectSchool(savedSchool, 'info');
   };
 
   const handleExportExcel = () => {
@@ -321,7 +667,7 @@ export default function App() {
 
   const handleRunSchoolDetails = async (schoolId) => {
     if (userRole !== 'admin') {
-      setAccessModalOpen(true);
+      handleOpenAccessModal();
       return null;
     }
     try {
@@ -345,21 +691,26 @@ export default function App() {
   };
 
   const handleDistrictRunComplete = ({ state, district, schools: returnedSchools }) => {
-    setSelectedHierarchy({
+    const next = {
       state: state,
       district: district,
       revenue_division: '',
       mandal: '',
       local_body_name: '',
       village_locality_ward: ''
-    });
+    };
+    setSelectedHierarchy(next);
+    const query = buildSearchParams({ hierarchy: next });
+    window.history.pushState({ type: 'hierarchy', hierarchy: next }, '', query ? `?${query}` : window.location.pathname);
+
     setFilters({
       search: '',
       tier: 'All',
       board: 'All',
       lead_status: 'All',
       skila_ai_potential: 'All',
-      technology_adoption_level: 'All'
+      technology_adoption_level: 'All',
+      agent: 'All'
     });
     if (returnedSchools && returnedSchools.length > 0) {
       setSchools(returnedSchools);
@@ -368,17 +719,6 @@ export default function App() {
     }
     fetchHierarchyOptions();
     fetchStats();
-  };
-
-  const handleSelectState = (stateName) => {
-    setSelectedHierarchy({
-      state: stateName,
-      district: '',
-      revenue_division: '',
-      mandal: '',
-      local_body_name: '',
-      village_locality_ward: ''
-    });
   };
 
   const availableAgents = React.useMemo(() => {
@@ -414,7 +754,7 @@ export default function App() {
         onRoleChange={setUserRole}
         currentAgentName={currentAgentName}
         onAgentNameChange={setCurrentAgentName}
-        onOpenAccessModal={() => setAccessModalOpen(true)}
+        onOpenAccessModal={handleOpenAccessModal}
         notifications={notifications}
         onNotificationClick={handleNotificationClick}
         onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
@@ -447,6 +787,7 @@ export default function App() {
           selectedHierarchy={selectedHierarchy}
           onHierarchyChange={handleHierarchyChange}
           onResetHierarchy={handleResetHierarchy}
+          onStepBackHierarchy={handleStepBackHierarchy}
           totalMatchingSchools={schools.length}
         />
 
@@ -497,7 +838,7 @@ export default function App() {
                 key={school.id}
                 school={school}
                 index={idx}
-                onSelectSchool={setSelectedSchool}
+                onSelectSchool={(s) => handleSelectSchool(s, 'info')}
                 onRunSchoolDetails={handleRunSchoolDetails}
                 userRole={userRole}
                 currentAgentName={currentAgentName}
@@ -507,7 +848,7 @@ export default function App() {
         ) : (
           <SchoolTable
             schools={schools}
-            onSelectSchool={setSelectedSchool}
+            onSelectSchool={(s) => handleSelectSchool(s, 'info')}
             onRunSchoolDetails={handleRunSchoolDetails}
             userRole={userRole}
             currentAgentName={currentAgentName}
@@ -520,10 +861,8 @@ export default function App() {
         <SchoolDetailModal
           school={selectedSchool}
           initialTab={activeModalTab}
-          onClose={() => {
-            setSelectedSchool(null);
-            setActiveModalTab('info');
-          }}
+          onTabChange={handleModalTabChange}
+          onClose={handleCloseSchoolModal}
           onUpdateSchool={(updated) => {
             setSelectedSchool(updated);
             fetchSchools();
@@ -540,10 +879,7 @@ export default function App() {
       {addEditModalOpen && userRole === 'admin' && (
         <AddEditSchoolModal
           initialData={editingSchool}
-          onClose={() => {
-            setAddEditModalOpen(false);
-            setEditingSchool(null);
-          }}
+          onClose={handleCloseAddEditModal}
           onSaveSuccess={handleSchoolSaved}
         />
       )}
@@ -551,7 +887,7 @@ export default function App() {
       {/* Skila AI Scraper Modal */}
       {skilaScraperModalOpen && (
         <SkilaScraperModal
-          onClose={() => setSkilaScraperModalOpen(false)}
+          onClose={handleCloseScraperModal}
           onImportSuccess={() => {
             fetchSchools();
             fetchStats();
@@ -563,7 +899,7 @@ export default function App() {
       {/* Role-Based Access Control Matrix Modal */}
       <AccessControlModal
         isOpen={accessModalOpen}
-        onClose={() => setAccessModalOpen(false)}
+        onClose={handleCloseAccessModal}
         currentRole={userRole}
         onSelectRole={setUserRole}
       />

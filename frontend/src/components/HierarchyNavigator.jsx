@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { MapPin, ChevronRight, RotateCcw, Layers } from 'lucide-react';
+import { MapPin, ChevronRight, RotateCcw, Layers, ArrowLeft } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 
 export default function HierarchyNavigator({
@@ -7,6 +7,7 @@ export default function HierarchyNavigator({
   selectedHierarchy,
   onHierarchyChange,
   onResetHierarchy,
+  onStepBackHierarchy,
   totalMatchingSchools
 }) {
   const { state, district, revenue_division, mandal, local_body_name, village_locality_ward } = selectedHierarchy;
@@ -169,48 +170,126 @@ export default function HierarchyNavigator({
         </div>
       </div>
 
-      {/* Active Breadcrumb Path */}
+      {/* Active Breadcrumb Path with Interactive Navigation & Step Back */}
       {hasAnyFilter && (
-        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 flex-wrap">
-          <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-            <MapPin className="w-3.5 h-3.5 text-slate-400" /> Filtered Scope:
-          </span>
-          <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">All</span>
-          {state && (
-            <>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-              <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">{state}</span>
-            </>
-          )}
-          {district && (
-            <>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-              <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">{district} District</span>
-            </>
-          )}
-          {revenue_division && (
-            <>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-              <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">{revenue_division} Div</span>
-            </>
-          )}
-          {mandal && (
-            <>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-              <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">{mandal} Mandal</span>
-            </>
-          )}
-          {local_body_name && (
-            <>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-              <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">{local_body_name}</span>
-            </>
-          )}
-          {village_locality_ward && (
-            <>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-              <span className="px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold">{village_locality_ward}</span>
-            </>
+        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 flex-wrap">
+            <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 mr-1">
+              <MapPin className="w-3.5 h-3.5 text-indigo-500" /> Filtered Scope:
+            </span>
+            <button
+              type="button"
+              onClick={onResetHierarchy}
+              className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer border border-transparent hover:border-indigo-200 dark:hover:border-indigo-800"
+              title="Click to reset to All India"
+            >
+              All India
+            </button>
+            {state && (
+              <>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                <button
+                  type="button"
+                  onClick={() => onHierarchyChange('state', state)}
+                  className={`px-2 py-0.5 rounded font-medium transition cursor-pointer ${
+                    !district
+                      ? 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-200 font-bold border border-indigo-200 dark:border-indigo-800'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-600'
+                  }`}
+                  title={`Navigate back to ${state} level`}
+                >
+                  {state}
+                </button>
+              </>
+            )}
+            {district && (
+              <>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                <button
+                  type="button"
+                  onClick={() => onHierarchyChange('district', district)}
+                  className={`px-2 py-0.5 rounded font-medium transition cursor-pointer ${
+                    !revenue_division && !mandal
+                      ? 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-200 font-bold border border-indigo-200 dark:border-indigo-800'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-600'
+                  }`}
+                  title={`Navigate back to ${district} District level`}
+                >
+                  {district} District
+                </button>
+              </>
+            )}
+            {revenue_division && (
+              <>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                <button
+                  type="button"
+                  onClick={() => onHierarchyChange('revenue_division', revenue_division)}
+                  className={`px-2 py-0.5 rounded font-medium transition cursor-pointer ${
+                    !mandal
+                      ? 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-200 font-bold border border-indigo-200 dark:border-indigo-800'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-600'
+                  }`}
+                  title={`Navigate back to ${revenue_division} Division level`}
+                >
+                  {revenue_division} Div
+                </button>
+              </>
+            )}
+            {mandal && (
+              <>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                <button
+                  type="button"
+                  onClick={() => onHierarchyChange('mandal', mandal)}
+                  className={`px-2 py-0.5 rounded font-medium transition cursor-pointer ${
+                    !local_body_name && !village_locality_ward
+                      ? 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-200 font-bold border border-indigo-200 dark:border-indigo-800'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-600'
+                  }`}
+                  title={`Navigate back to ${mandal} Mandal level`}
+                >
+                  {mandal} Mandal
+                </button>
+              </>
+            )}
+            {local_body_name && (
+              <>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                <button
+                  type="button"
+                  onClick={() => onHierarchyChange('local_body_name', local_body_name)}
+                  className={`px-2 py-0.5 rounded font-medium transition cursor-pointer ${
+                    !village_locality_ward
+                      ? 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-200 font-bold border border-indigo-200 dark:border-indigo-800'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-600'
+                  }`}
+                >
+                  {local_body_name}
+                </button>
+              </>
+            )}
+            {village_locality_ward && (
+              <>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                <span className="px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950/80 text-indigo-900 dark:text-indigo-200 font-bold border border-indigo-200 dark:border-indigo-800 shadow-2xs">
+                  {village_locality_ward}
+                </span>
+              </>
+            )}
+          </div>
+
+          {/* Quick Backward Navigation Step-Back Button */}
+          {onStepBackHierarchy && (
+            <button
+              type="button"
+              onClick={onStepBackHierarchy}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-2xs group shrink-0"
+              title="Step back to previous hierarchy level (or press Browser Back)"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-indigo-500 group-hover:-translate-x-0.5 transition-transform" />
+              <span>Step Back</span>
+            </button>
           )}
         </div>
       )}
