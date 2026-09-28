@@ -48,7 +48,7 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
           
           {/* Eyebrow badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-indigo-500/10 border border-indigo-200/80 dark:border-indigo-800/80 text-indigo-700 dark:text-indigo-300 text-xs font-semibold w-fit tracking-wide shadow-xs">
-            <img src="/skila_3d_logo_tight.png" alt="Skila 3D" className="w-4.5 h-4.5 object-contain drop-shadow-xs animate-pulse" />
+            <img src="/skila_3d_glass.png" alt="Skila 3D" className="w-4.5 h-4.5 object-contain drop-shadow-xs animate-pulse" />
             <span>Pan-India School Intelligence & AI Pipeline</span>
           </div>
 
@@ -170,7 +170,7 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
             {/* Map Top Bar */}
             <div className="w-full flex items-center justify-between px-2 pt-1 pb-2 border-b border-slate-100 dark:border-slate-800 text-xs">
               <div className="flex items-center gap-2">
-                <img src="/skila_3d_logo_tight.png" alt="Skila 3D" className="w-4.5 h-4.5 object-contain drop-shadow-xs" />
+                <img src="/skila_3d_glass.png" alt="Skila 3D" className="w-4.5 h-4.5 object-contain drop-shadow-xs" />
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
                   Interactive Pan-India Coverage Map
                 </span>
@@ -238,12 +238,13 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                 {/* 3D Skila Logo Mapped across India from Top (North) to Bottom (Chennai) */}
                 <g id="skila-3d-india-map" className="pointer-events-none select-none">
                   <image
-                    href="/skila_3d_logo_tight.png"
+                    href="/skila_3d_glass.png"
                     x="145"
                     y="80"
                     width="530"
                     height="710"
-                    className="opacity-45 dark:opacity-55 filter drop-shadow-2xl transition-all duration-300"
+                    opacity="0.80"
+                    className="drop-shadow-2xl transition-all duration-300"
                     preserveAspectRatio="xMidYMid meet"
                   />
                 </g>
@@ -291,7 +292,7 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                         {/* Center Beacon Dot */}
                         {hub.name === 'Hyderabad' ? (
                           <image
-                            href="/skila_3d_logo_tight.png"
+                            href="/skila_3d_glass.png"
                             x={hub.x - 7.5}
                             y={hub.y - 7.5}
                             width="15"
@@ -340,7 +341,7 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
             <div className="w-full mt-2 p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center p-1 shrink-0 shadow-2xs">
-                  <img src="/skila_3d_logo_tight.png" alt="Skila 3D" className="w-6 h-6 object-contain drop-shadow-xs" />
+                  <img src="/skila_3d_glass.png" alt="Skila 3D" className="w-6 h-6 object-contain drop-shadow-xs" />
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
