@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Save, Building2, Cpu, DollarSign, MapPin } from 'lucide-react';
 import { triggerDealCelebration } from '../utils/confetti';
+import { formatRemarksToCleanText } from '../utils/formatters';
 
 export default function AddEditSchoolModal({ initialData, onClose, onSaveSuccess }) {
   const isEditing = Boolean(initialData?.id);
@@ -77,7 +78,7 @@ export default function AddEditSchoolModal({ initialData, onClose, onSaveSuccess
       deal_closed: initialData?.sales?.deal_closed || false,
       deal_closed_at: initialData?.sales?.deal_closed_at || '',
       deal_closed_by: initialData?.sales?.deal_closed_by || '',
-      remarks: initialData?.sales?.remarks || ''
+      remarks: formatRemarksToCleanText(initialData?.sales?.remarks || '')
     }
   });
 
