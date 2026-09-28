@@ -193,13 +193,6 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                     <stop offset="0%" stopColor="#6366f1" />
                     <stop offset="100%" stopColor="#4338ca" />
                   </radialGradient>
-
-                  {/* Luminous Top-to-Bottom Corridor Gradient (North to Chennai) */}
-                  <linearGradient id="corridorGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#38bdf8" />
-                    <stop offset="50%" stopColor="#818cf8" />
-                    <stop offset="100%" stopColor="#4f46e5" />
-                  </linearGradient>
                 </defs>
 
                 {/* Ambient Soft Logo Watermark in Background - Map is Star */}
@@ -252,29 +245,6 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                       />
                     );
                   })}
-                </g>
-
-                {/* Luminous Top-to-Bottom National AI Corridor (North to Chennai via Hyderabad HQ) */}
-                <g id="national-corridor-layer" className="pointer-events-none select-none">
-                  {/* Outer Glow Track */}
-                  <path
-                    d="M 345 310 Q 375 480 395 645 T 410 785"
-                    fill="none"
-                    stroke="#6366f1"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                    className="opacity-25 dark:opacity-40 blur-[2px]"
-                  />
-                  {/* High-Tech Pulse Line */}
-                  <path
-                    d="M 345 310 Q 375 480 395 645 T 410 785"
-                    fill="none"
-                    stroke="url(#corridorGradient)"
-                    strokeWidth="2"
-                    strokeDasharray="6 4"
-                    strokeLinecap="round"
-                    className="opacity-80 dark:opacity-90"
-                  />
                 </g>
 
                 {/* Major Educational Hubs with Glowing Radar Beacons */}
