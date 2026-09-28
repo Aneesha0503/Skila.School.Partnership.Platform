@@ -8,6 +8,7 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
 
   const activeStateName = hoveredState?.name || selectedState || 'Telangana';
   const activeHubInfo = MAJOR_HUBS.find(h => h.state === activeStateName) || MAJOR_HUBS[0];
+  const activePinnedState = INDIA_STATES.find(s => s.name === activeStateName);
 
   const scrollToTarget = () => {
     if (!isAuthenticated) {
@@ -29,7 +30,6 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
     if (onSelectState) {
       onSelectState(stateName);
     }
-    scrollToTarget();
   };
 
   const scrollToDistrictRunner = scrollToTarget;
@@ -195,18 +195,6 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                   </radialGradient>
                 </defs>
 
-                {/* Ambient Soft Logo Watermark in Background - Map is Star */}
-                <g id="skila-ambient-watermark" className="pointer-events-none select-none opacity-[0.09] dark:opacity-[0.15]">
-                  <image
-                    href="/skila_3d_glass.png"
-                    x="180"
-                    y="100"
-                    width="460"
-                    height="620"
-                    preserveAspectRatio="xMidYMid meet"
-                  />
-                </g>
-
                 {/* State Vector Paths - Vibrant & Crisply Highlighted */}
                 <g id="india-states-layer">
                   {INDIA_STATES.map((state) => {
@@ -332,6 +320,60 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                     );
                   })}
                 </g>
+
+                {/* Dynamically Pinned 3D Logo on Selected / Clicked State */}
+                {activePinnedState && activePinnedState.cx && activePinnedState.cy && (
+                  <g
+                    id="selected-state-logo-pin"
+                    className="pointer-events-none select-none transition-all duration-300"
+                  >
+                    {/* Glowing Radar Pulse Rings on Clicked State */}
+                    <circle
+                      cx={activePinnedState.cx}
+                      cy={activePinnedState.cy}
+                      r="22"
+                      className="fill-indigo-500/25 dark:fill-indigo-400/30 animate-ping origin-center"
+                      style={{ animationDuration: '2.4s' }}
+                    />
+                    <circle
+                      cx={activePinnedState.cx}
+                      cy={activePinnedState.cy}
+                      r="12"
+                      className="fill-indigo-500/35 dark:fill-indigo-400/40 blur-xs"
+                    />
+
+                    {/* 3D Glass Logo Standing Directly on Clicked State */}
+                    <image
+                      href="/skila_3d_glass.png"
+                      x={activePinnedState.cx - 20}
+                      y={activePinnedState.cy - 26}
+                      width="40"
+                      height="52"
+                      className="drop-shadow-xl"
+                      preserveAspectRatio="xMidYMid meet"
+                    />
+
+                    {/* Floating Pill Label for Clicked State */}
+                    <g className="filter drop-shadow-md">
+                      <rect
+                        x={activePinnedState.cx - 42}
+                        y={activePinnedState.cy - 44}
+                        width="84"
+                        height="16"
+                        rx="8"
+                        className="fill-slate-900/90 dark:fill-slate-950/95 stroke-indigo-400/80 stroke-1"
+                      />
+                      <text
+                        x={activePinnedState.cx}
+                        y={activePinnedState.cy - 33}
+                        textAnchor="middle"
+                        className="text-[8px] font-extrabold fill-white tracking-wider uppercase"
+                      >
+                        {activePinnedState.name}
+                      </text>
+                    </g>
+                  </g>
+                )}
               </svg>
             </div>
 
