@@ -325,37 +325,6 @@ export default function IndiaMapHero({ onSelectState, selectedState, isAuthentic
                     );
                   })}
                 </g>
-
-                {/* Official Skila AI Bay of Bengal Cartographic Watermark */}
-                <g id="skila-bay-of-bengal-seal" className="pointer-events-none select-none">
-                  {/* Subtle backdrop glow */}
-                  <circle cx="685" cy="710" r="58" className="fill-indigo-500/5 dark:fill-indigo-400/10 blur-xs" />
-                  <image
-                    href="/skila_icon.png"
-                    x="640"
-                    y="650"
-                    width="90"
-                    height="90"
-                    className="opacity-80 dark:opacity-90 drop-shadow-md"
-                    preserveAspectRatio="xMidYMid meet"
-                  />
-                  <text
-                    x="685"
-                    y="758"
-                    textAnchor="middle"
-                    className="text-[10px] font-black tracking-widest fill-indigo-700 dark:fill-indigo-300 uppercase"
-                  >
-                    Skila AI
-                  </text>
-                  <text
-                    x="685"
-                    y="771"
-                    textAnchor="middle"
-                    className="text-[7.5px] font-bold tracking-wider fill-slate-500 dark:fill-slate-400 uppercase"
-                  >
-                    National Network
-                  </text>
-                </g>
               </svg>
             </div>
 
