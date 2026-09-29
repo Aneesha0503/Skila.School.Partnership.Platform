@@ -3,13 +3,21 @@
   "outputDirectory": "dist",
   "functions": {
     "api/index.py": {
-      "includeFiles": "backend/**"
+      "includeFiles": "{backend/**,api/dist/**}"
     }
   },
   "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": "/api/index.py?__path=$1"
+    },
+    {
+      "source": "/assets/(.*)",
+      "destination": "/assets/$1"
+    },
+    {
+      "source": "/(.*\\.[a-zA-Z0-9]+)",
+      "destination": "/$1"
     },
     {
       "source": "/(.*)",
