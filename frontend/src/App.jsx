@@ -875,13 +875,15 @@ function SkilaApp() {
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 w-full flex-1">
         
-        {/* Pan-India Vision & Interactive Vector Map Hero - Visible to All */}
-        <IndiaMapHero
-          onSelectState={handleSelectState}
-          selectedState={selectedHierarchy.state}
-          isAuthenticated={isAuthenticated}
-          onRequireAuth={handleOpenLogin}
-        />
+        {/* Pan-India Vision & Interactive Vector Map Hero - Visible only to guests */}
+        {!isAuthenticated && (
+          <IndiaMapHero
+            onSelectState={handleSelectState}
+            selectedState={selectedHierarchy.state}
+            isAuthenticated={isAuthenticated}
+            onRequireAuth={handleOpenLogin}
+          />
+        )}
 
         {/* Without sign in, except hero section, every functionality is invisible */}
         {isAuthenticated ? (
