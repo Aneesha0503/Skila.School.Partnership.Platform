@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   School, FileSpreadsheet, Plus, Sun, Moon, 
   ShieldCheck, ChevronDown, Check, Lock, UserCheck, Crown, Briefcase, Bell, Clock,
-  LogOut, LogIn, UserPlus, User, Trophy, Award, TrendingUp
+  LogOut, LogIn, UserPlus, User, Trophy, Award, TrendingUp, Layers, RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -29,10 +29,15 @@ export default function Header({
 }) {
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [hubsMenuOpen, setHubsMenuOpen] = useState(false);
   const [alertsViewMode, setAlertsViewMode] = useState('stream'); // 'stream' | 'buckets'
   const [selectedAgentFilter, setSelectedAgentFilter] = useState('All');
   const [selectedAlertUrgency, setSelectedAlertUrgency] = useState('all'); // 'all' | 'unread' | 'urgent'
   const [expandedAgentBuckets, setExpandedAgentBuckets] = useState({});
+
+  const dropdownRef = useRef(null);
+  const notificationsRef = useRef(null);
+  const hubsMenuRef = useRef(null);
 
   const { user, isAuthenticated, isAdmin, logout, setLoginModalOpen } = useAuth();
 
@@ -82,8 +87,6 @@ export default function Header({
     }
   }, [user]);
 
-  const dropdownRef = useRef(null);
-  const notificationsRef = useRef(null);
   const handleExport = onExportExcel || onExportCsv;
 
   // STRICT AGENT ISOLATION: Agents strictly receive ONLY their own alerts!
@@ -172,6 +175,9 @@ export default function Header({
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
         setNotificationsOpen(false);
       }
+      if (hubsMenuRef.current && !hubsMenuRef.current.contains(event.target)) {
+        setHubsMenuOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -189,230 +195,192 @@ export default function Header({
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
-          {/* Logo & Platform Brand */}
-          <div className="flex items-center gap-2 sm:gap-3 select-none shrink-0">
-            <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Logo & Platform Brand + Desktop Nav */}
+          <div className="flex items-center gap-3 sm:gap-6 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-2.5 select-none shrink-0">
               {/* Light Mode Logo */}
               <img
                 src="/skila_logo_transparent.png"
                 alt="Skila.ai powered by Tech Nirmaan"
-                className="h-8 sm:h-10 w-auto object-contain dark:hidden"
+                className="h-8 sm:h-9 w-auto object-contain dark:hidden"
               />
               {/* Dark Mode Logo */}
               <img
                 src="/skila_logo_dark.png"
                 alt="Skila.ai powered by Tech Nirmaan"
-                className="h-8 sm:h-10 w-auto object-contain hidden dark:block"
+                className="h-8 sm:h-9 w-auto object-contain hidden dark:block"
               />
-              <span className="hidden sm:inline-flex text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/80 shadow-2xs">
+              <span className="hidden xl:inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/80 shadow-2xs">
                 Partnership Platform
               </span>
             </div>
+
+            {/* Desktop Navigation Hubs */}
+            {isAuthenticated && (
+              <nav className="hidden lg:flex items-center gap-1">
+                {/* Confirmed Schools Hub */}
+                <button
+                  onClick={onOpenConfirmedModal}
+                  title="View Confirmed Schools & Formalities Hub"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-50/80 dark:hover:bg-amber-950/40 rounded-lg transition-colors cursor-pointer"
+                >
+                  <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Confirmed</span>
+                  {confirmedCount !== undefined && confirmedCount > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 font-extrabold">
+                      {confirmedCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Financial Tracker & P&L Statement */}
+                <button
+                  onClick={onOpenFinancialModal}
+                  title="View Revenue, Operational Expenses & Profit Margins (P&L)"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50/80 dark:hover:bg-emerald-950/40 rounded-lg transition-colors cursor-pointer"
+                >
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Financials</span>
+                  <span className="text-[9px] font-extrabold px-1 py-0.2 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200">
+                    P&L
+                  </span>
+                </button>
+
+                {/* Agent Performance Dashboard & Leaderboard - Admin Only */}
+                {userRole === 'admin' && (
+                  <button
+                    onClick={onOpenAgentPerformanceModal}
+                    title="View Agent Performance & Field Leaderboard (Admin Only)"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-violet-700 dark:hover:text-violet-300 hover:bg-violet-50/80 dark:hover:bg-violet-950/40 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <Award className="w-3.5 h-3.5 text-violet-500" />
+                    <span>Leaderboard</span>
+                  </button>
+                )}
+              </nav>
+            )}
           </div>
 
           {/* Right Header Navigation & Access Controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             
-            {/* Authenticated User Profile & Role Dropdown */}
-            <div className="relative" ref={dropdownRef}>
-              {isAuthenticated ? (
+            {/* Mobile / Tablet Hubs Dropdown (lg:hidden) */}
+            {isAuthenticated && (
+              <div className="relative lg:hidden" ref={hubsMenuRef}>
                 <button
-                  onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                  className={`inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer shadow-xs ${
-                    userRole === 'admin'
-                      ? 'bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60'
-                      : 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
-                  }`}
-                  title="Click to view profile, switch persona, or manage authentication"
+                  onClick={() => setHubsMenuOpen(!hubsMenuOpen)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition cursor-pointer"
+                  title="Hubs & Performance"
                 >
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0 ${
-                    userRole === 'admin' ? 'bg-purple-600' : 'bg-emerald-600'
-                  }`}>
-                    {(user?.full_name || 'U').charAt(0).toUpperCase()}
-                  </div>
-                  <div className="hidden sm:flex flex-col text-left leading-tight">
-                    <span className="font-extrabold text-[11px] truncate max-w-[120px]">
-                      {user?.full_name || currentAgentName}
-                    </span>
-                    <span className="text-[9px] font-bold opacity-80">
-                      {userRole === 'admin' ? '👑 Admin' : '💼 Agent'}
-                    </span>
-                  </div>
-                  <span className="sm:hidden text-xs">
-                    {userRole === 'admin' ? '👑' : '💼'}
-                  </span>
-                  <ChevronDown className="w-3.5 h-3.5 opacity-70 shrink-0" />
+                  <Layers className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  <span>Hubs</span>
+                  {confirmedCount !== undefined && confirmedCount > 0 && (
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  )}
+                  <ChevronDown className="w-3 h-3 opacity-60" />
                 </button>
-              ) : (
-                <button
-                  onClick={() => setLoginModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition cursor-pointer"
-                >
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span>Sign In</span>
-                </button>
-              )}
-
-              {/* Profile & Role Dropdown Menu */}
-              {roleDropdownOpen && isAuthenticated && (
-                <div className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] sm:w-80 max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-                  {/* Account Header */}
-                  <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white shadow-xs ${
-                        userRole === 'admin' ? 'bg-purple-600' : 'bg-emerald-600'
-                      }`}>
-                        {(user?.full_name || 'U').charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-black text-slate-900 dark:text-white truncate">
-                          {user?.full_name}
-                        </div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate">
-                          {user?.email}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-1.5 space-y-1.5">
-                    {/* Admin Switcher */}
+                {hubsMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-60 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
                     <button
-                      onClick={() => handleSelectRole('admin')}
-                      className={`w-full text-left p-2.5 rounded-xl transition flex items-center justify-between cursor-pointer ${
-                        userRole === 'admin'
-                          ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-900 dark:text-purple-200 font-bold'
-                          : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
-                      }`}
+                      onClick={() => { setHubsMenuOpen(false); onOpenConfirmedModal(); }}
+                      className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between transition cursor-pointer"
                     >
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-base">👑</span>
-                        <div>
-                          <div className="text-xs font-bold">Admin Level</div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Full 360° AI Scraper & Multi-Agent Control</div>
-                        </div>
-                      </div>
-                      {userRole === 'admin' && <Check className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
-                    </button>
-
-                    {/* Agent Switcher */}
-                    <div
-                      className={`p-2.5 rounded-xl transition ${
-                        userRole === 'agent'
-                          ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200'
-                          : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      <div 
-                        onClick={() => handleSelectRole('agent')}
-                        className="flex items-center justify-between cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-base">💼</span>
-                          <div>
-                            <div className="text-xs font-bold">Agent Level</div>
-                            <div className="text-[10px] text-slate-500 dark:text-slate-400">Strictly Scoped CRM & Private Field Notes</div>
-                          </div>
-                        </div>
-                        {userRole === 'agent' && <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
-                      </div>
-
-                      {/* Dynamic Agent Identity Manager */}
-                      {userRole === 'agent' && (
-                        <div className="mt-2.5 pt-2 border-t border-emerald-200/60 dark:border-emerald-800/60">
-                          <div className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 mb-1.5 flex items-center justify-between">
-                            <span>Active Agent Persona:</span>
-                            <span className="font-mono text-[9px] uppercase px-1.5 py-0.5 rounded bg-emerald-200/50 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 font-bold">
-                              Private Scope
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <input
-                              type="text"
-                              value={currentAgentName}
-                              onClick={(e) => e.stopPropagation()}
-                              onChange={(e) => {
-                                if (onAgentNameChange) onAgentNameChange(e.target.value);
-                              }}
-                              placeholder="Enter agent name..."
-                              className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold focus:outline-hidden focus:ring-1 focus:ring-emerald-500 shadow-2xs"
-                            />
-                          </div>
-
-                          {availableAgents.filter((a) => a !== currentAgentName).length > 0 && (
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              {availableAgents.filter((a) => a !== currentAgentName).map((name) => (
-                                <button
-                                  key={name}
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onAgentNameChange) onAgentNameChange(name);
-                                  }}
-                                  className="text-[10px] px-2.5 py-1 rounded-lg font-bold transition cursor-pointer bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-emerald-400"
-                                >
-                                  {name}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                      <span className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                        <Trophy className="w-4 h-4 text-amber-500" />
+                        Confirmed Schools
+                      </span>
+                      {confirmedCount !== undefined && confirmedCount > 0 && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200">
+                          {confirmedCount}
+                        </span>
                       )}
-                    </div>
-                  </div>
-
-                  {/* Actions / Admin & Auth Operations */}
-                  <div className="pt-1.5 px-1.5 border-t border-slate-100 dark:border-slate-800 space-y-1">
-                    {isAdmin && (
+                    </button>
+                    <button
+                      onClick={() => { setHubsMenuOpen(false); onOpenFinancialModal(); }}
+                      className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between transition cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                        <TrendingUp className="w-4 h-4 text-emerald-500" />
+                        Financial Tracker (P&L)
+                      </span>
+                      <span className="text-[9px] font-extrabold px-1 py-0.2 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200">
+                        P&L
+                      </span>
+                    </button>
+                    {userRole === 'admin' && (
                       <button
-                        onClick={() => {
-                          setRoleDropdownOpen(false);
-                          setLoginModalOpen(true);
-                        }}
-                        className="w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 flex items-center gap-2 transition cursor-pointer"
+                        onClick={() => { setHubsMenuOpen(false); onOpenAgentPerformanceModal(); }}
+                        className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between transition cursor-pointer"
                       >
-                        <UserPlus className="w-3.5 h-3.5" />
-                        <span>Register New Team Member</span>
+                        <span className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                          <Award className="w-4 h-4 text-violet-500" />
+                          Agent Leaderboard
+                        </span>
                       </button>
                     )}
-
-                    <button
-                      onClick={() => {
-                        setRoleDropdownOpen(false);
-                        if (onOpenAccessModal) onOpenAccessModal();
-                      }}
-                      className="w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 flex items-center gap-2 transition cursor-pointer"
-                    >
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>View Permissions Matrix</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setRoleDropdownOpen(false);
-                        setLoginModalOpen(true);
-                      }}
-                      className="w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 transition cursor-pointer"
-                    >
-                      <UserCheck className="w-3.5 h-3.5" />
-                      <span>Switch User / Sign In</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setRoleDropdownOpen(false);
-                        logout();
-                      }}
-                      className="w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/60 flex items-center gap-2 transition cursor-pointer"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      <span>Sign Out</span>
-                    </button>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
+
+            {/* Authenticated Primary Actions */}
+            {isAuthenticated && (
+              <>
+                {/* Export Excel Button */}
+                <button
+                  onClick={handleExport}
+                  title="Download directory as Microsoft Excel (.xlsx)"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/80 rounded-lg transition shadow-2xs cursor-pointer shrink-0"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span className="hidden sm:inline">Export</span>
+                </button>
+
+                {/* Add School Button */}
+                {userRole === 'admin' ? (
+                  <button
+                    onClick={onOpenAddModal}
+                    title="Add New School"
+                    className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition shadow-xs cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Add School</span>
+                  </button>
+                ) : (
+                  <button
+                    disabled
+                    title="Only Administrators can onboard new institutions"
+                    className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-200 dark:border-slate-700 cursor-not-allowed shrink-0"
+                  >
+                    <Lock className="w-3 h-3" />
+                    <span className="hidden sm:inline">Add School</span>
+                  </button>
+                )}
+              </>
+            )}
+
+            {/* Subtle Divider */}
+            <div className="h-5 w-px bg-slate-200 dark:bg-slate-800 mx-0.5 sm:mx-1 shrink-0" />
+
+            {/* Firebase Cloud Sync Indicator & Manual Sync Button */}
+            <button
+              onClick={handleManualFirebaseSync}
+              disabled={syncingFirebase}
+              title={
+                firebaseStatus?.live_active
+                  ? `Firebase Firestore Synced (${firebaseStatus.total_local_schools} schools). Click to re-sync.`
+                  : firebaseStatus?.quota_exhausted
+                  ? `Local Cache Active (${firebaseStatus.pending_sync_count} pending sync). Google Cloud quota exhausted. Click to retry sync.`
+                  : "Sync database with Firebase Cloud Firestore"
+              }
+              className="inline-flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-semibold rounded-lg border transition shadow-2xs cursor-pointer shrink-0 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+            >
+              <span className={`w-2 h-2 rounded-full ${syncingFirebase ? 'bg-amber-500 animate-ping' : firebaseStatus?.live_active ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+              <RefreshCw className={`w-3.5 h-3.5 text-slate-500 dark:text-slate-400 ${syncingFirebase ? 'animate-spin text-amber-500' : ''}`} />
+              <span className="hidden xl:inline text-[11px]">
+                {syncingFirebase ? 'Syncing...' : firebaseStatus?.live_active ? 'Synced' : 'Sync'}
+              </span>
+            </button>
 
             {/* Admin Notifications Bell - Only visible when signed in */}
             {isAuthenticated && (
@@ -746,117 +714,214 @@ export default function Header({
             {/* Light / Dark Mode Toggle */}
             <button
               onClick={onToggleTheme}
-              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-medium transition cursor-pointer shadow-2xs"
+              className="inline-flex items-center justify-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs transition cursor-pointer shadow-2xs shrink-0"
               title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? (
-                <>
-                  <Sun className="w-4 h-4 text-amber-400 fill-amber-400" />
-                  <span className="hidden md:inline">Light</span>
-                </>
+                <Sun className="w-4 h-4 text-amber-400 fill-amber-400" />
               ) : (
-                <>
-                  <Moon className="w-4 h-4 text-slate-700 fill-slate-700" />
-                  <span className="hidden md:inline">Dark</span>
-                </>
+                <Moon className="w-4 h-4 text-slate-700 fill-slate-700" />
               )}
             </button>
 
-            {/* Firebase Cloud Sync Indicator & Manual Sync Button */}
-            <button
-              onClick={handleManualFirebaseSync}
-              disabled={syncingFirebase}
-              title={
-                firebaseStatus?.live_active
-                  ? `Firebase Firestore Synced (${firebaseStatus.total_local_schools} schools). Click to re-sync.`
-                  : firebaseStatus?.quota_exhausted
-                  ? `Local Cache Active (${firebaseStatus.pending_sync_count} pending sync). Google Cloud quota exhausted. Click to retry sync.`
-                  : "Sync database with Firebase Cloud Firestore"
-              }
-              className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 text-xs font-semibold rounded-lg border transition shadow-2xs cursor-pointer shrink-0 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-            >
-              <span className={`w-2 h-2 rounded-full ${syncingFirebase ? 'bg-amber-500 animate-ping' : firebaseStatus?.live_active ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              <span className="hidden xl:inline text-[11px]">
-                {syncingFirebase ? 'Syncing...' : firebaseStatus?.live_active ? 'Firebase Synced' : 'Sync to Firebase'}
-              </span>
-            </button>
-
-            {/* Authenticated-only Action Buttons */}
-            {isAuthenticated && (
-              <>
-                {/* Confirmed Schools & Formalities Button */}
+            {/* Authenticated User Profile & Role Dropdown (Far Right) */}
+            <div className="relative shrink-0" ref={dropdownRef}>
+              {isAuthenticated ? (
                 <button
-                  onClick={onOpenConfirmedModal}
-                  title="View Confirmed Schools & Formalities Hub"
-                  className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/60 rounded-lg transition shadow-2xs cursor-pointer shrink-0"
+                  onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
+                  className={`inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer shadow-2xs ${
+                    userRole === 'admin'
+                      ? 'bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60'
+                      : 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
+                  }`}
+                  title="Click to view profile, switch persona, or manage authentication"
                 >
-                  <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span className="hidden sm:inline">Confirmed Schools</span>
-                  {confirmedCount !== undefined && confirmedCount > 0 && (
-                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-100 font-extrabold">
-                      {confirmedCount}
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0 ${
+                    userRole === 'admin' ? 'bg-purple-600' : 'bg-emerald-600'
+                  }`}>
+                    {(user?.full_name || 'U').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="hidden sm:flex flex-col text-left leading-tight">
+                    <span className="font-extrabold text-[11px] truncate max-w-[110px]">
+                      {user?.full_name || currentAgentName}
                     </span>
-                  )}
+                    <span className="text-[9px] font-bold opacity-80">
+                      {userRole === 'admin' ? '👑 Admin' : '💼 Agent'}
+                    </span>
+                  </div>
+                  <ChevronDown className="w-3.5 h-3.5 opacity-70 shrink-0" />
                 </button>
-
-                {/* Agent Performance Dashboard & Leaderboard - Admin Only */}
-                {userRole === 'admin' && (
-                  <button
-                    onClick={onOpenAgentPerformanceModal}
-                    title="View Agent Performance & Field Leaderboard (Admin Only)"
-                    className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-violet-800 dark:text-violet-200 bg-violet-50 dark:bg-violet-950/60 border border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-900/60 rounded-lg transition shadow-2xs cursor-pointer shrink-0"
-                  >
-                    <Award className="w-4 h-4 text-violet-500 shrink-0" />
-                    <span className="hidden sm:inline">Agent Leaderboard</span>
-                  </button>
-                )}
-
-                {/* Financial Tracker & P&L Statement Button */}
+              ) : (
                 <button
-                  onClick={onOpenFinancialModal}
-                  title="View Revenue, Operational Expenses & Profit Margins (P&L)"
-                  className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-lg transition shadow-2xs cursor-pointer shrink-0"
+                  onClick={() => setLoginModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition cursor-pointer"
                 >
-                  <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span className="hidden sm:inline">Financial Tracker</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-200 dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100 font-extrabold">
-                    P&L
-                  </span>
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Sign In</span>
                 </button>
+              )}
 
-                {/* Export Excel button */}
-                <button
-                  onClick={handleExport}
-                  title="Download directory as Microsoft Excel (.xlsx)"
-                  className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-lg transition shadow-2xs cursor-pointer shrink-0"
-                >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span className="hidden sm:inline">Export Excel</span>
-                </button>
+              {/* Profile & Role Dropdown Menu */}
+              {roleDropdownOpen && isAuthenticated && (
+                <div className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] sm:w-80 max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  {/* Account Header */}
+                  <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white shadow-xs ${
+                        userRole === 'admin' ? 'bg-purple-600' : 'bg-emerald-600'
+                      }`}>
+                        {(user?.full_name || 'U').charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-black text-slate-900 dark:text-white truncate">
+                          {user?.full_name}
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate">
+                          {user?.email}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-                {/* Add School button - Admin Only or locked for Agent */}
-                {userRole === 'admin' ? (
-                  <button
-                    onClick={onOpenAddModal}
-                    title="Add New School"
-                    className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition shadow-sm shadow-indigo-200 dark:shadow-none cursor-pointer shrink-0"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span className="hidden sm:inline">Add School</span>
-                  </button>
-                ) : (
-                  <button
-                    disabled
-                    title="Only Administrators can onboard new institutions"
-                    className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-200 dark:border-slate-700 cursor-not-allowed shrink-0"
-                  >
-                    <Lock className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Add School</span>
-                  </button>
-                )}
-              </>
-            )}
+                  <div className="p-1.5 space-y-1.5">
+                    {/* Admin Switcher */}
+                    <button
+                      onClick={() => handleSelectRole('admin')}
+                      className={`w-full text-left p-2.5 rounded-xl transition flex items-center justify-between cursor-pointer ${
+                        userRole === 'admin'
+                          ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-900 dark:text-purple-200 font-bold'
+                          : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-base">👑</span>
+                        <div>
+                          <div className="text-xs font-bold">Admin Level</div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Full 360° AI Scraper & Multi-Agent Control</div>
+                        </div>
+                      </div>
+                      {userRole === 'admin' && <Check className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
+                    </button>
+
+                    {/* Agent Switcher */}
+                    <div
+                      className={`p-2.5 rounded-xl transition ${
+                        userRole === 'agent'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200'
+                          : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <div 
+                        onClick={() => handleSelectRole('agent')}
+                        className="flex items-center justify-between cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-base">💼</span>
+                          <div>
+                            <div className="text-xs font-bold">Agent Level</div>
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400">Strictly Scoped CRM & Private Field Notes</div>
+                          </div>
+                        </div>
+                        {userRole === 'agent' && <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
+                      </div>
+
+                      {/* Dynamic Agent Identity Manager */}
+                      {userRole === 'agent' && (
+                        <div className="mt-2.5 pt-2 border-t border-emerald-200/60 dark:border-emerald-800/60">
+                          <div className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 mb-1.5 flex items-center justify-between">
+                            <span>Active Agent Persona:</span>
+                            <span className="font-mono text-[9px] uppercase px-1.5 py-0.5 rounded bg-emerald-200/50 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 font-bold">
+                              Private Scope
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <input
+                              type="text"
+                              value={currentAgentName}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => {
+                                if (onAgentNameChange) onAgentNameChange(e.target.value);
+                              }}
+                              placeholder="Enter agent name..."
+                              className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold focus:outline-hidden focus:ring-1 focus:ring-emerald-500 shadow-2xs"
+                            />
+                          </div>
+
+                          {availableAgents.filter((a) => a !== currentAgentName).length > 0 && (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {availableAgents.filter((a) => a !== currentAgentName).map((name) => (
+                                <button
+                                  key={name}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onAgentNameChange) onAgentNameChange(name);
+                                  }}
+                                  className="text-[10px] px-2.5 py-1 rounded-lg font-bold transition cursor-pointer bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-emerald-400"
+                                >
+                                  {name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions / Admin & Auth Operations */}
+                  <div className="pt-1.5 px-1.5 border-t border-slate-100 dark:border-slate-800 space-y-1">
+                    {isAdmin && (
+                      <button
+                        onClick={() => {
+                          setRoleDropdownOpen(false);
+                          setLoginModalOpen(true);
+                        }}
+                        className="w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 flex items-center gap-2 transition cursor-pointer"
+                      >
+                        <UserPlus className="w-3.5 h-3.5" />
+                        <span>Register New Team Member</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        setRoleDropdownOpen(false);
+                        if (onOpenAccessModal) onOpenAccessModal();
+                      }}
+                      className="w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 flex items-center gap-2 transition cursor-pointer"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>View Permissions Matrix</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setRoleDropdownOpen(false);
+                        setLoginModalOpen(true);
+                      }}
+                      className="w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 transition cursor-pointer"
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>Switch User / Sign In</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setRoleDropdownOpen(false);
+                        logout();
+                      }}
+                      className="w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/60 flex items-center gap-2 transition cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
           </div>
         </div>
