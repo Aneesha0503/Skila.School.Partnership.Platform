@@ -24,7 +24,10 @@ import {
   Upload,
   Image as ImageIcon,
   Camera,
-  RefreshCw
+  RefreshCw,
+  FileEdit,
+  SlidersHorizontal,
+  Type
 } from 'lucide-react';
 
 /**
@@ -106,18 +109,39 @@ function getInitialSchoolLogos(school, form) {
 }
 
 /**
- * Generates initial default MOU data matching the authentic 7-page legal agreement.
+ * Generates initial default MOU data strictly matching the authentic 7-page legal agreement.
  */
 function getInitialMOUData(school, formalities) {
   const info = school?.info || {};
   const hierarchy = school?.hierarchy || {};
   const form = formalities || school?.formalities || school?.sales?.formalities || {};
 
+  const schoolName = info.school_name || 'Partner School';
+  const campusAddr = info.full_address || `${hierarchy.mandal ? hierarchy.mandal + ', ' : ''}${hierarchy.district ? hierarchy.district + ', ' : ''}${hierarchy.state || 'Telangana'} – ${info.pincode || '500001'}`;
+
   // Check if there is previously saved custom MOU data
   if (form.mou_full_data && typeof form.mou_full_data === 'object') {
     const existing = { ...form.mou_full_data };
     if (!existing.schoolLogos || !Array.isArray(existing.schoolLogos)) {
       existing.schoolLogos = getInitialSchoolLogos(school, form);
+    }
+    // Backward compatibility for newly added editable fields
+    if (!existing.preambleRecitals) {
+      existing.preambleRecitals = [
+        'WHEREAS, TECH NIRMAAN is a leading EdTech and technology-driven skill development organization committed to transforming education through Artificial Intelligence (AI), digital learning, coding, STEM education, innovation programs, and future-ready skill development, enabling students to excel academically and prepare for the evolving global workforce.',
+        'WHEREAS, TECH NIRMAAN, through its flagship AI-powered platform Skila.ai (Smart Knowledge Integrated Learning Accelerator), provides personalized learning pathways, adaptive assessments, AI-powered learning assistance, coding and STEM education, real-time student performance analytics, teacher enablement programs, project-based learning, digital content, and holistic academic development solutions.',
+        `WHEREAS, ${schoolName}, located at ${campusAddr}, is committed to providing quality education by fostering academic excellence, innovation, creativity, digital literacy, and the overall development of students through modern teaching methodologies and technology-enabled learning.`,
+        'WHEREAS, both Parties share a common vision of creating a future-ready learning ecosystem by integrating Artificial Intelligence, personalized learning, digital education, coding, STEM education, innovation, and 21st-century skills into the academic environment, thereby enhancing student learning outcomes, teacher effectiveness, and institutional excellence.',
+        'NOW, THEREFORE, in consideration of the mutual promises, understandings, and covenants contained herein, the Parties agree to establish this Memorandum of Understanding (MOU) to collaborate in implementing AI-powered digital learning solutions, skill development initiatives, teacher capacity-building programs, student engagement activities, and future-readiness programs through the Skila.ai platform, in accordance with the terms and conditions set forth herein.'
+      ];
+    }
+    if (!existing.termsAndConditions) {
+      existing.termsAndConditions = [
+        'The details of pricing are confidential and must not be disclosed to any other Educational Institution.',
+        existing.financials?.gstTerms || 'This cost does not include GST.',
+        'The actual cost could vary based on the number of students.',
+        'Any change in the above could impact and lead to change in the overall cost of the program.'
+      ];
     }
     return existing;
   }
@@ -135,6 +159,8 @@ function getInitialMOUData(school, formalities) {
   const defaultFormattedDate = `${dayStr < 10 ? '0' + dayStr : dayStr}${daySuffix} day of ${monthStr} ${yearStr}`;
 
   return {
+    documentTitle: 'MEMORANDUM OF UNDERSTANDING (MOU)',
+    documentSubtitle: 'For Academic, Skill Development and Digital Learning Collaboration',
     mouNumber: form.mou_number || `TECH-NIRMAAN/SKILA/MOU/${yearStr}/${school?.id?.substring(0, 6)?.toUpperCase() || 'REF'}`,
     mouDate: form.mou_date || today.toISOString().substring(0, 10),
     mouSigningDateFormatted: form.mou_signed_date || defaultFormattedDate,
@@ -158,8 +184,8 @@ function getInitialMOUData(school, formalities) {
 
     // Party 2: Partner School
     schoolParty: {
-      name: info.school_name || 'Partner School',
-      campusAddress: info.full_address || `${hierarchy.mandal ? hierarchy.mandal + ', ' : ''}${hierarchy.district ? hierarchy.district + ', ' : ''}${hierarchy.state || 'Telangana'} – ${info.pincode || '500001'}`,
+      name: schoolName,
+      campusAddress: campusAddr,
       signatoryName: form.mou_signatory_name || info.correspondent_name || info.principal_name || 'Authorized Signatory',
       signatoryTitle: form.mou_signatory_designation || 'Principal / Chairman',
       coordinatorName: form.school_spoc_name || info.principal_name || 'Designated School Coordinator',
@@ -169,7 +195,17 @@ function getInitialMOUData(school, formalities) {
       classesCovered: `${info.classes_from || 'Grade 1'} to ${info.classes_to || 'Grade 10'}`
     },
 
-    // Section I: Objectives
+    // Preamble 5 Recitals (All editable in Edit Overall)
+    preambleRecitals: [
+      'WHEREAS, TECH NIRMAAN is a leading EdTech and technology-driven skill development organization committed to transforming education through Artificial Intelligence (AI), digital learning, coding, STEM education, innovation programs, and future-ready skill development, enabling students to excel academically and prepare for the evolving global workforce.',
+      'WHEREAS, TECH NIRMAAN, through its flagship AI-powered platform Skila.ai (Smart Knowledge Integrated Learning Accelerator), provides personalized learning pathways, adaptive assessments, AI-powered learning assistance, coding and STEM education, real-time student performance analytics, teacher enablement programs, project-based learning, digital content, and holistic academic development solutions.',
+      `WHEREAS, ${schoolName}, located at ${campusAddr}, is committed to providing quality education by fostering academic excellence, innovation, creativity, digital literacy, and the overall development of students through modern teaching methodologies and technology-enabled learning.`,
+      'WHEREAS, both Parties share a common vision of creating a future-ready learning ecosystem by integrating Artificial Intelligence, personalized learning, digital education, coding, STEM education, innovation, and 21st-century skills into the academic environment, thereby enhancing student learning outcomes, teacher effectiveness, and institutional excellence.',
+      'NOW, THEREFORE, in consideration of the mutual promises, understandings, and covenants contained herein, the Parties agree to establish this Memorandum of Understanding (MOU) to collaborate in implementing AI-powered digital learning solutions, skill development initiatives, teacher capacity-building programs, student engagement activities, and future-readiness programs through the Skila.ai platform, in accordance with the terms and conditions set forth herein.'
+    ],
+
+    // Section I: Purpose & Objectives
+    purposeIntro: `The primary purpose of this Memorandum of Understanding (MOU) is to establish a strategic collaboration between Tech Nirmaan and ${schoolName} to implement AI-powered digital learning solutions, promote technology-enabled education, and enhance the overall academic and skill development of students through the Skila.ai platform.`,
     objectives: [
       'Provide access to the Skila.ai AI-powered learning platform.',
       'Enhance teaching and learning through personalized and interactive digital education.',
@@ -178,6 +214,7 @@ function getInitialMOUData(school, formalities) {
       'Conduct workshops, competitions, and teacher development programs.',
       'Foster project-based learning and overall student development.'
     ],
+    purposeClosing: `This collaboration aims to create an engaging, inclusive, and future-ready learning environment that empowers students, supports educators, and contributes to the overall academic excellence of ${schoolName}.`,
 
     // Section II: Scope of Collaboration
     scopeAreas: [
@@ -208,6 +245,12 @@ function getInitialMOUData(school, formalities) {
         { percentage: '50%', condition: 'Paid within the first three months of the program' }
       ]
     },
+    termsAndConditions: [
+      'The details of pricing are confidential and must not be disclosed to any other Educational Institution.',
+      'This cost does not include GST.',
+      'The actual cost could vary based on the number of students.',
+      'Any change in the above could impact and lead to change in the overall cost of the program.'
+    ],
 
     // Section IV: Digital Content
     digitalContentNotice:
@@ -247,6 +290,8 @@ function getInitialMOUData(school, formalities) {
     governingLawClause:
       'This MOU shall be governed by the laws of India, subject to the exclusive jurisdiction of the courts at Hyderabad, Telangana.',
 
+    witnessStatement: 'The Parties have executed this Memorandum of Understanding on the date first written above.',
+
     // Optional Custom Clauses
     customClauses: form.mou_custom_clauses || []
   };
@@ -255,7 +300,8 @@ function getInitialMOUData(school, formalities) {
 export default function MOUPreviewModal({ school, formalities, onClose, onSaveFormalities }) {
   if (!school) return null;
 
-  const [activeTab, setActiveTab] = useState('preview'); // 'preview' | 'editor'
+  // 3 Modes: 'preview' (Document View) | 'editor' (Edit Clauses & Terms) | 'overall' (Edit Overall)
+  const [activeTab, setActiveTab] = useState('preview');
   const [inlineEdit, setInlineEdit] = useState(false);
   const [mouData, setMouData] = useState(() => getInitialMOUData(school, formalities));
   const [isSaving, setIsSaving] = useState(false);
@@ -278,7 +324,6 @@ export default function MOUPreviewModal({ school, formalities, onClose, onSaveFo
 
   /**
    * Optimizes and resizes uploaded image files via HTML5 Canvas (max 600px)
-   * to guarantee crisp print quality while keeping Firestore payload compact.
    */
   const processImageFile = (file) => {
     return new Promise((resolve, reject) => {
@@ -318,9 +363,6 @@ export default function MOUPreviewModal({ school, formalities, onClose, onSaveFo
     });
   };
 
-  /**
-   * Handles multiple file uploads at once
-   */
   const handleFilesUpload = async (files) => {
     if (!files || files.length === 0) return;
     const fileList = Array.from(files).filter((f) => f.type.startsWith('image/'));
@@ -343,9 +385,6 @@ export default function MOUPreviewModal({ school, formalities, onClose, onSaveFo
     }
   };
 
-  /**
-   * Handles replacing an existing logo
-   */
   const handleReplaceFile = async (e) => {
     const file = e.target.files?.[0];
     const index = replaceIndexRef.current;
@@ -517,7 +556,7 @@ export default function MOUPreviewModal({ school, formalities, onClose, onSaveFo
 
       setSaveStatus({
         type: 'success',
-        text: 'MOU terms, clauses, and institutional logos saved successfully to school records!'
+        text: 'All MOU terms, clauses, recitals, and logos saved successfully to school records!'
       });
       setTimeout(() => setSaveStatus({ type: '', text: '' }), 4000);
     } catch (err) {
@@ -533,8 +572,8 @@ export default function MOUPreviewModal({ school, formalities, onClose, onSaveFo
 
   const handleCopyText = () => {
     const plainText = `
-MEMORANDUM OF UNDERSTANDING (MOU)
-For Academic, Skill Development and Digital Learning Collaboration
+${mouData.documentTitle}
+${mouData.documentSubtitle}
 
 BETWEEN
 ${mouData.techNirmaan.name.toUpperCase()}
@@ -550,14 +589,13 @@ ${mouData.schoolParty.name}, a distinguished academic institution, having its ca
 (Tech Nirmaan and ${mouData.schoolParty.name} are hereinafter referred to individually as a "Party" and collectively as the "Parties").
 
 PREAMBLE
-WHEREAS, TECH NIRMAAN is a leading EdTech and technology-driven skill development organization committed to transforming education through Artificial Intelligence (AI), digital learning, coding, STEM education, innovation programs, and future-ready skill development...
-WHEREAS, TECH NIRMAAN, through its flagship AI-powered platform Skila.ai (Smart Knowledge Integrated Learning Accelerator), provides personalized learning pathways, adaptive assessments, AI-powered learning assistance, coding and STEM education, real-time student performance analytics, teacher enablement programs, project-based learning, digital content, and holistic academic development solutions.
-WHEREAS, ${mouData.schoolParty.name}, located at ${mouData.schoolParty.campusAddress}, is committed to providing quality education...
+${(mouData.preambleRecitals || []).join('\n\n')}
 
 I. PURPOSE AND OBJECTIVES
-The primary purpose of this Memorandum of Understanding (MOU) is to establish a strategic collaboration between Tech Nirmaan and ${mouData.schoolParty.name} to implement AI-powered digital learning solutions, promote technology-enabled education, and enhance the overall academic and skill development of students through the Skila.ai platform.
+${mouData.purposeIntro}
 Objectives:
 ${mouData.objectives.map((o) => `• ${o}`).join('\n')}
+${mouData.purposeClosing}
 
 II. SCOPE OF COLLABORATION
 ${mouData.scopeAreas.map((s, i) => `${i + 1}. ${s}`).join('\n')}
@@ -572,10 +610,8 @@ Estimated Student Enrolment: ${mouData.financials.estimatedStudents}
 Total Contract Value: ${mouData.financials.totalContractValue}
 
 b. Terms and Conditions:
-➢ The details of pricing are confidential and must not be disclosed to any other Educational Institution.
-➢ ${mouData.financials.gstTerms}
-➢ The actual cost could vary based on the number of students.
-➢ Payment Schedule:
+${(mouData.termsAndConditions || []).map((t) => `➢ ${t}`).join('\n')}
+Payment Schedule:
 ${mouData.financials.paymentMilestones.map((m) => `  • ${m.percentage}: ${m.condition}`).join('\n')}
 ➢ ${mouData.financials.priceValidity}
 
@@ -608,7 +644,7 @@ XII. GOVERNING LAW
 ${mouData.governingLawClause}
 
 IN WITNESS WHEREOF
-The Parties have executed this Memorandum of Understanding on the date first written above.
+${mouData.witnessStatement}
 
 For Tech Nirmaan:
 Name: ${mouData.techNirmaan.signatoryName}
@@ -709,7 +745,7 @@ Designation: ${mouData.schoolParty.signatoryTitle}
             </div>
           </div>
 
-          {/* Mode Switcher Tabs */}
+          {/* Mode Switcher Tabs: Document View | Edit Clauses & Terms | Edit Overall */}
           <div className="flex items-center bg-slate-200/80 dark:bg-slate-700/60 p-1 rounded-xl">
             <button
               onClick={() => setActiveTab('preview')}
@@ -718,6 +754,7 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                   ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
+              title="Official read-only print layout"
             >
               <Eye className="w-3.5 h-3.5" />
               <span>Document View</span>
@@ -729,9 +766,22 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                   ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
+              title="Form-based controls for commercial parameters"
             >
-              <Edit3 className="w-3.5 h-3.5" />
+              <SlidersHorizontal className="w-3.5 h-3.5" />
               <span>Edit Clauses &amp; Terms</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('overall')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                activeTab === 'overall'
+                  ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-xs'
+                  : 'text-indigo-600 dark:text-indigo-300 hover:text-indigo-800 dark:hover:text-white'
+              }`}
+              title="Edit the entire PDF document directly in-place"
+            >
+              <FileEdit className="w-3.5 h-3.5" />
+              <span>Edit Overall</span>
             </button>
           </div>
 
@@ -749,7 +799,7 @@ Designation: ${mouData.schoolParty.signatoryTitle}
               </label>
             )}
 
-            {/* Quick Upload Button directly in header */}
+            {/* Quick Upload Button */}
             <button
               onClick={() => fileInputRef.current?.click()}
               className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-xs font-medium transition cursor-pointer flex items-center gap-1.5"
@@ -835,7 +885,7 @@ Designation: ${mouData.schoolParty.signatoryTitle}
         <div className="flex-1 overflow-y-auto bg-slate-100/60 dark:bg-slate-950/60 p-3 sm:p-6 print:p-0 print:bg-white print:overflow-visible">
           
           {/* ======================================================== */}
-          {/* TAB 1: DOCUMENT PREVIEW (PRINT-READY LEGAL FORMAT)     */}
+          {/* TAB 1: DOCUMENT VIEW (CLEAN FORMAL PRINT-READY PREVIEW) */}
           {/* ======================================================== */}
           {activeTab === 'preview' && (
             <div className="mou-print-container max-w-4xl mx-auto bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-12 space-y-8 font-serif leading-relaxed text-[13px] print:shadow-none print:border-none print:p-0 print:m-0 print:rounded-none">
@@ -845,8 +895,6 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                 
                 {/* School Logos Area (Left) */}
                 <div className="flex items-center gap-3 flex-wrap">
-                  
-                  {/* If custom logos exist, render each logo in a gallery */}
                   {mouData.schoolLogos && mouData.schoolLogos.length > 0 ? (
                     <div className="flex items-center gap-2 flex-wrap">
                       {mouData.schoolLogos.map((logo, idx) => (
@@ -859,7 +907,6 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                               e.target.style.display = 'none';
                             }}
                           />
-                          {/* Hover action toolbar for this specific logo (screen only) */}
                           <div className="print:hidden absolute -top-2 -right-2 hidden group-hover:flex items-center gap-1 bg-slate-900/90 text-white rounded-full p-1 shadow-md z-10 transition">
                             <button
                               type="button"
@@ -884,7 +931,6 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                         </div>
                       ))}
 
-                      {/* Small "+ Add Another Logo" button in preview (screen only) */}
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
@@ -896,12 +942,8 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                       </button>
                     </div>
                   ) : (
-                    /* When NO logos are uploaded yet */
                     <div className="flex items-center gap-3">
-                      {/* Dynamic Academic Initial Crest (also printed gracefully) */}
                       <SchoolInitialsCrest schoolName={mouData.schoolParty.name} size="md" />
-
-                      {/* Prominent Upload Prompt (screen only) */}
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
@@ -919,7 +961,6 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                     </div>
                   )}
 
-                  {/* School Name & Collaboration Subtitle */}
                   <div>
                     <h3 className="font-sans font-bold text-sm sm:text-base text-slate-900 dark:text-white uppercase tracking-tight">
                       {inlineEdit ? (
@@ -963,10 +1004,10 @@ Designation: ${mouData.schoolParty.signatoryTitle}
               {/* Title Section (Matching Page 1 of PDF) */}
               <div className="text-center space-y-2 pt-2">
                 <h1 className="text-xl sm:text-2xl font-bold uppercase tracking-wider text-slate-950 dark:text-white">
-                  MEMORANDUM OF UNDERSTANDING (MOU)
+                  {mouData.documentTitle || 'MEMORANDUM OF UNDERSTANDING (MOU)'}
                 </h1>
                 <p className="text-xs sm:text-sm font-sans font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
-                  For Academic, Skill Development and Digital Learning Collaboration
+                  {mouData.documentSubtitle || 'For Academic, Skill Development and Digital Learning Collaboration'}
                 </p>
                 <div className="pt-2 text-xs font-sans font-bold tracking-widest text-slate-700 dark:text-slate-400">
                   <span className="block">BETWEEN</span>
@@ -1028,21 +1069,9 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                   <h3 className="font-sans font-bold text-slate-900 dark:text-white text-xs uppercase tracking-widest border-b pb-1">
                     PREAMBLE
                   </h3>
-                  <p>
-                    <strong>WHEREAS</strong>, TECH NIRMAAN is a leading EdTech and technology-driven skill development organization committed to transforming education through Artificial Intelligence (AI), digital learning, coding, STEM education, innovation programs, and future-ready skill development, enabling students to excel academically and prepare for the evolving global workforce.
-                  </p>
-                  <p>
-                    <strong>WHEREAS</strong>, TECH NIRMAAN, through its flagship AI-powered platform <strong>Skila.ai (Smart Knowledge Integrated Learning Accelerator)</strong>, provides personalized learning pathways, adaptive assessments, AI-powered learning assistance, coding and STEM education, real-time student performance analytics, teacher enablement programs, project-based learning, digital content, and holistic academic development solutions.
-                  </p>
-                  <p>
-                    <strong>WHEREAS</strong>, {mouData.schoolParty.name}, located at {mouData.schoolParty.campusAddress}, is committed to providing quality education by fostering academic excellence, innovation, creativity, digital literacy, and the overall development of students through modern teaching methodologies and technology-enabled learning.
-                  </p>
-                  <p>
-                    <strong>WHEREAS</strong>, both Parties share a common vision of creating a future-ready learning ecosystem by integrating Artificial Intelligence, personalized learning, digital education, coding, STEM education, innovation, and 21st-century skills into the academic environment, thereby enhancing student learning outcomes, teacher effectiveness, and institutional excellence.
-                  </p>
-                  <p>
-                    <strong>NOW, THEREFORE</strong>, in consideration of the mutual promises, understandings, and covenants contained herein, the Parties agree to establish this Memorandum of Understanding (MOU) to collaborate in implementing AI-powered digital learning solutions, skill development initiatives, teacher capacity-building programs, student engagement activities, and future-readiness programs through the Skila.ai platform, in accordance with the terms and conditions set forth herein.
-                  </p>
+                  {(mouData.preambleRecitals || []).map((recital, rIdx) => (
+                    <p key={rIdx}>{recital}</p>
+                  ))}
                 </div>
               </div>
 
@@ -1051,9 +1080,7 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                 <h3 className="font-sans font-bold text-slate-900 dark:text-white text-xs uppercase tracking-widest border-b pb-1">
                   I. PURPOSE AND OBJECTIVES
                 </h3>
-                <p>
-                  The primary purpose of this Memorandum of Understanding (MOU) is to establish a strategic collaboration between Tech Nirmaan and {mouData.schoolParty.name} to implement AI-powered digital learning solutions, promote technology-enabled education, and enhance the overall academic and skill development of students through the Skila.ai platform.
-                </p>
+                <p>{mouData.purposeIntro}</p>
                 <p className="font-semibold text-slate-800 dark:text-slate-200">
                   The objectives of this collaboration are to:
                 </p>
@@ -1063,7 +1090,7 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                   ))}
                 </ul>
                 <p className="text-slate-700 dark:text-slate-300 italic pt-1">
-                  This collaboration aims to create an engaging, inclusive, and future-ready learning environment that empowers students, supports educators, and contributes to the overall academic excellence of {mouData.schoolParty.name}.
+                  {mouData.purposeClosing}
                 </p>
               </div>
 
@@ -1149,18 +1176,12 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                     b. Terms and Conditions
                   </h4>
                   <ul className="space-y-1.5 text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-sans">
-                    <li className="flex items-start gap-2">
-                      <span className="text-slate-500 font-bold">➢</span>
-                      <span>The details of pricing are confidential and must not be disclosed to any other Educational Institution.</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-slate-500 font-bold">➢</span>
-                      <span><strong>{mouData.financials.gstTerms}</strong></span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-slate-500 font-bold">➢</span>
-                      <span>The actual cost could vary based on the number of students.</span>
-                    </li>
+                    {(mouData.termsAndConditions || []).map((term, tIdx) => (
+                      <li key={tIdx} className="flex items-start gap-2">
+                        <span className="text-slate-500 font-bold">➢</span>
+                        <span>{term}</span>
+                      </li>
+                    ))}
                     <li className="flex items-start gap-2">
                       <span className="text-slate-500 font-bold">➢</span>
                       <div>
@@ -1174,10 +1195,6 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                           ))}
                         </div>
                       </div>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-slate-500 font-bold">➢</span>
-                      <span>Any change in the above could impact and lead to change in the overall cost of the program.</span>
                     </li>
                   </ul>
                   <p className="text-xs font-sans text-slate-600 dark:text-slate-400 italic pt-1">
@@ -1302,7 +1319,7 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                   IN WITNESS WHEREOF
                 </div>
                 <p className="text-center text-xs italic text-slate-600 dark:text-slate-400">
-                  The Parties have executed this Memorandum of Understanding on the date first written above.
+                  {mouData.witnessStatement}
                 </p>
 
                 <div className="grid grid-cols-2 gap-8 sm:gap-12 pt-4 font-sans text-xs">
@@ -1386,15 +1403,15 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                 <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
                 <div>
                   <h4 className="font-bold text-slate-900 dark:text-white">
-                    Interactive Legal Agreement Editor
+                    Structured Legal Agreement Form
                   </h4>
                   <p className="text-slate-600 dark:text-slate-400 mt-0.5">
-                    Customize commercial parameters, signatories, institutional logos, per-student pricing, and specific school clauses. All changes update the Document View in real-time and can be saved to Firestore.
+                    Fast form controls for commercial pricing, dates, and signatories. If you prefer editing directly on the document pages, click <strong>"Edit Overall"</strong>.
                   </p>
                 </div>
               </div>
 
-              {/* Section 0: Institutional Logos & Branding (Multiple Supported!) */}
+              {/* Section 0: Institutional Logos & Branding */}
               <div className="p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
@@ -1421,7 +1438,6 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                   </div>
                 </div>
 
-                {/* Drag-and-drop / Click-to-upload Zone */}
                 <div
                   onDragOver={(e) => {
                     e.preventDefault();
@@ -1448,15 +1464,11 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                       Click or Drag &amp; Drop to Upload Logo(s)
                     </p>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                      Upload one or multiple photos: School Crest, Educational Trust, Society, or Affiliation emblem (PNG, JPG, SVG, WebP)
+                      Upload multiple photos: School Crest, Educational Trust, Society, or Affiliation emblem (PNG, JPG, SVG, WebP)
                     </p>
                   </div>
-                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800">
-                    Supports Multiple Photos &bull; Auto-optimized for Print
-                  </span>
                 </div>
 
-                {/* List of currently attached logos */}
                 {mouData.schoolLogos && mouData.schoolLogos.length > 0 && (
                   <div className="pt-2">
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
@@ -1496,7 +1508,7 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                                 replaceIndexRef.current = idx;
                                 replaceFileInputRef.current?.click();
                               }}
-                              className="p-1 text-slate-400 hover:text-indigo-600 transition"
+                              className="p-1 text-slate-400 hover:text-indigo-600 transition cursor-pointer"
                               title="Replace photo"
                             >
                               <RefreshCw className="w-3.5 h-3.5" />
@@ -1504,7 +1516,7 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                             <button
                               type="button"
                               onClick={() => handleRemoveLogo(idx)}
-                              className="p-1 text-slate-400 hover:text-red-500 transition"
+                              className="p-1 text-slate-400 hover:text-red-500 transition cursor-pointer"
                               title="Delete logo"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1711,7 +1723,7 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                 </div>
               </div>
 
-              {/* Section 3: Financial Arrangements & Commercial Calculation */}
+              {/* Section 3: Financial Arrangements */}
               <div className="p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
                 <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
                   <DollarSign className="w-4 h-4" />
@@ -1764,131 +1776,802 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                     />
                   </div>
                 </div>
+              </div>
 
-                {/* Payment Milestones */}
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    Payment Milestones Schedule
-                  </label>
-                  <div className="space-y-2">
-                    {mouData.financials.paymentMilestones.map((m, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={m.percentage}
-                          onChange={(e) => {
-                            const newMilestones = [...mouData.financials.paymentMilestones];
-                            newMilestones[idx].percentage = e.target.value;
-                            handleFieldChange('financials', 'paymentMilestones', newMilestones);
-                          }}
-                          className="w-20 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-center"
-                        />
-                        <input
-                          type="text"
-                          value={m.condition}
-                          onChange={(e) => {
-                            const newMilestones = [...mouData.financials.paymentMilestones];
-                            newMilestones[idx].condition = e.target.value;
-                            handleFieldChange('financials', 'paymentMilestones', newMilestones);
-                          }}
-                          className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs"
-                        />
-                      </div>
-                    ))}
+              {/* Bottom Quick Switch in Editor Mode */}
+              <div className="flex items-center justify-between p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Want to edit words directly on the document pages?
+                </p>
+                <button
+                  onClick={() => setActiveTab('overall')}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <FileEdit className="w-3.5 h-3.5" />
+                  <span>Open Edit Overall</span>
+                </button>
+              </div>
+
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* TAB 3: EDIT OVERALL (ENTIRE PDF DIRECTLY IN EDITABLE MODE)*/}
+          {/* ======================================================== */}
+          {activeTab === 'overall' && (
+            <div className="max-w-4xl mx-auto space-y-6">
+              
+              {/* Top Edit Mode Indicator Banner */}
+              <div className="p-4 rounded-xl bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 text-white shadow-lg flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0">
+                    <FileEdit className="w-4 h-4 text-white" />
                   </div>
+                  <div>
+                    <h4 className="font-bold text-sm">
+                      Edit Overall Mode — In-Place Document Editor
+                    </h4>
+                    <p className="text-indigo-100 text-[11px]">
+                      The entire 7-page PDF is presented below in editable format. Click into any section to edit text, recitals, and pricing.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setActiveTab('preview')}
+                    className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white font-semibold transition cursor-pointer"
+                  >
+                    View Result
+                  </button>
+                  <button
+                    onClick={handleSaveToRecord}
+                    disabled={isSaving}
+                    className="px-3.5 py-1.5 rounded-lg bg-white text-indigo-700 hover:bg-indigo-50 font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
+                  </button>
                 </div>
               </div>
 
-              {/* Section 4: Scope of Collaboration (9 Points) */}
-              <div className="p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
-                    <FileText className="w-4 h-4" />
-                    <span>Scope of Collaboration ({mouData.scopeAreas.length} Areas)</span>
-                  </div>
-                  <button
-                    onClick={() => handleAddArrayItem('scopeAreas', 'New Collaborative Initiative')}
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 cursor-pointer"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>Add Area</span>
-                  </button>
-                </div>
+              {/* The Entire Document in Live In-Place Editable Format */}
+              <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl border-2 border-indigo-500/40 p-6 sm:p-12 space-y-8 font-serif leading-relaxed text-[13px]">
+                
+                {/* Header Section (Logos + School Name) */}
+                <div className="border-b-2 border-slate-900 dark:border-slate-300 pb-5 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 flex-wrap flex-1">
+                    {/* Logos Gallery */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {(mouData.schoolLogos || []).map((logo, idx) => (
+                        <div key={logo.id || idx} className="relative group shrink-0">
+                          <img
+                            src={logo.url}
+                            alt={logo.name}
+                            className="h-14 w-auto max-w-[130px] object-contain rounded-xs border border-dashed border-indigo-300 p-0.5 bg-slate-50 dark:bg-slate-800"
+                          />
+                          <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-slate-900 text-white rounded-full p-0.5 shadow-xs">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                replaceIndexRef.current = idx;
+                                replaceFileInputRef.current?.click();
+                              }}
+                              className="p-1 hover:text-indigo-300 cursor-pointer"
+                              title="Replace"
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveLogo(idx)}
+                              className="p-1 hover:text-red-400 cursor-pointer"
+                              title="Remove"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
 
-                <div className="space-y-2">
-                  {mouData.scopeAreas.map((area, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <span className="w-6 text-right font-bold text-xs text-slate-400">{idx + 1}.</span>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="h-12 px-3 rounded-lg border-2 border-dashed border-indigo-400 hover:border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 transition flex items-center gap-1.5 text-xs font-sans font-semibold cursor-pointer"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Upload Logo(s)</span>
+                      </button>
+                    </div>
+
+                    <div className="flex-1 min-w-[200px]">
+                      <label className="block text-[10px] text-indigo-600 dark:text-indigo-400 font-sans font-bold uppercase tracking-wider mb-0.5">
+                        School Name (Editable)
+                      </label>
                       <input
                         type="text"
-                        value={area}
-                        onChange={(e) => handleArrayItemChange('scopeAreas', idx, e.target.value)}
-                        className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+                        value={mouData.schoolParty.name}
+                        onChange={(e) => handleFieldChange('schoolParty', 'name', e.target.value)}
+                        className="w-full text-sm sm:text-base font-sans font-bold text-slate-900 dark:text-white uppercase px-2 py-1 rounded border border-indigo-300 dark:border-indigo-700 bg-indigo-50/30 dark:bg-indigo-950/20 focus:ring-2 focus:ring-indigo-500 outline-hidden"
                       />
-                      <button
-                        onClick={() => handleRemoveArrayItem('scopeAreas', idx)}
-                        className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg transition cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <img
+                      src="/technirmaan_logo.png"
+                      alt="Tech Nirmaan"
+                      className="h-12 w-auto object-contain"
+                      onError={(e) => {
+                        e.target.src = '/skila_logo_transparent.png';
+                      }}
+                    />
+                    <p className="text-[10px] text-slate-400 font-sans mt-1">Tech Nirmaan &bull; Skila.ai</p>
+                  </div>
+                </div>
+
+                {/* Document Title & Subtitle */}
+                <div className="text-center space-y-2 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-indigo-200 dark:border-indigo-900/60">
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-500 font-sans uppercase font-bold tracking-wider">
+                      Document Title
+                    </label>
+                    <input
+                      type="text"
+                      value={mouData.documentTitle}
+                      onChange={(e) => handleFieldChange(null, 'documentTitle', e.target.value)}
+                      className="w-full text-center text-lg sm:text-xl font-bold uppercase text-slate-950 dark:text-white px-2 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-500 font-sans uppercase font-bold tracking-wider">
+                      Document Subtitle
+                    </label>
+                    <input
+                      type="text"
+                      value={mouData.documentSubtitle}
+                      onChange={(e) => handleFieldChange(null, 'documentSubtitle', e.target.value)}
+                      className="w-full text-center text-xs sm:text-sm font-sans font-semibold text-slate-600 dark:text-slate-300 uppercase px-2 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Execution Date & Parties */}
+                <div className="space-y-4">
+                  <div className="p-3 rounded-lg border border-dashed border-indigo-300 dark:border-indigo-700 bg-indigo-50/30 dark:bg-indigo-950/20">
+                    <label className="block text-[11px] font-sans font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider mb-1">
+                      Execution Date Statement:
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <span className="font-serif">This Memorandum of Understanding (MOU) is entered into on this</span>
+                      <input
+                        type="text"
+                        value={mouData.mouSigningDateFormatted}
+                        onChange={(e) => handleFieldChange(null, 'mouSigningDateFormatted', e.target.value)}
+                        className="px-2 py-1 rounded border border-indigo-400 bg-white dark:bg-slate-800 font-bold text-indigo-700 dark:text-indigo-300 text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Dual Parties Editable Boxes */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-sans text-xs">
+                    {/* Party 1: Tech Nirmaan */}
+                    <div className="p-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 space-y-2">
+                      <h4 className="font-bold text-indigo-600 dark:text-indigo-400 uppercase text-[11px] pb-1 border-b">
+                        Party 1: Tech Nirmaan
+                      </h4>
+                      <div>
+                        <span className="text-slate-500">Entity: </span>
+                        <input
+                          type="text"
+                          value={mouData.techNirmaan.name}
+                          onChange={(e) => handleFieldChange('techNirmaan', 'name', e.target.value)}
+                          className="font-bold px-1.5 py-0.5 border rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-slate-500">Address: </span>
+                        <textarea
+                          rows={2}
+                          value={mouData.techNirmaan.office}
+                          onChange={(e) => handleFieldChange('techNirmaan', 'office', e.target.value)}
+                          className="w-full text-xs px-2 py-1 border rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 mt-0.5"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 pt-1">
+                        <div>
+                          <span className="text-slate-500">Signatory: </span>
+                          <input
+                            type="text"
+                            value={mouData.techNirmaan.signatoryName}
+                            onChange={(e) => handleFieldChange('techNirmaan', 'signatoryName', e.target.value)}
+                            className="w-full font-semibold px-1.5 py-0.5 border rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Title: </span>
+                          <input
+                            type="text"
+                            value={mouData.techNirmaan.signatoryTitle}
+                            onChange={(e) => handleFieldChange('techNirmaan', 'signatoryTitle', e.target.value)}
+                            className="w-full px-1.5 py-0.5 border rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Party 2: School */}
+                    <div className="p-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 space-y-2">
+                      <h4 className="font-bold text-indigo-600 dark:text-indigo-400 uppercase text-[11px] pb-1 border-b">
+                        Party 2: {mouData.schoolParty.name}
+                      </h4>
+                      <div>
+                        <span className="text-slate-500">School: </span>
+                        <input
+                          type="text"
+                          value={mouData.schoolParty.name}
+                          onChange={(e) => handleFieldChange('schoolParty', 'name', e.target.value)}
+                          className="font-bold px-1.5 py-0.5 border rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-slate-500">Campus Address: </span>
+                        <textarea
+                          rows={2}
+                          value={mouData.schoolParty.campusAddress}
+                          onChange={(e) => handleFieldChange('schoolParty', 'campusAddress', e.target.value)}
+                          className="w-full text-xs px-2 py-1 border rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 mt-0.5"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 pt-1">
+                        <div>
+                          <span className="text-slate-500">Signatory: </span>
+                          <input
+                            type="text"
+                            value={mouData.schoolParty.signatoryName}
+                            onChange={(e) => handleFieldChange('schoolParty', 'signatoryName', e.target.value)}
+                            className="w-full font-semibold px-1.5 py-0.5 border rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Title: </span>
+                          <input
+                            type="text"
+                            value={mouData.schoolParty.signatoryTitle}
+                            onChange={(e) => handleFieldChange('schoolParty', 'signatoryTitle', e.target.value)}
+                            className="w-full px-1.5 py-0.5 border rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preamble Recitals (All 5 Editable in-place) */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between border-b pb-1">
+                    <h3 className="font-sans font-bold text-slate-900 dark:text-white text-xs uppercase tracking-widest">
+                      PREAMBLE (5 RECITALS)
+                    </h3>
+                    <span className="text-[10px] text-indigo-600 font-sans font-semibold">
+                      Click text to edit clauses
+                    </span>
+                  </div>
+
+                  {(mouData.preambleRecitals || []).map((recital, rIdx) => (
+                    <div key={rIdx} className="space-y-1">
+                      <div className="flex items-center justify-between text-[10px] font-sans text-slate-400 font-bold uppercase">
+                        <span>Recital {rIdx + 1}</span>
+                      </div>
+                      <textarea
+                        rows={3}
+                        value={recital}
+                        onChange={(e) => handleArrayItemChange('preambleRecitals', rIdx, e.target.value)}
+                        className="w-full text-xs font-serif leading-relaxed px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500 outline-hidden"
+                      />
                     </div>
                   ))}
                 </div>
-              </div>
 
-              {/* Section 5: Custom Addendums & Special Covenants */}
-              <div className="p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Special Addendums / Custom Clauses</span>
+                {/* Section I. Purpose and Objectives */}
+                <div className="space-y-3 pt-2">
+                  <h3 className="font-sans font-bold text-slate-900 dark:text-white text-xs uppercase tracking-widest border-b pb-1">
+                    I. PURPOSE AND OBJECTIVES
+                  </h3>
+                  
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-500 font-sans uppercase font-bold">Purpose Statement</label>
+                    <textarea
+                      rows={3}
+                      value={mouData.purposeIntro}
+                      onChange={(e) => handleFieldChange(null, 'purposeIntro', e.target.value)}
+                      className="w-full text-xs font-serif leading-relaxed px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500"
+                    />
                   </div>
-                  <button
-                    onClick={() => handleAddArrayItem('customClauses', 'Special mutual covenant...')}
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 cursor-pointer"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>Add Special Clause</span>
-                  </button>
-                </div>
 
-                {(!mouData.customClauses || mouData.customClauses.length === 0) ? (
-                  <p className="text-xs text-slate-400 italic">
-                    No custom special clauses specified. The agreement uses the standard 7-page legal provisions.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {mouData.customClauses.map((clause, idx) => (
-                      <div key={idx} className="flex items-start gap-2">
-                        <textarea
-                          rows={2}
-                          value={clause}
-                          onChange={(e) => handleArrayItemChange('customClauses', idx, e.target.value)}
-                          className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] text-slate-500 font-sans uppercase font-bold">Objectives List</label>
+                      <button
+                        type="button"
+                        onClick={() => handleAddArrayItem('objectives', 'New strategic learning objective...')}
+                        className="text-[11px] font-sans font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Add Objective</span>
+                      </button>
+                    </div>
+
+                    {mouData.objectives.map((obj, oIdx) => (
+                      <div key={oIdx} className="flex items-center gap-2">
+                        <span className="font-bold text-indigo-600 text-xs">•</span>
+                        <input
+                          type="text"
+                          value={obj}
+                          onChange={(e) => handleArrayItemChange('objectives', oIdx, e.target.value)}
+                          className="flex-1 text-xs font-serif px-2.5 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
                         />
                         <button
-                          onClick={() => handleRemoveArrayItem('customClauses', idx)}
-                          className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg transition cursor-pointer mt-1"
+                          type="button"
+                          onClick={() => handleRemoveArrayItem('objectives', oIdx)}
+                          className="p-1 text-slate-400 hover:text-red-500 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     ))}
                   </div>
-                )}
+
+                  <div className="space-y-1 pt-1">
+                    <label className="text-[10px] text-slate-500 font-sans uppercase font-bold">Closing Vision Statement</label>
+                    <textarea
+                      rows={2}
+                      value={mouData.purposeClosing}
+                      onChange={(e) => handleFieldChange(null, 'purposeClosing', e.target.value)}
+                      className="w-full text-xs font-serif leading-relaxed px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    />
+                  </div>
+                </div>
+
+                {/* Section II. Scope of Collaboration */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between border-b pb-1">
+                    <h3 className="font-sans font-bold text-slate-900 dark:text-white text-xs uppercase tracking-widest">
+                      II. SCOPE OF COLLABORATION ({mouData.scopeAreas.length} AREAS)
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => handleAddArrayItem('scopeAreas', 'New Collaborative Scope Item')}
+                      className="text-[11px] font-sans font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Add Area</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {mouData.scopeAreas.map((area, sIdx) => (
+                      <div key={sIdx} className="flex items-center gap-1.5 p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800">
+                        <span className="font-bold text-indigo-600 font-sans text-xs w-5 text-right shrink-0">
+                          {sIdx + 1}.
+                        </span>
+                        <input
+                          type="text"
+                          value={area}
+                          onChange={(e) => handleArrayItemChange('scopeAreas', sIdx, e.target.value)}
+                          className="flex-1 text-xs font-sans font-medium bg-transparent focus:outline-hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveArrayItem('scopeAreas', sIdx)}
+                          className="p-1 text-slate-400 hover:text-red-500 cursor-pointer"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Section III. Financial Arrangements (Live In-Place Editable Table) */}
+                <div className="space-y-4 pt-2">
+                  <h3 className="font-sans font-bold text-slate-900 dark:text-white text-xs uppercase tracking-widest border-b pb-1">
+                    III. FINANCIAL ARRANGEMENTS
+                  </h3>
+
+                  <div className="p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/20 dark:bg-indigo-950/20 space-y-3">
+                    <h4 className="font-sans font-bold text-xs uppercase text-slate-800 dark:text-slate-200">
+                      a. Payment Details Table
+                    </h4>
+
+                    <div className="overflow-x-auto rounded-lg border border-slate-300 dark:border-slate-700">
+                      <table className="w-full text-left font-sans text-xs">
+                        <thead className="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold border-b border-slate-300 dark:border-slate-700">
+                          <tr>
+                            <th className="py-2 px-3">Product</th>
+                            <th className="py-2 px-3">Description</th>
+                            <th className="py-2 px-3">Retail Price</th>
+                            <th className="py-2 px-3 text-indigo-700 dark:text-indigo-400">Final Discounted Price</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900">
+                          <tr>
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                value={mouData.financials.product}
+                                onChange={(e) => handleFieldChange('financials', 'product', e.target.value)}
+                                className="w-full font-bold px-2 py-1 border rounded border-slate-300 dark:border-slate-700"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                value={mouData.financials.description}
+                                onChange={(e) => handleFieldChange('financials', 'description', e.target.value)}
+                                className="w-full px-2 py-1 border rounded border-slate-300 dark:border-slate-700"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                value={mouData.financials.retailPrice}
+                                onChange={(e) => handleFieldChange('financials', 'retailPrice', e.target.value)}
+                                className="w-full line-through text-slate-400 px-2 py-1 border rounded border-slate-300 dark:border-slate-700"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <input
+                                type="number"
+                                value={mouData.financials.discountedPriceNum}
+                                onChange={(e) => handlePriceChange(e.target.value)}
+                                className="w-full font-bold text-indigo-600 px-2 py-1 border rounded border-indigo-400"
+                              />
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <span className="text-xs text-slate-500 font-sans">Enrolled Students: </span>
+                        <input
+                          type="number"
+                          value={mouData.financials.estimatedStudents}
+                          onChange={(e) => handleStudentsChange(e.target.value)}
+                          className="font-bold px-2 py-1 border rounded border-slate-300 dark:border-slate-700 text-xs w-28 ml-2"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-xs text-slate-500 font-sans">Total Consideration: </span>
+                        <input
+                          type="text"
+                          value={mouData.financials.totalContractValue}
+                          onChange={(e) => handleFieldChange('financials', 'totalContractValue', e.target.value)}
+                          className="font-bold text-indigo-700 dark:text-indigo-300 px-2 py-1 border rounded border-indigo-400 text-xs w-36 ml-2"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Terms & Conditions list */}
+                  <div className="space-y-2 pt-1 font-sans text-xs">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold uppercase text-slate-800 dark:text-slate-200">
+                        b. Terms and Conditions
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => handleAddArrayItem('termsAndConditions', 'New custom commercial term...')}
+                        className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Add Term</span>
+                      </button>
+                    </div>
+
+                    {(mouData.termsAndConditions || []).map((term, tIdx) => (
+                      <div key={tIdx} className="flex items-center gap-2">
+                        <span className="font-bold text-slate-500">➢</span>
+                        <input
+                          type="text"
+                          value={term}
+                          onChange={(e) => handleArrayItemChange('termsAndConditions', tIdx, e.target.value)}
+                          className="flex-1 px-2.5 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveArrayItem('termsAndConditions', tIdx)}
+                          className="p-1 text-slate-400 hover:text-red-500 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Section IV. Digital Content Acknowledgment */}
+                <div className="space-y-2 pt-2">
+                  <h3 className="font-sans font-bold text-slate-900 dark:text-white text-xs uppercase tracking-widest border-b pb-1">
+                    IV. DIGITAL CONTENT ACKNOWLEDGMENT
+                  </h3>
+                  <textarea
+                    rows={3}
+                    value={mouData.digitalContentNotice}
+                    onChange={(e) => handleFieldChange(null, 'digitalContentNotice', e.target.value)}
+                    className="w-full text-xs font-serif leading-relaxed px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                {/* Section V. Roles & Responsibilities of Tech Nirmaan */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between border-b pb-1">
+                    <h3 className="font-sans font-bold text-slate-900 dark:text-white text-xs uppercase tracking-widest">
+                      V. ROLES AND RESPONSIBILITIES OF TECH NIRMAAN
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => handleAddArrayItem('techNirmaanResponsibilities', 'New responsibility of Tech Nirmaan...')}
+                      className="text-[11px] font-sans font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Add Role</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {mouData.techNirmaanResponsibilities.map((resp, rIdx) => (
+                      <div key={rIdx} className="flex items-center gap-2">
+                        <span className="font-bold text-indigo-600 text-xs">•</span>
+                        <input
+                          type="text"
+                          value={resp}
+                          onChange={(e) => handleArrayItemChange('techNirmaanResponsibilities', rIdx, e.target.value)}
+                          className="flex-1 text-xs font-serif px-2.5 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveArrayItem('techNirmaanResponsibilities', rIdx)}
+                          className="p-1 text-slate-400 hover:text-red-500 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Section VI. Roles & Responsibilities of School */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between border-b pb-1">
+                    <h3 className="font-sans font-bold text-slate-900 dark:text-white text-xs uppercase tracking-widest">
+                      VI. ROLES AND RESPONSIBILITIES OF {mouData.schoolParty.name.toUpperCase()}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => handleAddArrayItem('schoolResponsibilities', 'New institutional responsibility...')}
+                      className="text-[11px] font-sans font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Add Role</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {mouData.schoolResponsibilities.map((resp, rIdx) => (
+                      <div key={rIdx} className="flex items-center gap-2">
+                        <span className="font-bold text-indigo-600 text-xs">•</span>
+                        <input
+                          type="text"
+                          value={resp}
+                          onChange={(e) => handleArrayItemChange('schoolResponsibilities', rIdx, e.target.value)}
+                          className="flex-1 text-xs font-serif px-2.5 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveArrayItem('schoolResponsibilities', rIdx)}
+                          className="p-1 text-slate-400 hover:text-red-500 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Sections VII - XII Legal Provisions */}
+                <div className="space-y-4 pt-2 font-sans text-xs">
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] mb-1">
+                      VII. CONFIDENTIALITY
+                    </h4>
+                    <textarea
+                      rows={2}
+                      value={mouData.confidentialityClause}
+                      onChange={(e) => handleFieldChange(null, 'confidentialityClause', e.target.value)}
+                      className="w-full text-xs font-serif leading-relaxed px-3 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] mb-1">
+                      VIII. DURATION, TERMINATION AND AMENDMENT
+                    </h4>
+                    <textarea
+                      rows={2}
+                      value={mouData.durationClause}
+                      onChange={(e) => handleFieldChange(null, 'durationClause', e.target.value)}
+                      className="w-full text-xs font-serif leading-relaxed px-3 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] mb-1">
+                      IX. NON-EXCLUSIVITY CLAUSE
+                    </h4>
+                    <textarea
+                      rows={2}
+                      value={mouData.nonExclusivityClause}
+                      onChange={(e) => handleFieldChange(null, 'nonExclusivityClause', e.target.value)}
+                      className="w-full text-xs font-serif leading-relaxed px-3 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] mb-1">
+                      X. INTELLECTUAL PROPERTY CLAUSE
+                    </h4>
+                    <div className="space-y-1">
+                      <input
+                        type="text"
+                        value={mouData.ipClause1}
+                        onChange={(e) => handleFieldChange(null, 'ipClause1', e.target.value)}
+                        className="w-full text-xs font-serif px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                      />
+                      <input
+                        type="text"
+                        value={mouData.ipClause2}
+                        onChange={(e) => handleFieldChange(null, 'ipClause2', e.target.value)}
+                        className="w-full text-xs font-serif px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] mb-1">
+                      XI. LIMITATION OF LIABILITY
+                    </h4>
+                    <textarea
+                      rows={2}
+                      value={mouData.liabilityClause}
+                      onChange={(e) => handleFieldChange(null, 'liabilityClause', e.target.value)}
+                      className="w-full text-xs font-serif leading-relaxed px-3 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] mb-1">
+                      XII. GOVERNING LAW
+                    </h4>
+                    <textarea
+                      rows={2}
+                      value={mouData.governingLawClause}
+                      onChange={(e) => handleFieldChange(null, 'governingLawClause', e.target.value)}
+                      className="w-full text-xs font-serif leading-relaxed px-3 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    />
+                  </div>
+                </div>
+
+                {/* Section XIII. Special Conditions & Addendums */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between border-b pb-1">
+                    <h3 className="font-sans font-bold text-slate-900 dark:text-white text-xs uppercase tracking-widest">
+                      XIII. SPECIAL CONDITIONS &amp; ADDENDUMS
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => handleAddArrayItem('customClauses', 'Special mutual covenant...')}
+                      className="text-[11px] font-sans font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Add Special Clause</span>
+                    </button>
+                  </div>
+
+                  {(mouData.customClauses || []).map((clause, cIdx) => (
+                    <div key={cIdx} className="flex items-start gap-2">
+                      <textarea
+                        rows={2}
+                        value={clause}
+                        onChange={(e) => handleArrayItemChange('customClauses', cIdx, e.target.value)}
+                        className="flex-1 text-xs font-serif px-3 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveArrayItem('customClauses', cIdx)}
+                        className="p-1 text-slate-400 hover:text-red-500 cursor-pointer mt-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Execution & Dual Signature Box */}
+                <div className="pt-6 border-t-2 border-slate-900 dark:border-slate-300 space-y-4">
+                  <div className="text-center font-bold font-sans uppercase tracking-widest text-xs text-slate-950 dark:text-white">
+                    IN WITNESS WHEREOF
+                  </div>
+                  <input
+                    type="text"
+                    value={mouData.witnessStatement}
+                    onChange={(e) => handleFieldChange(null, 'witnessStatement', e.target.value)}
+                    className="w-full text-center text-xs italic px-2 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
+
+                  <div className="grid grid-cols-2 gap-6 pt-2 font-sans text-xs">
+                    <div className="p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
+                      <p className="font-bold uppercase text-[11px]">For Tech Nirmaan</p>
+                      <div>
+                        <span className="text-slate-500">Signatory: </span>
+                        <input
+                          type="text"
+                          value={mouData.techNirmaan.signatoryName}
+                          onChange={(e) => handleFieldChange('techNirmaan', 'signatoryName', e.target.value)}
+                          className="font-bold px-1.5 py-0.5 border rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 w-full"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-slate-500">Title: </span>
+                        <input
+                          type="text"
+                          value={mouData.techNirmaan.signatoryTitle}
+                          onChange={(e) => handleFieldChange('techNirmaan', 'signatoryTitle', e.target.value)}
+                          className="px-1.5 py-0.5 border rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 w-full"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
+                      <p className="font-bold uppercase text-[11px]">For {mouData.schoolParty.name}</p>
+                      <div>
+                        <span className="text-slate-500">Signatory: </span>
+                        <input
+                          type="text"
+                          value={mouData.schoolParty.signatoryName}
+                          onChange={(e) => handleFieldChange('schoolParty', 'signatoryName', e.target.value)}
+                          className="font-bold px-1.5 py-0.5 border rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 w-full"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-slate-500">Title: </span>
+                        <input
+                          type="text"
+                          value={mouData.schoolParty.signatoryTitle}
+                          onChange={(e) => handleFieldChange('schoolParty', 'signatoryTitle', e.target.value)}
+                          className="px-1.5 py-0.5 border rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 w-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
 
-              {/* Bottom Quick Save in Editor Mode */}
-              <div className="flex items-center justify-between p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              {/* Bottom Sticky Action Bar in Edit Overall */}
+              <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Ready to print? Switch back to <strong>Document View</strong> to review the formatted pages.
+                  Done editing? Switch to <strong>Document View</strong> to review the finalized pages or print to PDF.
                 </p>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setActiveTab('preview')}
                     className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold transition cursor-pointer"
                   >
-                    Preview Document
+                    Done &bull; View Document
                   </button>
                   <button
                     onClick={handleSaveToRecord}
@@ -1896,7 +2579,7 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                     className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <Save className="w-3.5 h-3.5" />
-                    <span>{isSaving ? 'Saving...' : 'Save to School Record'}</span>
+                    <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
                   </button>
                 </div>
               </div>
