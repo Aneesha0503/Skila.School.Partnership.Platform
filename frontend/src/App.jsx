@@ -776,6 +776,7 @@ function SkilaApp() {
           setSelectedSchool(enriched);
         }
         fetchStats();
+        handleSelectSchool(enriched, 'info');
         return enriched;
       } else {
         const err = await res.json().catch(() => ({}));

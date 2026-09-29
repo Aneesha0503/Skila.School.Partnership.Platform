@@ -311,9 +311,12 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
                       </span>
                     )}
                   </td>
-                  <td className="py-3 px-4 text-right">
+                  <td className="py-3 px-4 text-right whitespace-nowrap">
                     {details_fetched ? (
-                      <button className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-semibold inline-flex items-center text-xs">
+                      <button 
+                        onClick={() => onSelectSchool(school)}
+                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-semibold inline-flex items-center text-xs whitespace-nowrap cursor-pointer"
+                      >
                         View Full Profile <ChevronRight className="w-4 h-4 ml-0.5" />
                       </button>
                     ) : userRole === 'admin' ? (
@@ -321,7 +324,7 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
                         type="button"
                         onClick={(e) => handleRunDetailsClick(e, school.id)}
                         disabled={isRunning}
-                        className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-xs inline-flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+                        className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-xs inline-flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50 whitespace-nowrap shrink-0"
                         title="Fetch verified 49-field profile for this school"
                       >
                         {isRunning ? (
