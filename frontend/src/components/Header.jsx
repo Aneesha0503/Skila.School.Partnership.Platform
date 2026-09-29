@@ -23,7 +23,8 @@ export default function Header({
   onNotificationClick,
   onMarkAllNotificationsRead,
   onOpenConfirmedModal,
-  confirmedCount = 0
+  confirmedCount = 0,
+  onOpenAgentPerformanceModal
 }) {
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -743,6 +744,18 @@ export default function Header({
                     </span>
                   )}
                 </button>
+
+                {/* Agent Performance Dashboard & Leaderboard - Admin Only */}
+                {userRole === 'admin' && (
+                  <button
+                    onClick={onOpenAgentPerformanceModal}
+                    title="View Agent Performance & Field Leaderboard (Admin Only)"
+                    className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-violet-800 dark:text-violet-200 bg-violet-50 dark:bg-violet-950/60 border border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-900/60 rounded-lg transition shadow-2xs cursor-pointer shrink-0"
+                  >
+                    <Award className="w-4 h-4 text-violet-500 shrink-0" />
+                    <span className="hidden sm:inline">Agent Leaderboard</span>
+                  </button>
+                )}
 
                 {/* Export Excel button */}
                 <button

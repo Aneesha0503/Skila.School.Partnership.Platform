@@ -13,6 +13,7 @@ import IndiaMapHero from './components/IndiaMapHero';
 import AccessControlModal from './components/AccessControlModal';
 import LoginModal from './components/LoginModal';
 import ConfirmedSchoolsModal from './components/ConfirmedSchoolsModal';
+import AgentPerformanceModal from './components/AgentPerformanceModal';
 import MOUPreviewModal from './components/MOUPreviewModal';
 import PartnershipCertificateModal from './components/PartnershipCertificateModal';
 import AuthGateSection from './components/AuthGateSection';
@@ -51,6 +52,7 @@ function SkilaApp() {
     return localStorage.getItem('skila_user_role') || 'admin';
   });
   const [accessModalOpen, setAccessModalOpen] = useState(false);
+  const [agentPerformanceModalOpen, setAgentPerformanceModalOpen] = useState(false);
 
   // Administrative Hierarchy State
   const [selectedHierarchy, setSelectedHierarchy] = useState({
@@ -870,6 +872,7 @@ function SkilaApp() {
           confirmedData?.metrics?.total_confirmed ??
           schools.filter((s) => s.sales?.deal_closed || s.formalities?.is_deal_confirmed).length
         }
+        onOpenAgentPerformanceModal={() => setAgentPerformanceModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -1068,6 +1071,16 @@ function SkilaApp() {
           onOpenSchoolFormalities={handleOpenSchoolFormalities}
           onOpenMOU={handleOpenMOU}
           onOpenCertificate={handleOpenCertificate}
+        />
+      )}
+
+      {/* Agent Performance Dashboard & Field Team Leaderboard Modal - Admin Only */}
+      {isAuthenticated && userRole === 'admin' && agentPerformanceModalOpen && (
+        <AgentPerformanceModal
+          isOpen={agentPerformanceModalOpen}
+          onClose={() => setAgentPerformanceModalOpen(false)}
+          onSelectSchool={(school) => handleSelectSchool(school, 'info')}
+          userRole={userRole}
         />
       )}
 

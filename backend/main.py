@@ -20,7 +20,7 @@ from models import (
     SchoolModel, SchoolCreateUpdate, AgentNoteCreate, AgentNoteModel, DealToggleRequest,
     LeadStatusUpdateRequest,
     UserRegisterRequest, UserLoginRequest, UserProfile, TokenResponse, UserUpdateRequest,
-    FormalitiesData, FormalitiesUpdateRequest
+    FormalitiesData, FormalitiesUpdateRequest, AssignSchoolRequest
 )
 from auth_utils import hash_password, verify_password, create_access_token, decode_access_token
 
@@ -626,6 +626,281 @@ def get_confirmed_schools(
             "pending_payment": pending_payment,
             "in_progress": len(confirmed) - completed_count
         }
+    }
+
+@app.get("/api/agents/performance")
+def get_agents_performance(role: str = Depends(require_admin)):
+    """
+    Admin-only: Aggregates partnership pipeline metrics across all agents
+    including schools contacted, demos done, deals closed, MOUs signed,
+    conversion rates, student reach, and gamified leaderboard ranking.
+    """
+    schools = get_all_schools_raw()
+    users_col = db.collection("users")
+    user_docs = list(users_col.stream())
+    
+    agent_users = {}
+    for d in user_docs:
+        u = d.to_dict()
+        uid = u.get("id") or d.id
+        u_role = (u.get("role") or "agent").lower()
+        if u_role == "agent":
+            name = (u.get("full_name") or "Field Agent").strip()
+            agent_users[name.lower()] = {
+                "id": uid,
+                "name": name,
+                "email": u.get("email", ""),
+                "role": u_role,
+                "is_active": u.get("is_active", True)
+            }
+
+    # Ensure baseline "Field Agent" exists
+    if not agent_users:
+        agent_users["field agent"] = {
+            "id": "agent-default",
+            "name": "Field Agent",
+            "email": "agent@skila.ai",
+            "role": "agent",
+            "is_active": True
+        }
+
+    # Also discover any distinct sales owners, deal closers, or note authors
+    discovered_agent_names = set()
+    for s in schools:
+        sales = s.get("sales") or {}
+        owner = (sales.get("sales_owner") or "").strip()
+        if owner and owner.lower() not in ("unassigned", "none", "n/a", "all", ""):
+            discovered_agent_names.add(owner)
+        closed_by = (sales.get("deal_closed_by") or "").strip()
+        if closed_by and closed_by.lower() not in ("unassigned", "none", "n/a", "system", ""):
+            discovered_agent_names.add(closed_by)
+        for n in (s.get("agent_notes") or []):
+            author = (n.get("agent_name") or "").strip()
+            if author and author.lower() not in ("unassigned", "admin", "system", ""):
+                discovered_agent_names.add(author)
+
+    for name in discovered_agent_names:
+        key = name.lower()
+        if key not in agent_users:
+            clean_email = name.lower().replace(" - ", ".").replace(" ", ".").replace("@", ".")
+            agent_users[key] = {
+                "id": f"agent-{uuid.uuid4().hex[:8]}",
+                "name": name,
+                "email": f"{clean_email[:25]}@skila.ai",
+                "role": "agent",
+                "is_active": True
+            }
+
+    # Prepare data containers for each agent
+    agent_data = {}
+    for key, info in agent_users.items():
+        agent_data[key] = {
+            "id": info["id"],
+            "name": info["name"],
+            "email": info["email"],
+            "role": info["role"],
+            "is_active": info.get("is_active", True),
+            "assigned_schools": [],
+            "contacted_count": 0,
+            "demos_done_count": 0,
+            "proposals_shared_count": 0,
+            "deals_closed_count": 0,
+            "mou_signed_count": 0,
+            "notes_logged_count": 0,
+            "total_students_reached": 0,
+            "pipeline_revenue_est": 0
+        }
+
+    unassigned_schools = []
+
+    for s in schools:
+        sales = s.get("sales") or {}
+        info = s.get("info") or {}
+        hierarchy = s.get("hierarchy") or {}
+        formalities = s.get("formalities") or sales.get("formalities") or {}
+        if not formalities and (sales.get("deal_closed") or sales.get("lead_status") == "Closed Won"):
+            formalities = get_default_formalities_dict(s.get("id", "SCH"), s, "System")
+
+        owner = (sales.get("sales_owner") or "").strip()
+        lead_st = sales.get("lead_status") or "New"
+        is_deal_closed = bool(sales.get("deal_closed") or lead_st == "Closed Won")
+        mou_st = formalities.get("mou_status") or ""
+        is_mou_signed = mou_st in ["Signed by School", "Fully Executed"]
+        is_demo_done = (
+            sales.get("demo_done") == "Yes" or 
+            lead_st in ["Demo Scheduled", "Proposal Shared", "Pilot Started", "Closed Won"] or
+            any("demo" in (n.get("bucket", "") + n.get("category", "")).lower() for n in s.get("agent_notes", []))
+        )
+        is_proposal = (
+            sales.get("proposal_shared") == "Yes" or 
+            lead_st in ["Proposal Shared", "Pilot Started", "Closed Won"]
+        )
+        is_contacted = (
+            lead_st not in ["New", ""] or
+            len(sales.get("sent_emails") or []) > 0 or
+            len(sales.get("sent_whatsapp") or []) > 0 or
+            len(s.get("agent_notes") or []) > 0 or
+            bool(sales.get("last_contact_date"))
+        )
+        students = int(info.get("student_strength") or 0)
+
+        # Match to agent
+        matched_keys = set()
+        if owner and owner.lower() in agent_data:
+            matched_keys.add(owner.lower())
+        else:
+            for n in s.get("agent_notes", []):
+                a_name = (n.get("agent_name") or "").strip().lower()
+                if a_name in agent_data:
+                    matched_keys.add(a_name)
+            closed_by = (sales.get("deal_closed_by") or "").strip().lower()
+            if closed_by in agent_data:
+                matched_keys.add(closed_by)
+
+        compact_school = {
+            "id": s.get("id"),
+            "school_name": info.get("school_name", "School"),
+            "udise_code": info.get("udise_code", ""),
+            "board": info.get("board", "CBSE"),
+            "student_strength": students,
+            "location": f"{hierarchy.get('district', '')}, {hierarchy.get('state', '')}".strip(", "),
+            "lead_status": lead_st,
+            "deal_closed": is_deal_closed,
+            "demo_done": is_demo_done,
+            "mou_status": mou_st,
+            "sales_owner": owner or "Unassigned"
+        }
+
+        if not matched_keys:
+            unassigned_schools.append(compact_school)
+        else:
+            for k in matched_keys:
+                target = agent_data[k]
+                target["assigned_schools"].append(compact_school)
+                if is_contacted:
+                    target["contacted_count"] += 1
+                if is_demo_done:
+                    target["demos_done_count"] += 1
+                if is_proposal:
+                    target["proposals_shared_count"] += 1
+                if is_deal_closed:
+                    target["deals_closed_count"] += 1
+                    target["total_students_reached"] += students
+                    target["pipeline_revenue_est"] += 250000
+                if is_mou_signed:
+                    target["mou_signed_count"] += 1
+                target["notes_logged_count"] += sum(
+                    1 for n in s.get("agent_notes", []) 
+                    if (n.get("agent_name") or "").strip().lower() == k
+                )
+
+    leaderboard = []
+    total_assigned_across = 0
+    total_demos_across = 0
+    total_closed_across = 0
+    total_mous_across = 0
+    total_contacted_across = 0
+
+    for k, d in agent_data.items():
+        assigned = len(d["assigned_schools"])
+        contacted = d["contacted_count"]
+        demos = d["demos_done_count"]
+        proposals = d["proposals_shared_count"]
+        closed = d["deals_closed_count"]
+        mous = d["mou_signed_count"]
+        notes = d["notes_logged_count"]
+        students = d["total_students_reached"]
+
+        total_assigned_across += assigned
+        total_demos_across += demos
+        total_closed_across += closed
+        total_mous_across += mous
+        total_contacted_across += contacted
+
+        base = contacted if contacted > 0 else assigned
+        conversion_rate = round((closed / max(1, base)) * 100, 1)
+
+        score = (
+            (contacted * 10) +
+            (demos * 25) +
+            (proposals * 35) +
+            (closed * 100) +
+            (mous * 150) +
+            (notes * 5) +
+            min(100, students // 200)
+        )
+
+        if closed >= 3 or mous >= 2:
+            badge = "💎 Diamond Closer"
+            badge_color = "purple"
+        elif closed >= 1:
+            badge = "🥇 Gold Producer"
+            badge_color = "amber"
+        elif demos >= 3 or proposals >= 3:
+            badge = "🚀 Demo Master"
+            badge_color = "indigo"
+        elif contacted >= 3:
+            badge = "⚡ Active Hustler"
+            badge_color = "blue"
+        else:
+            badge = "🌱 Rising Agent"
+            badge_color = "emerald"
+
+        d["assigned_count"] = assigned
+        d["conversion_rate"] = conversion_rate
+        d["score"] = score
+        d["badge"] = badge
+        d["badge_color"] = badge_color
+
+        leaderboard.append(d)
+
+    leaderboard.sort(key=lambda x: (x["score"], x["deals_closed_count"], x["demos_done_count"]), reverse=True)
+
+    for idx, item in enumerate(leaderboard, start=1):
+        item["rank"] = idx
+        if idx == 1:
+            item["medal"] = "🥇"
+        elif idx == 2:
+            item["medal"] = "🥈"
+        elif idx == 3:
+            item["medal"] = "🥉"
+        else:
+            item["medal"] = f"#{idx}"
+
+    team_conversion = round((total_closed_across / max(1, total_contacted_across if total_contacted_across > 0 else total_assigned_across)) * 100, 1)
+    top_performer = leaderboard[0] if leaderboard else None
+
+    return {
+        "metrics": {
+            "total_agents": len(leaderboard),
+            "total_schools_managed": total_assigned_across,
+            "total_unassigned_schools": len(unassigned_schools),
+            "team_demos_completed": total_demos_across,
+            "team_deals_closed": total_closed_across,
+            "team_mous_signed": total_mous_across,
+            "team_conversion_rate": team_conversion,
+            "top_performer_name": top_performer["name"] if top_performer else "None",
+            "top_performer_score": top_performer["score"] if top_performer else 0
+        },
+        "leaderboard": leaderboard,
+        "unassigned_schools": unassigned_schools
+    }
+
+@app.post("/api/agents/assign-school")
+def assign_school_to_agent(payload: AssignSchoolRequest, role: str = Depends(require_admin)):
+    """Admin only: Assigns or reassigns an institution's sales owner to a specific agent."""
+    doc_ref = db.collection("schools").document(payload.school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+    data = doc.to_dict()
+    sales = data.get("sales") or {}
+    sales["sales_owner"] = payload.agent_name.strip()
+    doc_ref.update({"sales": sales})
+    return {
+        "message": f"School assigned to {payload.agent_name.strip()} successfully",
+        "school_id": payload.school_id,
+        "sales_owner": payload.agent_name.strip()
     }
 
 @app.get("/api/schools/{school_id}")

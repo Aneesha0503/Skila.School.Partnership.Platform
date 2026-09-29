@@ -82,6 +82,14 @@ export default function AccessControlModal({ isOpen, onClose, currentRole, onSel
       category: 'Security'
     },
     {
+      feature: 'Agent Performance & Field Leaderboard',
+      description: 'View team rankings, demos conducted, conversion rates, and agent school pipelines',
+      admin: true,
+      agent: false,
+      agentNote: 'Confidential to administrators',
+      category: 'Management'
+    },
+    {
       feature: 'Microsoft Excel Export (.xlsx)',
       description: 'Download 61-column formatted spreadsheet sorted High to Low',
       admin: true,

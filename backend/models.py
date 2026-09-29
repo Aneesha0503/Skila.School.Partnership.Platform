@@ -238,4 +238,9 @@ class UserUpdateRequest(BaseModel):
     is_active: Optional[bool] = None
     password: Optional[str] = None
 
+class AssignSchoolRequest(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    school_id: str
+    agent_name: str
+
 
