@@ -1,0 +1,14 @@
+# Never upload local build output — Vercel builds fresh on the server
+dist/
+api/dist/
+frontend/dist/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local env secrets
+.env
+backend/serviceAccountKey.json
