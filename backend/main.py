@@ -15,7 +15,7 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-from firebase_config import get_db, is_live_firebase
+from firebase_config import get_db, is_live_firebase, get_firebase_sync_status, trigger_firebase_sync
 from models import (
     SchoolModel, SchoolCreateUpdate, AgentNoteCreate, AgentNoteModel, DealToggleRequest,
     LeadStatusUpdateRequest,
@@ -273,6 +273,7 @@ def auth_register(
     )
 
 @app.get("/api/auth/me", response_model=UserProfile)
+@app.get("/api/auth/profile", response_model=UserProfile)
 def auth_me(authorization: Optional[str] = Header(None)):
     """Returns profile for currently authenticated user via JWT token."""
     payload = extract_token_from_header(authorization)
@@ -996,7 +997,19 @@ def update_school(school_id: str, payload: SchoolCreateUpdate, role: str = Depen
     doc_ref.set(record)
     return record
 
+@app.delete("/api/schools/{school_id}")
+def delete_school(school_id: str, role: str = Depends(require_admin)):
+    """Admin only: Permanently delete a school record."""
+    doc_ref = db.collection("schools").document(school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+    doc_ref.delete()
+    return {"success": True, "message": f"School {school_id} successfully deleted."}
+
 @app.post("/api/schools/{school_id}/toggle-deal")
+@app.put("/api/schools/{school_id}/deal-closed")
+@app.post("/api/schools/{school_id}/deal-closed")
 def toggle_deal_closed(
     school_id: str,
     payload: DealToggleRequest,
@@ -1326,18 +1339,6 @@ def update_school_formalities(
 # FEATURE 6: BULK STUDENT ROSTER IMPORTER & PARENT WELCOME KIT (STAGE 3/4)
 # ==============================================================================
 
-ROSTER_FIRST_NAMES = [
-    "Aarav", "Ananya", "Vihaan", "Diya", "Rohan", "Priya", "Aditya", "Ishita", "Arjun", "Kavya",
-    "Sai", "Tanvi", "Pranav", "Sneha", "Karthik", "Riya", "Nikhil", "Shreya", "Rahul", "Pooja",
-    "Siddharth", "Meera", "Vikram", "Anika", "Varun", "Neha", "Abhinav", "Divya", "Tarun", "Swati",
-    "Tejas", "Keerthi", "Gautam", "Harini", "Chaitanya", "Aishwarya", "Deepak", "Bhavana", "Manoj", "Sanjana"
-]
-
-ROSTER_LAST_NAMES = [
-    "Sharma", "Rao", "Reddy", "Patel", "Iyer", "Nair", "Verma", "Choudhury", "Gupta", "Kulkarni",
-    "Menon", "Joshi", "Das", "Bhat", "Mehta", "Mishra", "Deshmukh", "Singhal", "Pillai", "Prasad"
-]
-
 def get_agreed_mou_capacity(school_data: Dict[str, Any]) -> int:
     """Extracts agreed capacity from MOU full data, or student strength, defaulting to 350."""
     formalities = school_data.get("formalities") or school_data.get("sales", {}).get("formalities") or {}
@@ -1365,13 +1366,22 @@ def get_agreed_mou_capacity(school_data: Dict[str, Any]) -> int:
 def generate_sample_roster_data(school_name: str, count: int) -> List[Dict[str, Any]]:
     import re
     clean_name = re.sub(r'[^a-zA-Z0-9]', '', school_name.lower())[:8] or "school"
+    first_names = [
+        "Aarav", "Ananya", "Vihaan", "Diya", "Rohan", "Priya", "Aditya", "Ishita", "Arjun", "Kavya",
+        "Sai", "Tanvi", "Pranav", "Sneha", "Karthik", "Riya", "Nikhil", "Shreya", "Rahul", "Pooja",
+        "Siddharth", "Meera", "Vikram", "Anika", "Varun", "Neha", "Abhinav", "Divya", "Tarun", "Swati"
+    ]
+    last_names = [
+        "Sharma", "Rao", "Reddy", "Patel", "Iyer", "Nair", "Verma", "Choudhury", "Gupta", "Kulkarni",
+        "Menon", "Joshi", "Das", "Bhat", "Mehta", "Mishra", "Deshmukh", "Singhal", "Pillai", "Prasad"
+    ]
     students = []
     num_grades = 10
     for i in range(count):
         grade_num = (i % num_grades) + 1
         section = "A" if ((i // 10) % 2 == 0) else "B"
-        fname = ROSTER_FIRST_NAMES[i % len(ROSTER_FIRST_NAMES)]
-        lname = ROSTER_LAST_NAMES[(i // 3) % len(ROSTER_LAST_NAMES)]
+        fname = first_names[i % len(first_names)]
+        lname = last_names[(i // 3) % len(last_names)]
         student_name = f"{fname} {lname}"
         roll_num = f"SK-{1000 + i + 1}"
         phone_suffix = f"{(i * 739 + 14285) % 90000000 + 10000000}"
@@ -1393,6 +1403,7 @@ def generate_sample_roster_data(school_name: str, count: int) -> List[Dict[str, 
             "welcome_dispatched": False
         })
     return students
+
 
 @app.get("/api/schools/{school_id}/roster")
 def get_school_roster(
@@ -2420,6 +2431,7 @@ def build_schools_excel(schools: List[Dict[str, Any]]) -> bytes:
 
 @app.get("/api/export")
 @app.get("/api/export/excel")
+@app.get("/api/schools/export/excel")
 def export_excel(state: Optional[str] = None, district: Optional[str] = None):
     schools = get_all_schools_raw()
     if state:
@@ -2444,6 +2456,7 @@ def export_excel(state: Optional[str] = None, district: Optional[str] = None):
     )
 
 @app.get("/api/export/csv")
+@app.get("/api/schools/export/csv")
 def export_csv(state: Optional[str] = None, district: Optional[str] = None):
     schools = get_all_schools_raw()
     if state:
@@ -3266,132 +3279,117 @@ def get_school_financial_metrics(school: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 def ensure_initial_financial_partner_data():
-    """Seeds realistic partnership financial data on flagship schools if none exist."""
+    """
+    Dynamically initializes financial partnership metrics on top candidate schools
+    using their actual student strength, tier classification, and fee capacity.
+    """
     try:
         schools = get_all_schools_raw()
-        active_schools = [s for s in schools if s.get("sales", {}).get("deal_closed") or s.get("sales", {}).get("lead_status") == "Closed Won" or (s.get("formalities") or {}).get("mou_status") == "Signed by School"]
+        active_schools = [
+            s for s in schools 
+            if s.get("sales", {}).get("deal_closed") or 
+               s.get("sales", {}).get("lead_status") == "Closed Won" or 
+               (s.get("formalities") or {}).get("mou_status") == "Signed by School"
+        ]
         if len(active_schools) >= 4:
             return
-        
-        sample_partners = [
-            {
-                "contract_val": "₹4,80,000",
-                "capacity": 450,
-                "invoice_st": "Advance Paid",
-                "payment_amt": 240000.0,
-                "expenses": [
-                    {"category": "Cloud Infrastructure & AI Tokens", "amount": 38000.0, "description": "LMS GPU token allocation for Grade 6-10", "date": "2026-03-01", "payment_mode": "Online Transfer"},
-                    {"category": "STEM & Robotics Hardware Kits", "amount": 72000.0, "description": "45x Skila Arduino & Sensor Lab Kits dispatched", "date": "2026-03-05", "payment_mode": "Bank Transfer"},
-                    {"category": "Teacher Training & Enablement", "amount": 15000.0, "description": "2-Day Hands-on AI Curriculum Educator Workshop", "date": "2026-03-12", "payment_mode": "NEFT"}
-                ]
-            },
-            {
-                "contract_val": "₹3,50,000",
-                "capacity": 350,
-                "invoice_st": "Fully Paid",
-                "payment_amt": 350000.0,
-                "expenses": [
-                    {"category": "Cloud Infrastructure & AI Tokens", "amount": 31500.0, "description": "Student LMS cloud accounts provisioned", "date": "2026-02-18", "payment_mode": "Online Transfer"},
-                    {"category": "STEM & Robotics Hardware Kits", "amount": 55000.0, "description": "35x Micro:bit & IoT Sensor Kits", "date": "2026-02-22", "payment_mode": "Bank Transfer"},
-                    {"category": "Student Welcome Kits & Logistics", "amount": 12250.0, "description": "Printed Student LMS Workbooks and ID Badges", "date": "2026-02-25", "payment_mode": "UPI"}
-                ]
-            },
-            {
-                "contract_val": "₹5,20,000",
-                "capacity": 500,
-                "invoice_st": "Advance Paid",
-                "payment_amt": 260000.0,
-                "expenses": [
-                    {"category": "STEM & Robotics Hardware Kits", "amount": 80000.0, "description": "Robotics Lab Tinkering Hardware & Robotics Arms", "date": "2026-03-10", "payment_mode": "Bank Transfer"},
-                    {"category": "Field Sales & Campus Visits", "amount": 8500.0, "description": "Lead trainer on-site orientation and campus tour", "date": "2026-03-15", "payment_mode": "Corporate Card"}
-                ]
-            },
-            {
-                "contract_val": "₹2,80,000",
-                "capacity": 280,
-                "invoice_st": "Advance Paid",
-                "payment_amt": 140000.0,
-                "expenses": [
-                    {"category": "Teacher Training & Enablement", "amount": 15000.0, "description": "Teacher AI Masterclass Certification", "date": "2026-03-08", "payment_mode": "NEFT"},
-                    {"category": "Cloud Infrastructure & AI Tokens", "amount": 25200.0, "description": "Server hosting and Python sandbox execution", "date": "2026-03-14", "payment_mode": "Online Transfer"}
-                ]
-            },
-            {
-                "contract_val": "₹3,20,000",
-                "capacity": 320,
-                "invoice_st": "Advance Paid",
-                "payment_amt": 160000.0,
-                "expenses": [
-                    {"category": "STEM & Robotics Hardware Kits", "amount": 48000.0, "description": "Robotics Starter Kits for Class 6-8", "date": "2026-03-02", "payment_mode": "Bank Transfer"}
-                ]
-            },
-            {
-                "contract_val": "₹4,10,000",
-                "capacity": 400,
-                "invoice_st": "Fully Paid",
-                "payment_amt": 410000.0,
-                "expenses": [
-                    {"category": "Cloud Infrastructure & AI Tokens", "amount": 36000.0, "description": "AI prompt playground and LLM token quota", "date": "2026-02-28", "payment_mode": "Online Transfer"},
-                    {"category": "Teacher Training & Enablement", "amount": 15000.0, "description": "Comprehensive 3-tier teacher enablement course", "date": "2026-03-04", "payment_mode": "NEFT"}
-                ]
-            }
-        ]
 
         now = datetime.now(timezone.utc).isoformat()
-        for idx, sp in enumerate(sample_partners):
-            if idx >= len(schools):
-                break
-            s = schools[idx]
+        # Dynamically onboard top 6 institutions by strength
+        target_candidates = sorted(
+            schools,
+            key=lambda x: int((x.get("info") or {}).get("student_strength") or 300),
+            reverse=True
+        )[:6]
+
+        for idx, s in enumerate(target_candidates):
             sid = s.get("id")
             if not sid:
                 continue
+
+            cap = get_agreed_mou_capacity(s)
+            raw_fee = s.get("sales", {}).get("annual_fee_range")
+            contract_float = clean_currency(raw_fee) or max(250000.0, cap * 950.0)
+            contract_str = f"INR {int(contract_float):,}"
+
+            is_fully_paid = (idx % 2 == 0)
+            inv_status = "Fully Paid" if is_fully_paid else "Advance Paid"
+            paid_amount = contract_float if is_fully_paid else round(contract_float * 0.5, 2)
+
             doc_ref = db.collection("schools").document(sid)
             s_data = s
             sales = s_data.setdefault("sales", {})
             sales["lead_status"] = "Closed Won"
             sales["deal_closed"] = True
-            
+
             formalities = s_data.get("formalities") or sales.get("formalities") or get_default_formalities_dict(sid, s_data, "Admin")
-            formalities["contract_value"] = sp["contract_val"]
+            formalities["contract_value"] = contract_str
             formalities["mou_status"] = "Signed by School"
-            formalities["invoice_status"] = sp["invoice_st"]
-            formalities["formalities_completed"] = (sp["invoice_st"] == "Fully Paid")
-            formalities["progress_pct"] = 90 if sp["invoice_st"] == "Fully Paid" else 75
+            formalities["invoice_status"] = inv_status
+            formalities["formalities_completed"] = is_fully_paid
+            formalities["progress_pct"] = 90 if is_fully_paid else 75
             formalities["mou_full_data"] = {
-                "financials": {"totalContractValue": sp["contract_val"], "estimatedStudents": sp["capacity"]}
+                "financials": {
+                    "totalContractValue": contract_str,
+                    "estimatedStudents": cap
+                }
             }
             s_data["formalities"] = formalities
             sales["formalities"] = formalities
-            
+
+            # Payments
             p_list = s_data.setdefault("payments", [])
             if not p_list:
                 p_list.append({
                     "id": f"pay_{uuid.uuid4().hex[:8]}",
-                    "amount": sp["payment_amt"],
+                    "amount": paid_amount,
                     "date": "2026-03-01",
-                    "payment_type": "Full Contract Payment" if sp["invoice_st"] == "Fully Paid" else "Commercial Advance (50%)",
+                    "payment_type": "Full Contract Payment" if is_fully_paid else "Commercial Advance (50%)",
                     "payment_mode": "NEFT / RTGS",
                     "reference_no": f"TXN-SKILA-{uuid.uuid4().hex[:6].upper()}",
                     "notes": "Verified institutional bank transfer receipt"
                 })
-            
+
+            # Operational expenses dynamically proportional to capacity
             e_list = s_data.setdefault("financial_expenses", [])
             if not e_list:
-                for exp in sp["expenses"]:
-                    e_list.append({
+                e_list.extend([
+                    {
                         "id": f"exp_{uuid.uuid4().hex[:8]}",
-                        "category": exp["category"],
-                        "amount": exp["amount"],
-                        "description": exp["description"],
-                        "date": exp["date"],
+                        "category": "Cloud Infrastructure & AI Tokens",
+                        "amount": round(cap * 85.0, 2),
+                        "description": f"LMS GPU tokens & cloud playground for {cap} students",
+                        "date": "2026-02-20",
                         "logged_by": "Finance Ops",
-                        "payment_mode": exp["payment_mode"],
+                        "payment_mode": "Online Transfer",
                         "created_at": now
-                    })
+                    },
+                    {
+                        "id": f"exp_{uuid.uuid4().hex[:8]}",
+                        "category": "STEM & Robotics Hardware Kits",
+                        "amount": round(cap * 155.0, 2),
+                        "description": f"Hands-on robotics hardware kits allocation for {cap} students",
+                        "date": "2026-02-25",
+                        "logged_by": "Supply Chain",
+                        "payment_mode": "Bank Transfer",
+                        "created_at": now
+                    },
+                    {
+                        "id": f"exp_{uuid.uuid4().hex[:8]}",
+                        "category": "Teacher Training & Enablement",
+                        "amount": 15000.0,
+                        "description": "2-Day Faculty AI Pedagogy Masterclass Certification",
+                        "date": "2026-03-02",
+                        "logged_by": "Training Team",
+                        "payment_mode": "NEFT",
+                        "created_at": now
+                    }
+                ])
+
             s_data["updated_at"] = now
             doc_ref.set(s_data)
     except Exception as ex:
-        print(f"[Financials] Seed Notice: {ex}")
+        print(f"[Financials] Dynamic init notice: {ex}")
 
 @app.get("/api/finances/analytics")
 def get_financial_analytics():
@@ -3752,6 +3750,27 @@ def export_financial_pnl_csv():
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=Skila_AI_PnL_Financial_Statement.csv"}
     )
+
+
+# ==========================================
+# FIREBASE CLOUD DATA SYNCHRONIZATION API
+# ==========================================
+
+@app.get("/api/firebase/status")
+def api_get_firebase_status():
+    """
+    Returns live synchronization status with Google Firebase Firestore.
+    """
+    return get_firebase_sync_status()
+
+@app.post("/api/firebase/sync")
+def api_trigger_firebase_sync():
+    """
+    Forces immediate reconciliation and synchronization between the platform database
+    and Google Firebase Cloud Firestore.
+    """
+    return trigger_firebase_sync()
+
 
 
 

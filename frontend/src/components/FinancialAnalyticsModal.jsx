@@ -6,6 +6,7 @@ import {
   X, Search, Filter, RefreshCw, FileText, Wallet, Sparkles, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { formatINR, formatShortINR } from '../utils/formatters';
 
 export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchool }) {
   const { user } = useAuth();
@@ -192,24 +193,6 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
     } finally {
       setFormSubmitting(false);
     }
-  };
-
-  // Format currency helpers
-  const formatINR = (val) => {
-    if (val === undefined || val === null || isNaN(val)) return '₹0.00';
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(val);
-  };
-
-  const formatShortINR = (val) => {
-    if (!val || isNaN(val)) return '₹0';
-    if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
-    if (val >= 100000) return `₹${(val / 100000).toFixed(2)} L`;
-    if (val >= 1000) return `₹${(val / 1000).toFixed(1)} K`;
-    return `₹${Math.round(val)}`;
   };
 
   if (!isOpen) return null;

@@ -36,6 +36,41 @@ export default function Header({
 
   const { user, isAuthenticated, isAdmin, logout, setLoginModalOpen } = useAuth();
 
+  const [firebaseStatus, setFirebaseStatus] = useState(null);
+  const [syncingFirebase, setSyncingFirebase] = useState(false);
+
+  const checkFirebaseStatus = async () => {
+    try {
+      const res = await fetch('/api/firebase/status');
+      if (res.ok) {
+        const data = await res.json();
+        setFirebaseStatus(data);
+      }
+    } catch {
+      // Ignore background fetch error
+    }
+  };
+
+  const handleManualFirebaseSync = async () => {
+    setSyncingFirebase(true);
+    try {
+      const res = await fetch('/api/firebase/sync', { method: 'POST' });
+      if (res.ok) {
+        await checkFirebaseStatus();
+      }
+    } catch (err) {
+      console.error('Firebase sync error:', err);
+    } finally {
+      setSyncingFirebase(false);
+    }
+  };
+
+  useEffect(() => {
+    checkFirebaseStatus();
+    const interval = setInterval(checkFirebaseStatus, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     if (user) {
       if (user.role && user.role !== userRole && onRoleChange) {
@@ -726,6 +761,25 @@ export default function Header({
                   <span className="hidden md:inline">Dark</span>
                 </>
               )}
+            </button>
+
+            {/* Firebase Cloud Sync Indicator & Manual Sync Button */}
+            <button
+              onClick={handleManualFirebaseSync}
+              disabled={syncingFirebase}
+              title={
+                firebaseStatus?.live_active
+                  ? `Firebase Firestore Synced (${firebaseStatus.total_local_schools} schools). Click to re-sync.`
+                  : firebaseStatus?.quota_exhausted
+                  ? `Local Cache Active (${firebaseStatus.pending_sync_count} pending sync). Google Cloud quota exhausted. Click to retry sync.`
+                  : "Sync database with Firebase Cloud Firestore"
+              }
+              className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 text-xs font-semibold rounded-lg border transition shadow-2xs cursor-pointer shrink-0 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+            >
+              <span className={`w-2 h-2 rounded-full ${syncingFirebase ? 'bg-amber-500 animate-ping' : firebaseStatus?.live_active ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+              <span className="hidden xl:inline text-[11px]">
+                {syncingFirebase ? 'Syncing...' : firebaseStatus?.live_active ? 'Firebase Synced' : 'Sync to Firebase'}
+              </span>
             </button>
 
             {/* Authenticated-only Action Buttons */}

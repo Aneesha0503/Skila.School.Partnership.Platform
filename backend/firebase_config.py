@@ -163,32 +163,44 @@ class ResilientDocumentRef:
 
     def set(self, data: dict, merge: bool = False):
         self.parent.local.collection(self.col_name).document(self.doc_id).set(data, merge=merge)
+        synced_live = False
         if not self.parent.quota_exhausted and self.parent.live:
             try:
                 self.parent.live.collection(self.col_name).document(self.doc_id).set(data, merge=merge)
+                synced_live = True
             except Exception as e:
                 err_str = str(e).lower()
                 if "quota exceeded" in err_str or "429" in err_str or "resource_exhausted" in err_str:
                     self.parent.quota_exhausted = True
+        if not synced_live:
+            self.parent.queue_sync(self.col_name, self.doc_id, "set", data, merge)
         return self
 
     def update(self, data: dict):
         self.parent.local.collection(self.col_name).document(self.doc_id).update(data)
+        synced_live = False
         if not self.parent.quota_exhausted and self.parent.live:
             try:
                 self.parent.live.collection(self.col_name).document(self.doc_id).update(data)
+                synced_live = True
             except Exception as e:
                 err_str = str(e).lower()
                 if "quota exceeded" in err_str or "429" in err_str or "resource_exhausted" in err_str:
                     self.parent.quota_exhausted = True
+        if not synced_live:
+            self.parent.queue_sync(self.col_name, self.doc_id, "update", data)
 
     def delete(self):
         self.parent.local.collection(self.col_name).document(self.doc_id).delete()
+        synced_live = False
         if not self.parent.quota_exhausted and self.parent.live:
             try:
                 self.parent.live.collection(self.col_name).document(self.doc_id).delete()
+                synced_live = True
             except Exception:
                 pass
+        if not synced_live:
+            self.parent.queue_sync(self.col_name, self.doc_id, "delete")
 
 class ResilientCollectionRef:
     def __init__(self, parent, col_name: str):
@@ -221,9 +233,96 @@ class ResilientFirestoreClient:
         self.live = live_client
         self.local = local_client
         self.quota_exhausted = False
+        self.sync_queue = []
+        from datetime import datetime, timezone
+        self.last_sync_time = datetime.now(timezone.utc).isoformat()
 
     def collection(self, col_name: str):
         return ResilientCollectionRef(self, col_name)
+
+    def queue_sync(self, col_name: str, doc_id: str, action: str, data: Optional[dict] = None, merge: bool = False):
+        self.sync_queue = [q for q in self.sync_queue if not (q["col"] == col_name and q["id"] == doc_id)]
+        self.sync_queue.append({
+            "col": col_name,
+            "id": doc_id,
+            "action": action,
+            "data": data,
+            "merge": merge
+        })
+
+    def get_sync_status(self) -> dict:
+        schools_count = len(self.local._data.get("schools", {}))
+        notifs_count = len(self.local._data.get("notifications", {}))
+        return {
+            "live_firebase_configured": FIREBASE_ACTIVE,
+            "live_active": bool(self.live and not self.quota_exhausted),
+            "quota_exhausted": self.quota_exhausted,
+            "pending_sync_count": len(self.sync_queue),
+            "last_sync_time": self.last_sync_time,
+            "total_local_schools": schools_count,
+            "total_local_notifications": notifs_count,
+            "mode": "Live Cloud Firestore" if (self.live and not self.quota_exhausted) else "Local Resilient Cache (Queued for Firebase)"
+        }
+
+    def sync_to_firebase(self) -> dict:
+        if not self.live:
+            return {"status": "skipped", "message": "Live Firebase is not configured.", "synced_count": 0}
+
+        from datetime import datetime, timezone
+        synced_count = 0
+        failed_count = 0
+
+        # Try to flush pending queue
+        remaining_queue = []
+        for item in self.sync_queue:
+            try:
+                col = item["col"]
+                doc_id = item["id"]
+                action = item["action"]
+                doc_ref = self.live.collection(col).document(doc_id)
+                if action == "delete":
+                    doc_ref.delete()
+                elif action == "update":
+                    doc_ref.update(item.get("data") or {})
+                else:
+                    doc_ref.set(item.get("data") or {}, merge=item.get("merge", False))
+                synced_count += 1
+            except Exception as e:
+                err_str = str(e).lower()
+                if "quota exceeded" in err_str or "429" in err_str or "resource_exhausted" in err_str:
+                    self.quota_exhausted = True
+                    remaining_queue.append(item)
+                    failed_count += 1
+                    break
+                remaining_queue.append(item)
+                failed_count += 1
+
+        self.sync_queue = remaining_queue
+
+        # If live client succeeded, attempt full local data reconciliation
+        if not self.quota_exhausted:
+            self.last_sync_time = datetime.now(timezone.utc).isoformat()
+            try:
+                # Reconcile schools
+                for s_id, s_data in list(self.local._data.get("schools", {}).items()):
+                    try:
+                        self.live.collection("schools").document(s_id).set(s_data, merge=True)
+                        synced_count += 1
+                    except Exception as ex:
+                        if "quota" in str(ex).lower() or "429" in str(ex):
+                            self.quota_exhausted = True
+                            break
+            except Exception:
+                pass
+
+        return {
+            "status": "success" if not self.quota_exhausted else "partial_quota_limited",
+            "synced_count": synced_count,
+            "pending_count": len(self.sync_queue),
+            "quota_exhausted": self.quota_exhausted,
+            "last_sync_time": self.last_sync_time,
+            "message": f"Successfully synced {synced_count} items with Firebase." if not self.quota_exhausted else "Synced available items; remaining queued awaiting Cloud quota reset."
+        }
 
 local_client = LocalFirestoreDB(LOCAL_STORE_PATH)
 
@@ -237,4 +336,21 @@ def get_db():
 
 def is_live_firebase():
     return FIREBASE_ACTIVE and (not getattr(db, "quota_exhausted", False))
+
+def get_firebase_sync_status() -> dict:
+    if hasattr(db, "get_sync_status"):
+        return db.get_sync_status()
+    return {
+        "live_firebase_configured": FIREBASE_ACTIVE,
+        "live_active": False,
+        "quota_exhausted": False,
+        "pending_sync_count": 0,
+        "mode": "Local Firestore Mode"
+    }
+
+def trigger_firebase_sync() -> dict:
+    if hasattr(db, "sync_to_firebase"):
+        return db.sync_to_firebase()
+    return {"status": "local_only", "message": "Operating in local Firestore store mode."}
+
 

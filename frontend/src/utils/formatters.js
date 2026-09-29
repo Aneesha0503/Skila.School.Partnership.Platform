@@ -1,7 +1,49 @@
 /**
- * Utility functions for formatting CRM remarks, JSON objects, and structured data into executive-friendly text.
+ * Skila Platform Standard Formatting Utilities
  */
 
+export function formatINR(val, fallback = '₹0') {
+  if (val === undefined || val === null || val === '') return fallback;
+  const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^\d.-]/g, ''));
+  if (isNaN(num)) return fallback;
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0
+  }).format(num);
+}
+
+export function formatShortINR(val, fallback = '₹0') {
+  if (val === undefined || val === null || val === '') return fallback;
+  const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^\d.-]/g, ''));
+  if (isNaN(num)) return fallback;
+  if (num >= 10000000) return `₹${(num / 10000000).toFixed(2)} Cr`;
+  if (num >= 100000) return `₹${(num / 100000).toFixed(2)} L`;
+  if (num >= 1000) return `₹${(num / 1000).toFixed(1)} K`;
+  return `₹${Math.round(num)}`;
+}
+
+export function cleanNumber(val, fallback = 0) {
+  if (val === undefined || val === null) return fallback;
+  if (typeof val === 'number') return val;
+  const cleaned = String(val).replace(/[^\d.-]/g, '');
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? fallback : parsed;
+}
+
+export function formatDate(isoStr) {
+  if (!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch {
+    return String(isoStr).slice(0, 10);
+  }
+}
+
+/**
+ * Utility functions for formatting CRM remarks, JSON objects, and structured data into executive-friendly text.
+ */
 export function formatRemarksToCleanText(val) {
   if (!val) return '';
 
@@ -45,7 +87,6 @@ export function formatRemarksToCleanText(val) {
     return sections.join('\n\n');
   };
 
-  // If val is already an object/array
   if (typeof val === 'object') {
     try {
       return renderObjectToText(val).trim();
@@ -54,7 +95,6 @@ export function formatRemarksToCleanText(val) {
 
   let t = String(val).trim();
 
-  // Check if string is a JSON or stringified dictionary
   if ((t.startsWith('{') && t.endsWith('}')) || (t.startsWith('[') && t.endsWith(']'))) {
     try {
       const parsed = JSON.parse(t);
@@ -74,7 +114,6 @@ export function formatRemarksToCleanText(val) {
     }
   }
 
-  // 1. Unescape escaped unicode sequences & clean replacement artifacts
   t = t
     .replace(/\\u2019/g, "'")
     .replace(/\\u2018/g, "'")
@@ -85,7 +124,6 @@ export function formatRemarksToCleanText(val) {
     .replace(/\\u20b9/g, '₹')
     .replace(/\ufffd/g, "'");
 
-  // 2. Parse inline stringified JSON objects
   t = t.replace(/\{[^{}]+\}/g, (match) => {
     try {
       const parsed = JSON.parse(match);
@@ -101,7 +139,6 @@ export function formatRemarksToCleanText(val) {
     }
   });
 
-  // 3. Clean remaining pseudo-JSON brackets and quotes if present
   if (t.includes('{') || t.includes('}') || t.includes('":') || t.includes('": {')) {
     t = t
       .replace(/\{\s*"?([a-zA-Z0-9_ ]+)"?\s*:\s*\{/g, '\n📌 $1\n')
@@ -113,7 +150,6 @@ export function formatRemarksToCleanText(val) {
       .replace(/",?$/gm, '');
   }
 
-  // 4. Format stringified python-style arrays like ['Item 1', 'Item 2']
   t = t.replace(/\[\s*('[^']+'|"[^"]+")(?:\s*,\s*('[^']+'|"[^"]+"))*\s*\]/g, (match) => {
     try {
       const jsonArr = match.replace(/'/g, '"');
@@ -125,7 +161,6 @@ export function formatRemarksToCleanText(val) {
     return match;
   });
 
-  // 5. Clean redundant bullet markers and spaces
   t = t.replace(/[•\u2022]\s*[•\u2022]/g, '•');
   t = t.replace(/[•\u2022]\s*-\s*/g, '• ');
   t = t.replace(/^[ \t]*[•\u2022][ \t]*/gm, '  • ');
@@ -135,7 +170,6 @@ export function formatRemarksToCleanText(val) {
 
 /**
  * Resolves a lead status string and deal closed flag to a formatted badge configuration.
- * Supports all CRM statuses across the platform with distinctive colors and icons.
  */
 export function getLeadStatusBadge(leadStatus = '', dealClosed = false) {
   if (dealClosed || (leadStatus && String(leadStatus).trim().toLowerCase() === 'closed won')) {
@@ -162,8 +196,9 @@ export function getLeadStatusBadge(leadStatus = '', dealClosed = false) {
         className: 'bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-700'
       };
     case 'demo completed':
+    case 'demo done':
       return {
-        label: 'Demo Completed',
+        label: 'Demo Done',
         icon: '🎯',
         className: 'bg-sky-100 dark:bg-sky-950/80 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-700'
       };
@@ -174,14 +209,9 @@ export function getLeadStatusBadge(leadStatus = '', dealClosed = false) {
         className: 'bg-cyan-100 dark:bg-cyan-950/80 text-cyan-800 dark:text-cyan-300 border-cyan-300 dark:border-cyan-700'
       };
     case 'pilot started':
-      return {
-        label: 'Pilot Started',
-        icon: '🚀',
-        className: 'bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-700'
-      };
     case 'pilot running':
       return {
-        label: 'Pilot Running',
+        label: 'Pilot Started',
         icon: '🚀',
         className: 'bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-700'
       };
@@ -192,15 +222,10 @@ export function getLeadStatusBadge(leadStatus = '', dealClosed = false) {
         className: 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700'
       };
     case 'closed lost':
+    case 'not interested':
       return {
         label: 'Closed Lost',
         icon: '❌',
-        className: 'bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-700'
-      };
-    case 'not interested':
-      return {
-        label: 'Not Interested',
-        icon: '🚫',
         className: 'bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-700'
       };
     case 'new':
@@ -221,4 +246,3 @@ export function getLeadStatusBadge(leadStatus = '', dealClosed = false) {
       };
   }
 }
-
