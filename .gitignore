@@ -1,8 +1,7 @@
 # Node & Frontend
 node_modules/
 dist/
-!api/dist/
-!api/dist/**
+api/dist/
 .vite/
 npm-debug.log*
 yarn-debug.log*

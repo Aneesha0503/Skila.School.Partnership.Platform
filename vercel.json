@@ -3,7 +3,7 @@
   "outputDirectory": "dist",
   "functions": {
     "api/index.py": {
-      "includeFiles": "{backend/**,dist/**,api/dist/**}"
+      "includeFiles": "{backend/**,dist/**}"
     }
   },
   "rewrites": [
