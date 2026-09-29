@@ -202,6 +202,25 @@ class RosterProvisionRequest(BaseModel):
     channels: Optional[List[str]] = ["WhatsApp", "SMS"]
     custom_welcome_message: Optional[str] = ""
 
+class ExpenseCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="allow", coerce_numbers_to_str=True)
+    category: str
+    amount: float
+    description: str
+    date: Optional[str] = ""
+    logged_by: Optional[str] = "Admin"
+    payment_mode: Optional[str] = "Bank Transfer"
+    receipt_ref: Optional[str] = ""
+
+class PaymentCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="allow", coerce_numbers_to_str=True)
+    amount: float
+    date: Optional[str] = ""
+    payment_type: Optional[str] = "Advance Payment"
+    payment_mode: Optional[str] = "NEFT / RTGS"
+    reference_no: Optional[str] = ""
+    notes: Optional[str] = ""
+
 class AgentNoteCreate(BaseModel):
     model_config = ConfigDict(extra="allow", coerce_numbers_to_str=True)
     agent_name: Optional[str] = "Field Agent"

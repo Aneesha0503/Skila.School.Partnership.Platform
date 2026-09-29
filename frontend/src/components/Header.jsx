@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   School, FileSpreadsheet, Plus, Sun, Moon, 
   ShieldCheck, ChevronDown, Check, Lock, UserCheck, Crown, Briefcase, Bell, Clock,
-  LogOut, LogIn, UserPlus, User, Trophy, Award
+  LogOut, LogIn, UserPlus, User, Trophy, Award, TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -24,7 +24,8 @@ export default function Header({
   onMarkAllNotificationsRead,
   onOpenConfirmedModal,
   confirmedCount = 0,
-  onOpenAgentPerformanceModal
+  onOpenAgentPerformanceModal,
+  onOpenFinancialModal
 }) {
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -756,6 +757,19 @@ export default function Header({
                     <span className="hidden sm:inline">Agent Leaderboard</span>
                   </button>
                 )}
+
+                {/* Financial Tracker & P&L Statement Button */}
+                <button
+                  onClick={onOpenFinancialModal}
+                  title="View Revenue, Operational Expenses & Profit Margins (P&L)"
+                  className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-lg transition shadow-2xs cursor-pointer shrink-0"
+                >
+                  <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="hidden sm:inline">Financial Tracker</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-200 dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100 font-extrabold">
+                    P&L
+                  </span>
+                </button>
 
                 {/* Export Excel button */}
                 <button

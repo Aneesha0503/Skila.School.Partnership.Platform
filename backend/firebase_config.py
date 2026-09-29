@@ -141,11 +141,100 @@ class LocalFirestoreDB:
     def collection(self, col_name: str):
         return LocalCollectionRef(col_name, self._data, self.save)
 
-if not FIREBASE_ACTIVE:
-    db = LocalFirestoreDB(LOCAL_STORE_PATH)
+class ResilientDocumentRef:
+    def __init__(self, parent, col_name: str, doc_id: Optional[str]):
+        self.parent = parent
+        self.col_name = col_name
+        self.id = doc_id
+        self.doc_id = doc_id
+
+    def get(self):
+        if not self.parent.quota_exhausted and self.parent.live:
+            try:
+                return self.parent.live.collection(self.col_name).document(self.doc_id).get()
+            except Exception as e:
+                err_str = str(e).lower()
+                if "quota exceeded" in err_str or "429" in err_str or "resource_exhausted" in err_str:
+                    print(f"[Firebase] Live Firestore quota exceeded: {e}. Switching to Local Firestore mode.")
+                    self.parent.quota_exhausted = True
+                else:
+                    self.parent.quota_exhausted = True
+        return self.parent.local.collection(self.col_name).document(self.doc_id).get()
+
+    def set(self, data: dict, merge: bool = False):
+        self.parent.local.collection(self.col_name).document(self.doc_id).set(data, merge=merge)
+        if not self.parent.quota_exhausted and self.parent.live:
+            try:
+                self.parent.live.collection(self.col_name).document(self.doc_id).set(data, merge=merge)
+            except Exception as e:
+                err_str = str(e).lower()
+                if "quota exceeded" in err_str or "429" in err_str or "resource_exhausted" in err_str:
+                    self.parent.quota_exhausted = True
+        return self
+
+    def update(self, data: dict):
+        self.parent.local.collection(self.col_name).document(self.doc_id).update(data)
+        if not self.parent.quota_exhausted and self.parent.live:
+            try:
+                self.parent.live.collection(self.col_name).document(self.doc_id).update(data)
+            except Exception as e:
+                err_str = str(e).lower()
+                if "quota exceeded" in err_str or "429" in err_str or "resource_exhausted" in err_str:
+                    self.parent.quota_exhausted = True
+
+    def delete(self):
+        self.parent.local.collection(self.col_name).document(self.doc_id).delete()
+        if not self.parent.quota_exhausted and self.parent.live:
+            try:
+                self.parent.live.collection(self.col_name).document(self.doc_id).delete()
+            except Exception:
+                pass
+
+class ResilientCollectionRef:
+    def __init__(self, parent, col_name: str):
+        self.parent = parent
+        self.col_name = col_name
+
+    def document(self, doc_id: Optional[str] = None):
+        if not doc_id:
+            doc_id = str(uuid.uuid4())
+        return ResilientDocumentRef(self.parent, self.col_name, doc_id)
+
+    def stream(self):
+        if not self.parent.quota_exhausted and self.parent.live:
+            try:
+                for doc in self.parent.live.collection(self.col_name).stream():
+                    yield doc
+                return
+            except Exception as e:
+                err_str = str(e).lower()
+                if "quota exceeded" in err_str or "429" in err_str or "resource_exhausted" in err_str:
+                    print(f"[Firebase] Live Firestore quota exceeded: {e}. Switching to Local Firestore mode.")
+                    self.parent.quota_exhausted = True
+                else:
+                    self.parent.quota_exhausted = True
+        for doc in self.parent.local.collection(self.col_name).stream():
+            yield doc
+
+class ResilientFirestoreClient:
+    def __init__(self, live_client, local_client):
+        self.live = live_client
+        self.local = local_client
+        self.quota_exhausted = False
+
+    def collection(self, col_name: str):
+        return ResilientCollectionRef(self, col_name)
+
+local_client = LocalFirestoreDB(LOCAL_STORE_PATH)
+
+if FIREBASE_ACTIVE and db:
+    db = ResilientFirestoreClient(db, local_client)
+else:
+    db = local_client
 
 def get_db():
     return db
 
 def is_live_firebase():
-    return FIREBASE_ACTIVE
+    return FIREBASE_ACTIVE and (not getattr(db, "quota_exhausted", False))
+

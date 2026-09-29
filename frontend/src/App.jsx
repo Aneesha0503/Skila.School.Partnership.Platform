@@ -17,6 +17,7 @@ import AgentPerformanceModal from './components/AgentPerformanceModal';
 import MOUPreviewModal from './components/MOUPreviewModal';
 import PartnershipCertificateModal from './components/PartnershipCertificateModal';
 import StudentRosterModal from './components/StudentRosterModal';
+import FinancialAnalyticsModal from './components/FinancialAnalyticsModal';
 import AuthGateSection from './components/AuthGateSection';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { School, RefreshCw } from 'lucide-react';
@@ -55,6 +56,7 @@ function SkilaApp() {
   });
   const [accessModalOpen, setAccessModalOpen] = useState(false);
   const [agentPerformanceModalOpen, setAgentPerformanceModalOpen] = useState(false);
+  const [financialModalOpen, setFinancialModalOpen] = useState(false);
 
   // Administrative Hierarchy State
   const [selectedHierarchy, setSelectedHierarchy] = useState({
@@ -882,6 +884,7 @@ function SkilaApp() {
           schools.filter((s) => s.sales?.deal_closed || s.formalities?.is_deal_confirmed).length
         }
         onOpenAgentPerformanceModal={() => setAgentPerformanceModalOpen(true)}
+        onOpenFinancialModal={() => setFinancialModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -1092,6 +1095,15 @@ function SkilaApp() {
           onClose={() => setAgentPerformanceModalOpen(false)}
           onSelectSchool={(school) => handleSelectSchool(school, 'info')}
           userRole={userRole}
+        />
+      )}
+
+      {/* Financial Analytics & P&L Statement Modal */}
+      {isAuthenticated && financialModalOpen && (
+        <FinancialAnalyticsModal
+          isOpen={financialModalOpen}
+          onClose={() => setFinancialModalOpen(false)}
+          onSelectSchool={(school) => handleSelectSchool(school, 'info')}
         />
       )}
 
