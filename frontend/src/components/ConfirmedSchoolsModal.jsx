@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
   X, Trophy, Search, FileText, Award, CheckCircle2, Clock, 
-  ExternalLink, ArrowRight, ShieldCheck, DollarSign, Building2, MapPin, Sparkles, Filter
+  ExternalLink, ArrowRight, ShieldCheck, DollarSign, Building2, MapPin, Sparkles, Filter, FileSpreadsheet
 } from 'lucide-react';
 
 export default function ConfirmedSchoolsModal({ 
@@ -10,7 +10,8 @@ export default function ConfirmedSchoolsModal({
   onClose, 
   onOpenSchoolFormalities,
   onOpenMOU,
-  onOpenCertificate
+  onOpenCertificate,
+  onOpenRoster
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -252,8 +253,15 @@ export default function ConfirmedSchoolsModal({
                       <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700/80 text-slate-700 dark:text-slate-300 font-medium">
                         Payment: {form.invoice_status || 'Pending'}
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700/80 text-slate-700 dark:text-slate-300 font-medium">
-                        Roster: {form.roster_status || 'Pending'}
+                      <span className={`px-2 py-0.5 rounded font-medium flex items-center gap-1 ${
+                        form.roster_status === 'Verified'
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300'
+                          : form.roster_status === 'Uploaded'
+                          ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300'
+                          : 'bg-slate-100 dark:bg-slate-700/80 text-slate-700 dark:text-slate-300'
+                      }`}>
+                        <span>Roster: {form.roster_status || 'Pending'}</span>
+                        {(form.roster_total_students || 0) > 0 && <span className="font-bold">({form.roster_total_students})</span>}
                       </span>
                       <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700/80 text-slate-700 dark:text-slate-300 font-medium">
                         Lab: {form.lab_readiness || 'Pending'}
@@ -280,6 +288,17 @@ export default function ConfirmedSchoolsModal({
                         <FileText className="w-3.5 h-3.5 text-indigo-500" />
                         <span>MOU</span>
                       </button>
+
+                      {onOpenRoster && (
+                        <button
+                          onClick={() => onOpenRoster(s, form)}
+                          className="flex-1 md:flex-initial px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-800/60 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs font-semibold transition flex items-center justify-center gap-1 cursor-pointer"
+                          title="Manage Student Roster & Parent Welcome Kit"
+                        >
+                          <FileSpreadsheet className="w-3.5 h-3.5 text-purple-500" />
+                          <span>Roster</span>
+                        </button>
+                      )}
 
                       <button
                         onClick={() => onOpenCertificate(s, form)}

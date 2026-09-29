@@ -3,7 +3,7 @@ import {
   X, Building2, Cpu, DollarSign, MapPin, Phone, Mail, 
   Globe, User, CheckCircle2, XCircle, Edit3, Save, Sparkles, ExternalLink,
   Play, RefreshCw, Zap, Layers, Lock, ShieldCheck, UserCheck, ArrowLeft, Send, MessageSquare, AlertCircle,
-  FileText, Clock, Tag, Bell, CheckCheck, Award, PartyPopper
+  FileText, Clock, Tag, Bell, CheckCheck, Award, PartyPopper, FileSpreadsheet, Users
 } from 'lucide-react';
 import SendEmailModal from './SendEmailModal';
 import SendWhatsAppModal from './SendWhatsAppModal';
@@ -20,7 +20,8 @@ export default function SchoolDetailModal({
   initialTab = 'info',
   onTabChange,
   onOpenMOU,
-  onOpenCertificate
+  onOpenCertificate,
+  onOpenRoster
 }) {
   const formatRemarks = formatRemarksToCleanText;
 
@@ -2387,11 +2388,22 @@ export default function SchoolDetailModal({
 
                   {/* Section 3: Institutional SPOC & Roster Handover */}
                   <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs space-y-4">
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex flex-wrap items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 gap-2">
                       <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
                         <Building2 className="w-4 h-4 text-purple-500" />
                         <span>Stage 3: School SPOC & Academic Roster</span>
                       </h4>
+
+                      {onOpenRoster && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenRoster(school, formalities)}
+                          className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <FileSpreadsheet className="w-3.5 h-3.5" />
+                          <span>📁 Launch Roster & Welcome Kit Engine</span>
+                        </button>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -2462,6 +2474,49 @@ export default function SchoolDetailModal({
                           className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
                         />
                       </div>
+                    </div>
+
+                    {/* Live Roster Status Summary Strip */}
+                    <div className="p-3.5 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 flex flex-wrap items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
+                          <Users className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                            <span>Institutional Ingestion Engine</span>
+                            <span className={`text-[10px] font-bold px-2 py-0.2 rounded-full ${
+                              formalities.roster_status === 'Verified'
+                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300'
+                                : formalities.roster_status === 'Uploaded'
+                                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300'
+                                : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                            }`}>
+                              {formalities.roster_status || 'Pending'}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            {(formalities.roster_total_students || 0) > 0 ? (
+                              <span>
+                                {formalities.roster_total_students} Students Uploaded • {formalities.accounts_provisioned ? 'LMS Accounts Active' : 'Pending LMS Provisioning'} • {formalities.welcome_kit_dispatched ? 'Welcome Kits Sent' : 'Ready to Dispatch'}
+                              </span>
+                            ) : (
+                              <span>Upload student spreadsheet (.xlsx/.csv) or synthesize 350-student sample roster.</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {onOpenRoster && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenRoster(school, formalities)}
+                          className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Manage Roster</span>
+                        </button>
+                      )}
                     </div>
                   </div>
 

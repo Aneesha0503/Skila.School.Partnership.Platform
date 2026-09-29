@@ -16,6 +16,7 @@ import ConfirmedSchoolsModal from './components/ConfirmedSchoolsModal';
 import AgentPerformanceModal from './components/AgentPerformanceModal';
 import MOUPreviewModal from './components/MOUPreviewModal';
 import PartnershipCertificateModal from './components/PartnershipCertificateModal';
+import StudentRosterModal from './components/StudentRosterModal';
 import AuthGateSection from './components/AuthGateSection';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { School, RefreshCw } from 'lucide-react';
@@ -44,6 +45,7 @@ function SkilaApp() {
   const [confirmedData, setConfirmedData] = useState({ schools: [], metrics: {} });
   const [mouModalOpen, setMouModalOpen] = useState(false);
   const [certificateModalOpen, setCertificateModalOpen] = useState(false);
+  const [rosterModalOpen, setRosterModalOpen] = useState(false);
   const [selectedSchoolForDoc, setSelectedSchoolForDoc] = useState(null);
   const [formalitiesForDoc, setFormalitiesForDoc] = useState(null);
 
@@ -596,6 +598,12 @@ function SkilaApp() {
     setCertificateModalOpen(true);
   };
 
+  const handleOpenRoster = (school, form) => {
+    setSelectedSchoolForDoc(school);
+    setFormalitiesForDoc(form);
+    setRosterModalOpen(true);
+  };
+
   const handleOpenSchoolFormalities = (school) => {
     setConfirmedSchoolsModalOpen(false);
     handleSelectSchool(school, 'formalities');
@@ -1021,6 +1029,7 @@ function SkilaApp() {
           currentAgentName={currentAgentName}
           onOpenMOU={(school, form) => handleOpenMOU(school, form)}
           onOpenCertificate={(school, form) => handleOpenCertificate(school, form)}
+          onOpenRoster={(school, form) => handleOpenRoster(school, form)}
         />
       )}
 
@@ -1072,6 +1081,7 @@ function SkilaApp() {
           onOpenSchoolFormalities={handleOpenSchoolFormalities}
           onOpenMOU={handleOpenMOU}
           onOpenCertificate={handleOpenCertificate}
+          onOpenRoster={handleOpenRoster}
         />
       )}
 
@@ -1118,6 +1128,33 @@ function SkilaApp() {
             setCertificateModalOpen(false);
             setSelectedSchoolForDoc(null);
             setFormalitiesForDoc(null);
+          }}
+        />
+      )}
+
+      {/* Bulk Student Roster Importer & Parent Welcome Kit Modal */}
+      {isAuthenticated && rosterModalOpen && selectedSchoolForDoc && (
+        <StudentRosterModal
+          school={selectedSchoolForDoc}
+          formalities={formalitiesForDoc}
+          onClose={() => {
+            setRosterModalOpen(false);
+            setSelectedSchoolForDoc(null);
+            setFormalitiesForDoc(null);
+          }}
+          onFormalitiesUpdated={() => {
+            fetchSchools();
+            fetchConfirmedSchools();
+            fetchStats();
+            fetchNotifications();
+            if (selectedSchool && selectedSchool.id === selectedSchoolForDoc.id) {
+              fetchWithRole(`/api/schools/${selectedSchool.id}/formalities`)
+                .then(r => r.json())
+                .then(f => {
+                  setSelectedSchool(prev => ({ ...prev, formalities: f }));
+                })
+                .catch(() => {});
+            }
           }}
         />
       )}

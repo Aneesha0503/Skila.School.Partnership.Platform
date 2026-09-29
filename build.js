@@ -8,10 +8,16 @@ execSync('npm --prefix frontend install && npm --prefix frontend run build', { s
 const src = path.join(__dirname, 'frontend', 'dist');
 const dest = path.join(__dirname, 'dist');
 
-console.log('[Build] Copying frontend/dist to root dist...');
+console.log('[Build] Copying frontend/dist to root dist and api/dist...');
 if (fs.existsSync(dest)) {
   fs.rmSync(dest, { recursive: true, force: true });
 }
 fs.cpSync(src, dest, { recursive: true });
 
-console.log('[Build] Build complete! dist/ ready.');
+const apiDest = path.join(__dirname, 'api', 'dist');
+if (fs.existsSync(apiDest)) {
+  fs.rmSync(apiDest, { recursive: true, force: true });
+}
+fs.cpSync(src, apiDest, { recursive: true });
+
+console.log('[Build] Build complete! dist/ and api/dist/ ready.');

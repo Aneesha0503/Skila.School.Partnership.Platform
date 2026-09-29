@@ -116,6 +116,17 @@ class FormalitiesData(BaseModel):
     school_spoc_phone: Optional[str] = ""
     school_spoc_email: Optional[str] = ""
     roster_status: Optional[str] = "Pending"  # Pending, Uploaded, Verified
+    roster_total_students: Optional[int] = 0
+    roster_verified_students: Optional[int] = 0
+    roster_classes_breakdown: Optional[Dict[str, int]] = {}
+    roster_file_name: Optional[str] = ""
+    roster_uploaded_at: Optional[str] = ""
+    accounts_provisioned: Optional[bool] = False
+    accounts_provisioned_count: Optional[int] = 0
+    welcome_kit_dispatched: Optional[bool] = False
+    welcome_kit_dispatched_at: Optional[str] = ""
+    welcome_kit_channels: Optional[List[str]] = []
+    roster_students: Optional[List[Dict[str, Any]]] = []
     # Stage 5: Tech Lab Readiness & Training
     lab_readiness: Optional[str] = "Pending"  # Pending, Verified Ready
     teacher_training_date: Optional[str] = ""
@@ -151,10 +162,45 @@ class FormalitiesUpdateRequest(BaseModel):
     school_spoc_phone: Optional[str] = None
     school_spoc_email: Optional[str] = None
     roster_status: Optional[str] = None
+    roster_total_students: Optional[int] = None
+    roster_verified_students: Optional[int] = None
+    roster_classes_breakdown: Optional[Dict[str, int]] = None
+    roster_file_name: Optional[str] = None
+    roster_uploaded_at: Optional[str] = None
+    accounts_provisioned: Optional[bool] = None
+    accounts_provisioned_count: Optional[int] = None
+    welcome_kit_dispatched: Optional[bool] = None
+    welcome_kit_dispatched_at: Optional[str] = None
+    welcome_kit_channels: Optional[List[str]] = None
+    roster_students: Optional[List[Dict[str, Any]]] = None
     lab_readiness: Optional[str] = None
     teacher_training_date: Optional[str] = None
     teacher_training_status: Optional[str] = None
     rollout_target_date: Optional[str] = None
+
+class StudentRosterItem(BaseModel):
+    model_config = ConfigDict(extra="allow", coerce_numbers_to_str=True)
+    roll_number: Optional[str] = ""
+    student_name: str
+    class_grade: str
+    section: Optional[str] = "A"
+    parent_name: Optional[str] = ""
+    parent_phone: str
+    parent_email: Optional[str] = ""
+    lms_username: Optional[str] = ""
+    temp_password: Optional[str] = ""
+    provision_status: Optional[str] = "Pending"
+    welcome_dispatched: Optional[bool] = False
+
+class RosterUploadRequest(BaseModel):
+    model_config = ConfigDict(extra="allow", coerce_numbers_to_str=True)
+    file_name: Optional[str] = "students_roster.csv"
+    students: List[Dict[str, Any]] = []
+
+class RosterProvisionRequest(BaseModel):
+    model_config = ConfigDict(extra="allow", coerce_numbers_to_str=True)
+    channels: Optional[List[str]] = ["WhatsApp", "SMS"]
+    custom_welcome_message: Optional[str] = ""
 
 class AgentNoteCreate(BaseModel):
     model_config = ConfigDict(extra="allow", coerce_numbers_to_str=True)
