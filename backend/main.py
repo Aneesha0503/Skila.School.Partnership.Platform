@@ -1751,6 +1751,154 @@ def export_school_roster(school_id: str):
         headers={"Content-Disposition": f"attachment; filename={clean_name}_Student_Roster_Credentials.csv"}
     )
 
+@app.post("/api/schools/{school_id}/roster/student")
+def add_student_manually(
+    school_id: str,
+    payload: StudentRosterItem,
+    role: str = Depends(get_current_role),
+    current_agent: Optional[str] = Depends(get_current_agent_name)
+):
+    """
+    Manually appends or updates an individual student record on the school roster,
+    auto-generates unique LMS credentials, recalculates capacity metrics and progress.
+    """
+    doc_ref = db.collection("schools").document(school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+
+    data = doc.to_dict()
+    school_name = data.get("info", {}).get("school_name", "Partner School")
+    formalities = data.get("formalities") or data.get("sales", {}).get("formalities") or {}
+    if not formalities:
+        formalities = get_default_formalities_dict(school_id, data, current_agent or "Field Agent")
+
+    import re
+    clean_name = re.sub(r'[^a-zA-Z0-9]', '', school_name.lower())[:8] or "school"
+
+    students = list(formalities.get("roster_students") or [])
+    
+    roll = (payload.roll_number or "").strip()
+    if not roll:
+        roll = f"SK-{1000 + len(students) + 1}"
+
+    # Auto-generate LMS username if not provided
+    lms_user = payload.lms_username or f"skila.{clean_name}.{roll.lower()}"
+    temp_pwd = payload.temp_password or "SkilaAI@2026"
+
+    new_student = {
+        "roll_number": roll,
+        "student_name": payload.student_name.strip(),
+        "class_grade": payload.class_grade.strip(),
+        "section": (payload.section or "A").strip(),
+        "parent_name": (payload.parent_name or "Parent").strip(),
+        "parent_phone": payload.parent_phone.strip(),
+        "parent_email": (payload.parent_email or "").strip(),
+        "lms_username": lms_user,
+        "temp_password": temp_pwd,
+        "provision_status": payload.provision_status or "Pending",
+        "welcome_dispatched": payload.welcome_dispatched or False
+    }
+
+    # Check if student with same roll number exists, if so update, else append
+    existing_idx = next((i for i, s in enumerate(students) if s.get("roll_number") == roll), None)
+    if existing_idx is not None:
+        students[existing_idx] = new_student
+    else:
+        students.append(new_student)
+
+    # Recompute class breakdown
+    breakdown = {}
+    for s in students:
+        c = s.get("class_grade", "Grade 1")
+        breakdown[c] = breakdown.get(c, 0) + 1
+
+    now = datetime.now(timezone.utc).isoformat()
+    agreed_capacity = get_agreed_mou_capacity(data)
+    uploaded_count = len(students)
+
+    formalities["roster_students"] = students
+    formalities["roster_total_students"] = uploaded_count
+    formalities["roster_classes_breakdown"] = breakdown
+    if formalities.get("roster_status") in [None, "", "Pending"]:
+        formalities["roster_status"] = "Uploaded"
+    formalities["formalities_updated_at"] = now
+
+    pct = compute_formalities_progress(formalities)
+    formalities["progress_pct"] = pct
+
+    data["formalities"] = formalities
+    if "sales" in data:
+        data["sales"]["formalities"] = formalities
+    data["updated_at"] = now
+    doc_ref.set(data)
+
+    return {
+        "status": "success",
+        "message": f"Student '{payload.student_name}' successfully added to roster.",
+        "student": new_student,
+        "uploaded_count": uploaded_count,
+        "agreed_capacity": agreed_capacity,
+        "capacity_status": "matched" if uploaded_count == agreed_capacity else ("over_capacity" if uploaded_count > agreed_capacity else "under_capacity"),
+        "classes_breakdown": breakdown
+    }
+
+@app.delete("/api/schools/{school_id}/roster/student/{roll_number}")
+def delete_student_from_roster(
+    school_id: str,
+    roll_number: str,
+    role: str = Depends(get_current_role),
+    current_agent: Optional[str] = Depends(get_current_agent_name)
+):
+    """Deletes an individual student from the school roster and updates capacity metrics."""
+    doc_ref = db.collection("schools").document(school_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="School not found")
+
+    data = doc.to_dict()
+    formalities = data.get("formalities") or data.get("sales", {}).get("formalities") or {}
+    students = list(formalities.get("roster_students") or [])
+
+    initial_len = len(students)
+    students = [s for s in students if s.get("roll_number") != roll_number]
+    if len(students) == initial_len:
+        raise HTTPException(status_code=404, detail="Student roll number not found in roster")
+
+    breakdown = {}
+    for s in students:
+        c = s.get("class_grade", "Grade 1")
+        breakdown[c] = breakdown.get(c, 0) + 1
+
+    now = datetime.now(timezone.utc).isoformat()
+    agreed_capacity = get_agreed_mou_capacity(data)
+    uploaded_count = len(students)
+
+    formalities["roster_students"] = students
+    formalities["roster_total_students"] = uploaded_count
+    formalities["roster_classes_breakdown"] = breakdown
+    if uploaded_count == 0:
+        formalities["roster_status"] = "Pending"
+        formalities["accounts_provisioned"] = False
+        formalities["welcome_kit_dispatched"] = False
+    formalities["formalities_updated_at"] = now
+
+    pct = compute_formalities_progress(formalities)
+    formalities["progress_pct"] = pct
+
+    data["formalities"] = formalities
+    if "sales" in data:
+        data["sales"]["formalities"] = formalities
+    data["updated_at"] = now
+    doc_ref.set(data)
+
+    return {
+        "status": "success",
+        "message": f"Student with roll number '{roll_number}' removed from roster.",
+        "uploaded_count": uploaded_count,
+        "classes_breakdown": breakdown
+    }
+
 @app.post("/api/schools/{school_id}/agent-notes")
 
 def add_agent_note(

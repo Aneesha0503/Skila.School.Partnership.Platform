@@ -3,7 +3,7 @@ import {
   X, UploadCloud, Users, CheckCircle2, AlertTriangle, MessageSquare, Send,
   FileSpreadsheet, Sparkles, Download, Copy, Check, Search, Filter, ShieldCheck,
   Smartphone, Mail, RefreshCw, Key, ChevronRight, ArrowUpDown, School, AlertCircle,
-  Clock
+  Clock, Plus, Edit2, Trash2, UserPlus, Save
 } from 'lucide-react';
 
 export default function StudentRosterModal({
@@ -47,6 +47,19 @@ export default function StudentRosterModal({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 25;
 
+  // Manual Add / Edit Student Modal State
+  const [isAddEditOpen, setIsAddEditOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null); // null if adding new
+  const [studentForm, setStudentForm] = useState({
+    student_name: '',
+    roll_number: '',
+    class_grade: 'Grade 6',
+    section: 'A',
+    parent_name: '',
+    parent_phone: '',
+    parent_email: ''
+  });
+
   // Batch provisioning setup
   const [channels, setChannels] = useState({
     whatsapp: true,
@@ -79,6 +92,107 @@ export default function StudentRosterModal({
   useEffect(() => {
     fetchRoster();
   }, [school?.id]);
+
+  // Open Add Student Modal
+  const handleOpenAddStudent = () => {
+    const nextRollNum = `SK-${1000 + (rosterData.students?.length || 0) + 1}`;
+    setEditingStudent(null);
+    setStudentForm({
+      student_name: '',
+      roll_number: nextRollNum,
+      class_grade: 'Grade 6',
+      section: 'A',
+      parent_name: '',
+      parent_phone: '+91 ',
+      parent_email: ''
+    });
+    setIsAddEditOpen(true);
+  };
+
+  // Open Edit Student Modal
+  const handleOpenEditStudent = (st) => {
+    setEditingStudent(st);
+    setStudentForm({
+      student_name: st.student_name || '',
+      roll_number: st.roll_number || '',
+      class_grade: st.class_grade || 'Grade 6',
+      section: st.section || 'A',
+      parent_name: st.parent_name || '',
+      parent_phone: st.parent_phone || '+91 ',
+      parent_email: st.parent_email || ''
+    });
+    setIsAddEditOpen(true);
+  };
+
+  // Save Student (Add or Edit)
+  const handleSaveStudent = async (e) => {
+    e.preventDefault();
+    if (!studentForm.student_name.trim()) {
+      setErrorMsg('Please enter student name.');
+      return;
+    }
+    if (!studentForm.parent_phone.trim() || studentForm.parent_phone.trim() === '+91') {
+      setErrorMsg('Please enter valid parent mobile number.');
+      return;
+    }
+
+    setActionLoading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      const res = await fetch(`/api/schools/${school.id}/roster/student`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_name: studentForm.student_name.trim(),
+          roll_number: studentForm.roll_number.trim(),
+          class_grade: studentForm.class_grade.trim(),
+          section: studentForm.section.trim(),
+          parent_name: studentForm.parent_name.trim(),
+          parent_phone: studentForm.parent_phone.trim(),
+          parent_email: studentForm.parent_email.trim()
+        })
+      });
+
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const data = await res.json();
+      setIsAddEditOpen(false);
+      setSuccessMsg(editingStudent ? `✅ Student details updated successfully.` : `✅ Student '${studentForm.student_name}' added to roster! Total students: ${data.uploaded_count}`);
+      fetchRoster();
+      if (onFormalitiesUpdated) onFormalitiesUpdated();
+    } catch (err) {
+      console.error('Error saving student:', err);
+      setErrorMsg('Failed to save student details. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Delete Student
+  const handleDeleteStudent = async (rollNumber, studentName) => {
+    if (!window.confirm(`Are you sure you want to remove student "${studentName}" (${rollNumber}) from the roster?`)) {
+      return;
+    }
+
+    setActionLoading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      const res = await fetch(`/api/schools/${school.id}/roster/student/${encodeURIComponent(rollNumber)}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const data = await res.json();
+      setSuccessMsg(`🗑️ Student '${studentName}' removed. Roster count is now ${data.uploaded_count}.`);
+      fetchRoster();
+      if (onFormalitiesUpdated) onFormalitiesUpdated();
+    } catch (err) {
+      console.error('Error deleting student:', err);
+      setErrorMsg('Failed to remove student from roster.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   // 1-Click Load Realistic Sample Roster
   const handleLoadSampleRoster = async () => {
@@ -292,6 +406,13 @@ export default function StudentRosterModal({
 
           <div className="flex items-center gap-2">
             <button
+              onClick={handleOpenAddStudent}
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>➕ Add Student</span>
+            </button>
+            <button
               onClick={fetchRoster}
               disabled={loading || actionLoading}
               title="Refresh Roster"
@@ -396,47 +517,57 @@ export default function StudentRosterModal({
         </div>
 
         {/* ================= TABS NAVIGATION ================= */}
-        <div className="px-6 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2 bg-white dark:bg-slate-900">
-          <button
-            onClick={() => setActiveTab('ingest')}
-            className={`py-3 px-4 text-xs font-semibold border-b-2 flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'ingest'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-            }`}
-          >
-            <UploadCloud className="w-4 h-4" />
-            <span>1. Ingestion & Capacity Validator</span>
-          </button>
+        <div className="px-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 bg-white dark:bg-slate-900">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab('ingest')}
+              className={`py-3 px-4 text-xs font-semibold border-b-2 flex items-center gap-2 transition-all cursor-pointer ${
+                activeTab === 'ingest'
+                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+              }`}
+            >
+              <UploadCloud className="w-4 h-4" />
+              <span>1. Ingestion & Capacity Validator</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('directory')}
+              className={`py-3 px-4 text-xs font-semibold border-b-2 flex items-center gap-2 transition-all cursor-pointer ${
+                activeTab === 'directory'
+                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>2. Student & Parent Directory</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 font-mono">
+                {uploadedCount}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('provision')}
+              className={`py-3 px-4 text-xs font-semibold border-b-2 flex items-center gap-2 transition-all cursor-pointer ${
+                activeTab === 'provision'
+                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+              }`}
+            >
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span>3. Batch LMS & Parent Welcome Kit</span>
+              {rosterData.accounts_provisioned && (
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              )}
+            </button>
+          </div>
 
           <button
-            onClick={() => setActiveTab('directory')}
-            className={`py-3 px-4 text-xs font-semibold border-b-2 flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'directory'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-            }`}
+            onClick={handleOpenAddStudent}
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 text-xs font-bold transition cursor-pointer"
           >
-            <Users className="w-4 h-4" />
-            <span>2. Student & Parent Directory</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 font-mono">
-              {uploadedCount}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('provision')}
-            className={`py-3 px-4 text-xs font-semibold border-b-2 flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'provision'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-            }`}
-          >
-            <Sparkles className="w-4 h-4 text-amber-500" />
-            <span>3. Batch LMS & Parent Welcome Kit</span>
-            {rosterData.accounts_provisioned && (
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            )}
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Student Manually</span>
           </button>
         </div>
 
@@ -459,11 +590,11 @@ export default function StudentRosterModal({
         {activeTab === 'ingest' && (
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             
-            {/* Top Row: Upload Area + Quick Load Sample */}
+            {/* Top Row: Upload Area + Manual Entry Card + Quick Load Sample */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               
               {/* Drag and Drop Zone */}
-              <div className="md:col-span-2 border-2 border-dashed border-indigo-200 dark:border-indigo-900/60 rounded-2xl p-6 bg-indigo-50/20 dark:bg-indigo-950/10 flex flex-col items-center justify-center text-center hover:border-indigo-400 transition-all group">
+              <div className="border-2 border-dashed border-indigo-200 dark:border-indigo-900/60 rounded-2xl p-5 bg-indigo-50/20 dark:bg-indigo-950/10 flex flex-col items-center justify-center text-center hover:border-indigo-400 transition-all group">
                 <input
                   type="file"
                   id="roster-file-input"
@@ -472,54 +603,77 @@ export default function StudentRosterModal({
                   className="hidden"
                   disabled={actionLoading}
                 />
-                <div className="w-14 h-14 rounded-2xl bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                  <UploadCloud className="w-7 h-7" />
+                <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
+                  <UploadCloud className="w-6 h-6" />
                 </div>
                 <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                  Upload Student Roster (.xlsx or .csv)
+                  Bulk Spreadsheet Ingestion
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1 mb-4">
-                  Drag & drop your institutional student spreadsheet containing Roll No, Class, Section, and Parent Mobile.
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mt-1 mb-3">
+                  Upload complete student roster (.xlsx / .csv) with Class/Section & Parent Mobile.
                 </p>
                 
-                <div className="flex flex-wrap items-center justify-center gap-3">
+                <div className="flex flex-col gap-2 w-full max-w-[210px]">
                   <label
                     htmlFor="roster-file-input"
-                    className="cursor-pointer px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors flex items-center gap-2"
+                    className="cursor-pointer py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors flex items-center justify-center gap-1.5"
                   >
                     <FileSpreadsheet className="w-4 h-4" />
-                    <span>Choose Spreadsheet File</span>
+                    <span>Choose File (.xlsx/.csv)</span>
                   </label>
 
                   <a
                     href={`/api/schools/${school?.id}/roster/template`}
                     download="Skila_Student_Roster_Template.csv"
-                    className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-750 rounded-xl text-xs font-semibold transition-colors flex items-center gap-2 cursor-pointer"
+                    className="py-1.5 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span>Download Blank Template</span>
+                    <span>Download Template</span>
                   </a>
-                </div>
-
-                <div className="text-[11px] text-slate-400 mt-3 flex items-center gap-3">
-                  <span>Supports: .csv, .xlsx</span>
-                  <span>•</span>
-                  <span>Required columns: Student Name, Class, Parent Mobile</span>
                 </div>
               </div>
 
-              {/* Instant 1-Click Sample Generator Card */}
+              {/* Card 2: Manual Student Entry */}
+              <div className="border border-emerald-200 dark:border-emerald-900/50 rounded-2xl p-5 bg-gradient-to-br from-emerald-50/60 to-teal-50/30 dark:from-emerald-950/20 dark:to-teal-950/20 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-bold text-xs uppercase tracking-wider mb-2">
+                    <UserPlus className="w-4 h-4" />
+                    <span>Manual Addition</span>
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Add Individual Students
+                  </h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                    Directly enroll individual students one-by-one with roll number, class/section, parent phone, and auto-generated LMS credentials.
+                  </p>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    onClick={handleOpenAddStudent}
+                    className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>➕ Add Student Details</span>
+                  </button>
+                  <p className="text-[10px] text-center text-slate-400 mt-2">
+                    Ideal for late admissions and manual adjustments
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 3: 1-Click Realistic Sample Generator */}
               <div className="border border-purple-200 dark:border-purple-900/50 rounded-2xl p-5 bg-gradient-to-br from-purple-50/60 to-indigo-50/30 dark:from-purple-950/20 dark:to-indigo-950/20 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-bold text-xs uppercase tracking-wider mb-2">
                     <Sparkles className="w-4 h-4" />
-                    <span>Demo & Instant Loader</span>
+                    <span>Demo Fixture</span>
                   </div>
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Need realistic roster data for testing?
+                    Synthesize Full Roster
                   </h4>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                    Auto-synthesize {agreedCapacity} verified student records distributed across Grades 1–10 with authentic Indian names, parent contacts, and LMS IDs.
+                    Auto-generate {agreedCapacity} realistic student records distributed across Grades 1–10 matching MOU capacity for instant verification.
                   </p>
                 </div>
 
@@ -530,7 +684,7 @@ export default function StudentRosterModal({
                     className="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4" />
-                    <span>{actionLoading ? 'Synthesizing...' : `⚡ Load Realistic Roster (${agreedCapacity} Students)`}</span>
+                    <span>{actionLoading ? 'Synthesizing...' : `⚡ Load ${agreedCapacity} Records`}</span>
                   </button>
                   <p className="text-[10px] text-center text-slate-400 mt-2">
                     Instant 1-click test fixture for onboarding demonstrations
@@ -591,29 +745,37 @@ export default function StudentRosterModal({
 
               {/* Status explanation */}
               {uploadedCount === 0 ? (
-                <div className="p-3 bg-slate-100 dark:bg-slate-800/80 rounded-xl text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-slate-400" />
-                  <span>No student roster spreadsheet uploaded yet. Upload a CSV or click <strong>Load Realistic Roster</strong> above to begin.</span>
+                <div className="p-3 bg-slate-100 dark:bg-slate-800/80 rounded-xl text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span>No students registered yet. Click <strong>➕ Add Student Details</strong> or upload a roster to begin.</span>
+                  </div>
+                  <button
+                    onClick={handleOpenAddStudent}
+                    className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs shrink-0 cursor-pointer"
+                  >
+                    Add First Student
+                  </button>
                 </div>
               ) : uploadedCount === agreedCapacity ? (
                 <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>
-                    <strong>Capacity Validated:</strong> The uploaded roster contains exactly <strong>{uploadedCount} students</strong>, fulfilling the institutional MOU capacity. All student records are ready for 1-click batch LMS account creation.
+                    <strong>Capacity Validated:</strong> The roster contains exactly <strong>{uploadedCount} students</strong>, fulfilling the institutional MOU capacity. All student records are ready for 1-click batch LMS account creation.
                   </span>
                 </div>
               ) : uploadedCount > agreedCapacity ? (
                 <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                   <span>
-                    <strong>Over-Capacity Notice:</strong> Uploaded roster has <strong>{uploadedCount} students</strong> ({uploadedCount - agreedCapacity} extra beyond the agreed {agreedCapacity} MOU quota). Per terms, additional students will be billed at standard discounted rate.
+                    <strong>Over-Capacity Notice:</strong> Roster currently has <strong>{uploadedCount} students</strong> ({uploadedCount - agreedCapacity} extra beyond the agreed {agreedCapacity} MOU quota). Per terms, additional students will be billed at standard discounted rate.
                   </span>
                 </div>
               ) : (
                 <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/50 rounded-xl text-xs text-indigo-800 dark:text-indigo-300 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-indigo-600 shrink-0" />
                   <span>
-                    <strong>Partial Ingestion:</strong> {uploadedCount} of {agreedCapacity} students uploaded. School coordinator can upload additional sections later.
+                    <strong>Partial Ingestion:</strong> {uploadedCount} of {agreedCapacity} students uploaded. School coordinator can upload additional sections or add students manually.
                   </span>
                 </div>
               )}
@@ -680,7 +842,7 @@ export default function StudentRosterModal({
         {/* ================= TAB 2: STUDENT & PARENT DIRECTORY ================= */}
         {activeTab === 'directory' && (
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Filter Toolbar */}
+            {/* Filter & Action Toolbar */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-wrap items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2 flex-1 min-w-[240px]">
                 <div className="relative flex-1">
@@ -695,7 +857,7 @@ export default function StudentRosterModal({
                   {searchTerm && (
                     <button
                       onClick={() => setSearchTerm('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -732,6 +894,15 @@ export default function StudentRosterModal({
                 </select>
               </div>
 
+              {/* Add Student Button */}
+              <button
+                onClick={handleOpenAddStudent}
+                className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Student</span>
+              </button>
+
               {/* Export Button */}
               <a
                 href={`/api/schools/${school?.id}/roster/export`}
@@ -739,7 +910,7 @@ export default function StudentRosterModal({
                 className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Export Roster CSV</span>
+                <span>Export CSV</span>
               </a>
             </div>
 
@@ -749,7 +920,13 @@ export default function StudentRosterModal({
                 <div className="p-12 text-center text-slate-400 text-xs">
                   <Users className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
                   <p className="font-semibold text-slate-600 dark:text-slate-300">No students found matching your criteria</p>
-                  <p className="mt-1">Try adjusting your search filters or upload a student list in Tab 1.</p>
+                  <p className="mt-1">Try adjusting your filters, or click "Add Student" above to enter a record manually.</p>
+                  <button
+                    onClick={handleOpenAddStudent}
+                    className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs cursor-pointer"
+                  >
+                    ➕ Add Student Now
+                  </button>
                 </div>
               ) : (
                 <table className="w-full text-left border-collapse text-xs">
@@ -763,6 +940,7 @@ export default function StudentRosterModal({
                       <th className="py-2.5 px-4">Temp Password</th>
                       <th className="py-2.5 px-4">Account Status</th>
                       <th className="py-2.5 px-4">Welcome Kit</th>
+                      <th className="py-2.5 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -822,6 +1000,24 @@ export default function StudentRosterModal({
                               <MessageSquare className="w-3 h-3" />
                               <span>{isWelcomeSent ? 'Dispatched' : 'Queued'}</span>
                             </span>
+                          </td>
+                          <td className="py-2.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => handleOpenEditStudent(st)}
+                                className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                                title="Edit Student Details"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteStudent(st.roll_number, st.student_name)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+                                title="Delete Student"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1096,6 +1292,172 @@ export default function StudentRosterModal({
         </div>
 
       </div>
+
+      {/* ================= MANUAL ADD / EDIT STUDENT MODAL ================= */}
+      {isAddEditOpen && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold">
+                  <UserPlus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    {editingStudent ? 'Edit Student Details' : 'Add Student Manually'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {schoolName} • Institutional Roster
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsAddEditOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Form Body */}
+            <form onSubmit={handleSaveStudent} className="p-5 space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Student Full Name <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={studentForm.student_name}
+                    onChange={(e) => setStudentForm({ ...studentForm, student_name: e.target.value })}
+                    placeholder="e.g. Aarav Sharma"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Roll Number / ID
+                  </label>
+                  <input
+                    type="text"
+                    value={studentForm.roll_number}
+                    onChange={(e) => setStudentForm({ ...studentForm, roll_number: e.target.value })}
+                    placeholder="e.g. SK-1051"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Grade / Class
+                    </label>
+                    <select
+                      value={studentForm.class_grade}
+                      onChange={(e) => setStudentForm({ ...studentForm, class_grade: e.target.value })}
+                      className="w-full px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium cursor-pointer"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(g => (
+                        <option key={g} value={`Grade ${g}`}>Grade {g}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Section
+                    </label>
+                    <select
+                      value={studentForm.section}
+                      onChange={(e) => setStudentForm({ ...studentForm, section: e.target.value })}
+                      className="w-full px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium cursor-pointer"
+                    >
+                      {['A', 'B', 'C', 'D', 'E'].map(sec => (
+                        <option key={sec} value={sec}>Section {sec}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Parent / Guardian Name
+                  </label>
+                  <input
+                    type="text"
+                    value={studentForm.parent_name}
+                    onChange={(e) => setStudentForm({ ...studentForm, parent_name: e.target.value })}
+                    placeholder="e.g. Mr. Ramesh Sharma"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Parent Mobile / WhatsApp <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={studentForm.parent_phone}
+                    onChange={(e) => setStudentForm({ ...studentForm, parent_phone: e.target.value })}
+                    placeholder="+91 98765 43210"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Parent Email Address (Optional)
+                  </label>
+                  <input
+                    type="email"
+                    value={studentForm.parent_email}
+                    onChange={(e) => setStudentForm({ ...studentForm, parent_email: e.target.value })}
+                    placeholder="parent@gmail.com"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+              </div>
+
+              {/* Dynamic Credentials Preview */}
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-1">
+                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  Automated Skila LMS Access Credentials:
+                </div>
+                <div className="font-mono text-[11px] text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span>Username: skila.{schoolName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 6)}.{studentForm.roll_number.toLowerCase().replace(/[^a-z0-9]/g, '') || 'new'}</span>
+                  <span className="text-indigo-600 dark:text-indigo-400 font-bold">Temp Pwd: SkilaAI@2026</span>
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsAddEditOpen(false)}
+                  className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{actionLoading ? 'Saving...' : editingStudent ? 'Update Student' : 'Add to Roster'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
