@@ -1095,6 +1095,17 @@ function SkilaApp() {
             setSelectedSchoolForDoc(null);
             setFormalitiesForDoc(null);
           }}
+          onSaveFormalities={(updatedForm) => {
+            setFormalitiesForDoc((prev) => ({ ...(prev || {}), ...updatedForm }));
+            fetchSchools();
+            fetchConfirmedSchools();
+            if (selectedSchool && selectedSchool.id === selectedSchoolForDoc.id) {
+              setSelectedSchool((prev) => ({
+                ...prev,
+                formalities: { ...(prev.formalities || {}), ...updatedForm }
+              }));
+            }
+          }}
         />
       )}
 
