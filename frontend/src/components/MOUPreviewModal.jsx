@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Printer,
@@ -20,22 +20,106 @@ import {
   DollarSign,
   ShieldCheck,
   Download,
-  AlertCircle
+  AlertCircle,
+  Upload,
+  Image as ImageIcon,
+  Camera,
+  RefreshCw
 } from 'lucide-react';
 
 /**
- * Generates initial default MOU data strictly matching the authentic 7-page
- * legal agreement between Tech Nirmaan (Skila.ai) and the Partner School.
+ * Extracts clean, distinguished initials from school name.
+ * e.g. "The Hyderabad Public School" -> "HPS"
+ * "Delhi Public School" -> "DPS"
+ * "Sri Siddartha High School" -> "SSHS"
+ */
+function getSchoolInitials(name = '') {
+  const stopWords = new Set(['the', 'of', 'and', '&', 'for', 'in', 'at']);
+  const words = name
+    .trim()
+    .split(/\s+/)
+    .filter((w) => !stopWords.has(w.toLowerCase()));
+  if (words.length === 0) return 'SCH';
+  if (words.length === 1) return words[0].substring(0, 3).toUpperCase();
+  return words
+    .slice(0, 4)
+    .map((w) => w[0]?.toUpperCase() || '')
+    .join('');
+}
+
+/**
+ * Renders an elegant fallback academic crest with school initials.
+ */
+function SchoolInitialsCrest({ schoolName, size = 'md' }) {
+  const initials = getSchoolInitials(schoolName);
+  const sizeClasses = size === 'sm' ? 'w-10 h-10 text-xs' : 'w-14 h-14 text-sm';
+
+  return (
+    <div
+      className={`${sizeClasses} shrink-0 rounded-full bg-gradient-to-tr from-slate-900 via-indigo-950 to-blue-900 text-amber-300 font-serif font-bold flex flex-col items-center justify-center border-2 border-amber-400/80 shadow-md relative select-none`}
+      title={`${schoolName} Emblem`}
+    >
+      <div className="absolute inset-1 rounded-full border border-amber-300/40 pointer-events-none" />
+      <span className="tracking-widest font-black drop-shadow-xs">{initials}</span>
+      <span className="text-[7px] text-amber-200/90 font-sans tracking-tighter uppercase font-semibold">
+        ACADEMY
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Resolves initial school logos array:
+ * 1. Checks saved full data
+ * 2. Checks saved formalities logo fields
+ * 3. Checks school info logo
+ * 4. Checks if school name matches Sri Siddartha High School (from PDF)
+ * 5. Otherwise returns empty array so user can upload any logo(s)
+ */
+function getInitialSchoolLogos(school, form) {
+  if (form?.mou_full_data?.schoolLogos && Array.isArray(form.mou_full_data.schoolLogos) && form.mou_full_data.schoolLogos.length > 0) {
+    return form.mou_full_data.schoolLogos;
+  }
+  if (form?.school_logos && Array.isArray(form.school_logos) && form.school_logos.length > 0) {
+    return form.school_logos;
+  }
+  if (form?.mou_logos && Array.isArray(form.mou_logos) && form.mou_logos.length > 0) {
+    return form.mou_logos;
+  }
+  if (form?.mou_logo_url) {
+    return [{ id: 'logo-init-1', url: form.mou_logo_url, name: 'School Logo' }];
+  }
+  if (school?.info?.logo_url) {
+    return [{ id: 'logo-init-1', url: school.info.logo_url, name: 'School Logo' }];
+  }
+  if (school?.info?.logos && Array.isArray(school.info.logos) && school.info.logos.length > 0) {
+    return school.info.logos;
+  }
+
+  // Only default to Sri Siddartha crest if the school is actually Sri Siddartha
+  const name = (school?.info?.school_name || '').toLowerCase();
+  if (name.includes('siddartha') || name.includes('siddhartha')) {
+    return [{ id: 'crest-siddartha', url: '/pdf_school_crest.png', name: 'Sri Siddartha Crest' }];
+  }
+
+  return [];
+}
+
+/**
+ * Generates initial default MOU data matching the authentic 7-page legal agreement.
  */
 function getInitialMOUData(school, formalities) {
   const info = school?.info || {};
   const hierarchy = school?.hierarchy || {};
   const form = formalities || school?.formalities || school?.sales?.formalities || {};
-  const sales = school?.sales || {};
 
   // Check if there is previously saved custom MOU data
   if (form.mou_full_data && typeof form.mou_full_data === 'object') {
-    return form.mou_full_data;
+    const existing = { ...form.mou_full_data };
+    if (!existing.schoolLogos || !Array.isArray(existing.schoolLogos)) {
+      existing.schoolLogos = getInitialSchoolLogos(school, form);
+    }
+    return existing;
   }
 
   const defaultStudents = parseInt(info.total_students || 350, 10) || 350;
@@ -59,6 +143,9 @@ function getInitialMOUData(school, formalities) {
     status: form.mou_status || 'Drafting',
     academicYear: form.academic_year || `${yearStr}-${yearStr + 1}`,
 
+    // Uploadable School Logos (multiple supported)
+    schoolLogos: getInitialSchoolLogos(school, form),
+
     // Party 1: Tech Nirmaan
     techNirmaan: {
       name: 'Tech Nirmaan',
@@ -71,10 +158,10 @@ function getInitialMOUData(school, formalities) {
 
     // Party 2: Partner School
     schoolParty: {
-      name: info.school_name || 'Sri Siddartha High School',
-      campusAddress: info.full_address || `${hierarchy.mandal ? hierarchy.mandal + ', ' : ''}${hierarchy.district ? hierarchy.district + ', ' : ''}${hierarchy.state || 'Telangana'} – ${info.pincode || '505467'}`,
-      signatoryName: form.mou_signatory_name || info.correspondent_name || info.principal_name || 'Dasari Sripal Reddy',
-      signatoryTitle: form.mou_signatory_designation || 'Chairman',
+      name: info.school_name || 'Partner School',
+      campusAddress: info.full_address || `${hierarchy.mandal ? hierarchy.mandal + ', ' : ''}${hierarchy.district ? hierarchy.district + ', ' : ''}${hierarchy.state || 'Telangana'} – ${info.pincode || '500001'}`,
+      signatoryName: form.mou_signatory_name || info.correspondent_name || info.principal_name || 'Authorized Signatory',
+      signatoryTitle: form.mou_signatory_designation || 'Principal / Chairman',
       coordinatorName: form.school_spoc_name || info.principal_name || 'Designated School Coordinator',
       coordinatorTitle: form.school_spoc_designation || 'Institutional SPOC',
       udiseCode: info.udise_code || '',
@@ -174,6 +261,11 @@ export default function MOUPreviewModal({ school, formalities, onClose, onSaveFo
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState({ type: '', text: '' });
   const [copied, setCopied] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const fileInputRef = useRef(null);
+  const replaceIndexRef = useRef(null);
+  const replaceFileInputRef = useRef(null);
 
   // Sync if school changes
   useEffect(() => {
@@ -184,9 +276,124 @@ export default function MOUPreviewModal({ school, formalities, onClose, onSaveFo
     window.print();
   };
 
+  /**
+   * Optimizes and resizes uploaded image files via HTML5 Canvas (max 600px)
+   * to guarantee crisp print quality while keeping Firestore payload compact.
+   */
+  const processImageFile = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 600;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/png');
+          resolve({
+            id: `logo-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+            url: dataUrl,
+            name: file.name.replace(/\.[^/.]+$/, '') || 'School Logo'
+          });
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  /**
+   * Handles multiple file uploads at once
+   */
+  const handleFilesUpload = async (files) => {
+    if (!files || files.length === 0) return;
+    const fileList = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    if (fileList.length === 0) return;
+
+    try {
+      const processed = await Promise.all(fileList.map((f) => processImageFile(f)));
+      setMouData((prev) => ({
+        ...prev,
+        schoolLogos: [...(prev.schoolLogos || []), ...processed]
+      }));
+      setSaveStatus({
+        type: 'success',
+        text: `Uploaded ${processed.length} logo${processed.length > 1 ? 's' : ''} successfully! Remember to Save Changes.`
+      });
+      setTimeout(() => setSaveStatus({ type: '', text: '' }), 3500);
+    } catch (err) {
+      console.error('Error uploading logos:', err);
+      setSaveStatus({ type: 'error', text: 'Failed to process image files.' });
+    }
+  };
+
+  /**
+   * Handles replacing an existing logo
+   */
+  const handleReplaceFile = async (e) => {
+    const file = e.target.files?.[0];
+    const index = replaceIndexRef.current;
+    if (!file || index === null) return;
+
+    try {
+      const processed = await processImageFile(file);
+      setMouData((prev) => {
+        const arr = [...(prev.schoolLogos || [])];
+        arr[index] = processed;
+        return { ...prev, schoolLogos: arr };
+      });
+      setSaveStatus({ type: 'success', text: 'Logo replaced successfully!' });
+      setTimeout(() => setSaveStatus({ type: '', text: '' }), 3000);
+    } catch (err) {
+      console.error('Error replacing logo:', err);
+    } finally {
+      replaceIndexRef.current = null;
+      if (replaceFileInputRef.current) replaceFileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveLogo = (index) => {
+    setMouData((prev) => {
+      const arr = [...(prev.schoolLogos || [])];
+      arr.splice(index, 1);
+      return { ...prev, schoolLogos: arr };
+    });
+  };
+
+  const handleApplyPresetCrest = () => {
+    setMouData((prev) => ({
+      ...prev,
+      schoolLogos: [{ id: 'siddartha-crest', url: '/pdf_school_crest.png', name: 'Sri Siddartha High School Crest' }]
+    }));
+  };
+
+  const handleClearAllLogos = () => {
+    if (window.confirm('Remove all uploaded logos for this agreement?')) {
+      setMouData((prev) => ({
+        ...prev,
+        schoolLogos: []
+      }));
+    }
+  };
+
   const handleResetToTemplate = () => {
-    if (window.confirm('Reset all MOU fields to the standard 7-page legal agreement template? Unsaved changes will be discarded.')) {
-      // Force fresh defaults ignoring cached full data
+    if (window.confirm('Reset all MOU fields to the standard legal agreement template? Unsaved changes will be discarded.')) {
       const fresh = getInitialMOUData(school, { ...formalities, mou_full_data: null });
       setMouData(fresh);
       setSaveStatus({ type: 'success', text: 'Reset to standard legal template!' });
@@ -280,6 +487,8 @@ export default function MOUPreviewModal({ school, formalities, onClose, onSaveFo
         contract_value: mouData.financials.totalContractValue,
         academic_year: mouData.academicYear,
         mou_status: mouData.status || 'Drafting',
+        school_logos: mouData.schoolLogos || [],
+        mou_logo_url: mouData.schoolLogos?.[0]?.url || '',
         mou_full_data: mouData
       };
 
@@ -308,7 +517,7 @@ export default function MOUPreviewModal({ school, formalities, onClose, onSaveFo
 
       setSaveStatus({
         type: 'success',
-        text: 'MOU terms and customized clauses saved successfully to school formalities!'
+        text: 'MOU terms, clauses, and institutional logos saved successfully to school records!'
       });
       setTimeout(() => setSaveStatus({ type: '', text: '' }), 4000);
     } catch (err) {
@@ -418,6 +627,23 @@ Designation: ${mouData.schoolParty.signatoryTitle}
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
       
+      {/* Hidden file inputs for uploading and replacing logos */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={(e) => handleFilesUpload(e.target.files)}
+        multiple
+        accept="image/*"
+        className="hidden"
+      />
+      <input
+        type="file"
+        ref={replaceFileInputRef}
+        onChange={handleReplaceFile}
+        accept="image/*"
+        className="hidden"
+      />
+
       {/* Print Styles for Multi-page Legal Document */}
       <style>{`
         @media print {
@@ -523,6 +749,16 @@ Designation: ${mouData.schoolParty.signatoryTitle}
               </label>
             )}
 
+            {/* Quick Upload Button directly in header */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-xs font-medium transition cursor-pointer flex items-center gap-1.5"
+              title="Upload logo(s) for this school (supports multiple)"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Upload Logo</span>
+            </button>
+
             <button
               onClick={handleCopyText}
               className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium transition cursor-pointer flex items-center gap-1.5"
@@ -545,7 +781,7 @@ Designation: ${mouData.schoolParty.signatoryTitle}
               onClick={handleSaveToRecord}
               disabled={isSaving}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
-              title="Save agreement terms to school formalities record"
+              title="Save agreement terms & logos to school record"
             >
               <Save className="w-3.5 h-3.5" />
               <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
@@ -604,20 +840,98 @@ Designation: ${mouData.schoolParty.signatoryTitle}
           {activeTab === 'preview' && (
             <div className="mou-print-container max-w-4xl mx-auto bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-12 space-y-8 font-serif leading-relaxed text-[13px] print:shadow-none print:border-none print:p-0 print:m-0 print:rounded-none">
               
-              {/* Document Header with Logos */}
+              {/* Document Header with Uploadable Logos */}
               <div className="border-b-2 border-slate-900 dark:border-slate-300 pb-5 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="/pdf_school_crest.png"
-                    alt="School Crest"
-                    className="h-14 w-auto object-contain drop-shadow-xs"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
+                
+                {/* School Logos Area (Left) */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  
+                  {/* If custom logos exist, render each logo in a gallery */}
+                  {mouData.schoolLogos && mouData.schoolLogos.length > 0 ? (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {mouData.schoolLogos.map((logo, idx) => (
+                        <div key={logo.id || idx} className="relative group shrink-0">
+                          <img
+                            src={logo.url}
+                            alt={logo.name || 'School Logo'}
+                            className="h-14 sm:h-16 w-auto max-w-[150px] object-contain drop-shadow-2xs rounded-xs bg-transparent"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                          {/* Hover action toolbar for this specific logo (screen only) */}
+                          <div className="print:hidden absolute -top-2 -right-2 hidden group-hover:flex items-center gap-1 bg-slate-900/90 text-white rounded-full p-1 shadow-md z-10 transition">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                replaceIndexRef.current = idx;
+                                replaceFileInputRef.current?.click();
+                              }}
+                              className="p-1 hover:text-indigo-300 transition"
+                              title="Replace this logo"
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveLogo(idx)}
+                              className="p-1 hover:text-red-400 transition"
+                              title="Remove logo"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Small "+ Add Another Logo" button in preview (screen only) */}
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="print:hidden h-12 px-2.5 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 text-slate-400 hover:text-indigo-600 transition flex items-center gap-1 text-[11px] font-sans font-medium cursor-pointer"
+                        title="Upload another logo (e.g. Trust, Society, Board crest)"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Add Logo</span>
+                      </button>
+                    </div>
+                  ) : (
+                    /* When NO logos are uploaded yet */
+                    <div className="flex items-center gap-3">
+                      {/* Dynamic Academic Initial Crest (also printed gracefully) */}
+                      <SchoolInitialsCrest schoolName={mouData.schoolParty.name} size="md" />
+
+                      {/* Prominent Upload Prompt (screen only) */}
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="print:hidden flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-indigo-400 dark:border-indigo-600 bg-indigo-50/60 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition cursor-pointer text-xs font-sans font-semibold shadow-2xs group"
+                        title="Click to upload one or multiple logos for this school"
+                      >
+                        <Upload className="w-4 h-4 text-indigo-600 group-hover:scale-110 transition" />
+                        <div className="text-left">
+                          <span className="block font-bold">Upload School Logo(s)</span>
+                          <span className="block text-[10px] text-slate-500 dark:text-slate-400 font-normal">
+                            Multiple photos supported (PNG/JPG)
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* School Name & Collaboration Subtitle */}
                   <div>
-                    <h3 className="font-sans font-bold text-sm text-slate-900 dark:text-white uppercase tracking-tight">
-                      {mouData.schoolParty.name}
+                    <h3 className="font-sans font-bold text-sm sm:text-base text-slate-900 dark:text-white uppercase tracking-tight">
+                      {inlineEdit ? (
+                        <input
+                          type="text"
+                          value={mouData.schoolParty.name}
+                          onChange={(e) => handleFieldChange('schoolParty', 'name', e.target.value)}
+                          className="px-1 py-0.5 border border-dashed border-indigo-400 rounded bg-indigo-50/50 font-bold"
+                        />
+                      ) : (
+                        mouData.schoolParty.name
+                      )}
                     </h3>
                     <p className="font-sans text-[11px] text-slate-500 dark:text-slate-400">
                       Academic &amp; Skill Development Collaboration
@@ -625,7 +939,8 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                   </div>
                 </div>
 
-                <div className="text-right flex items-center gap-3">
+                {/* Right Side: Tech Nirmaan & Skila.ai Brand */}
+                <div className="text-right flex items-center gap-3 shrink-0">
                   <div className="hidden sm:block text-right">
                     <p className="font-sans text-[10px] text-slate-500 uppercase tracking-widest font-semibold">
                       Powered By
@@ -639,7 +954,6 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                     alt="Tech Nirmaan"
                     className="h-12 w-auto object-contain"
                     onError={(e) => {
-                      // Fallback to Skila logo if technirmaan logo fails
                       e.target.src = '/skila_logo_transparent.png';
                     }}
                   />
@@ -1075,9 +1389,132 @@ Designation: ${mouData.schoolParty.signatoryTitle}
                     Interactive Legal Agreement Editor
                   </h4>
                   <p className="text-slate-600 dark:text-slate-400 mt-0.5">
-                    Customize commercial parameters, signatories, per-student pricing, and specific institutional clauses. All changes update the Document View in real-time and can be saved to Firestore.
+                    Customize commercial parameters, signatories, institutional logos, per-student pricing, and specific school clauses. All changes update the Document View in real-time and can be saved to Firestore.
                   </p>
                 </div>
+              </div>
+
+              {/* Section 0: Institutional Logos & Branding (Multiple Supported!) */}
+              <div className="p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                    <ImageIcon className="w-4 h-4" />
+                    <span>School &amp; Institutional Logos ({mouData.schoolLogos?.length || 0} Attached)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleApplyPresetCrest}
+                      className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                    >
+                      Sample Crest Preset
+                    </button>
+                    {mouData.schoolLogos?.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearAllLogos}
+                        className="text-[11px] text-red-500 hover:underline cursor-pointer"
+                      >
+                        Clear All
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Drag-and-drop / Click-to-upload Zone */}
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    handleFilesUpload(e.dataTransfer.files);
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`border-2 border-dashed rounded-xl p-6 text-center transition cursor-pointer flex flex-col items-center justify-center gap-2 ${
+                    isDragging
+                      ? 'border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/50'
+                      : 'border-slate-300 dark:border-slate-700 hover:border-indigo-400 bg-slate-50/50 dark:bg-slate-800/30'
+                  }`}
+                >
+                  <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-xs">
+                    <Upload className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Click or Drag &amp; Drop to Upload Logo(s)
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Upload one or multiple photos: School Crest, Educational Trust, Society, or Affiliation emblem (PNG, JPG, SVG, WebP)
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800">
+                    Supports Multiple Photos &bull; Auto-optimized for Print
+                  </span>
+                </div>
+
+                {/* List of currently attached logos */}
+                {mouData.schoolLogos && mouData.schoolLogos.length > 0 && (
+                  <div className="pt-2">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                      Attached Logos for {mouData.schoolParty.name}:
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {mouData.schoolLogos.map((logo, idx) => (
+                        <div
+                          key={logo.id || idx}
+                          className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 relative group"
+                        >
+                          <img
+                            src={logo.url}
+                            alt={logo.name}
+                            className="h-12 w-12 object-contain rounded-md bg-white p-1 border border-slate-200 shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <input
+                              type="text"
+                              value={logo.name || `Logo ${idx + 1}`}
+                              onChange={(e) => {
+                                const newLogos = [...mouData.schoolLogos];
+                                newLogos[idx].name = e.target.value;
+                                setMouData((prev) => ({ ...prev, schoolLogos: newLogos }));
+                              }}
+                              className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent border-b border-dashed border-slate-300 dark:border-slate-700 focus:outline-hidden w-full"
+                              title="Rename logo label"
+                            />
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              {idx === 0 ? 'Primary Crest' : `Partner Logo #${idx + 1}`}
+                            </p>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                replaceIndexRef.current = idx;
+                                replaceFileInputRef.current?.click();
+                              }}
+                              className="p-1 text-slate-400 hover:text-indigo-600 transition"
+                              title="Replace photo"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveLogo(idx)}
+                              className="p-1 text-slate-400 hover:text-red-500 transition"
+                              title="Delete logo"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Section 1: Agreement Meta & Identification */}
