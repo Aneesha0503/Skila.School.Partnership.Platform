@@ -188,36 +188,9 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
           )}
         </div>
       ) : (
-        <div className="mb-3 p-2 sm:p-2.5 rounded-lg bg-amber-50/70 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
-          <span>Click to run Skila AI 49-field profile</span>
-          {userRole === 'admin' ? (
-            <button
-              type="button"
-              onClick={handleRunDetailsClick}
-              disabled={isRunning}
-              className="w-full sm:w-auto justify-center px-2.5 py-1.5 sm:py-1 rounded-md bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-[11px] inline-flex items-center gap-1 shrink-0 shadow-xs cursor-pointer disabled:opacity-50"
-            >
-              {isRunning ? (
-                <>
-                  <RefreshCw className="w-3 h-3 animate-spin text-slate-950" />
-                  <span>Running...</span>
-                </>
-              ) : (
-                <>
-                  <Zap className="w-3 h-3 fill-current" />
-                  <span>Run Details</span>
-                </>
-              )}
-            </button>
-          ) : (
-            <span 
-              title="Single school AI research requires Administrator role"
-              className="px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold text-[10px] inline-flex items-center gap-1 shrink-0 border border-slate-300 dark:border-slate-700"
-            >
-              <Lock className="w-3 h-3 text-amber-500" />
-              <span>Admin Scraper</span>
-            </span>
-          )}
+        <div className="mb-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+          <span>Basic Profile</span>
+          <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">Click to view</span>
         </div>
       )}
 
@@ -230,11 +203,11 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
               <span className="font-medium text-slate-700 dark:text-slate-300">{sales?.decision_maker}</span>
             </>
           ) : (
-            <span className="text-slate-400 dark:text-slate-500 italic">Full profile pending</span>
+            <span className="text-slate-400 dark:text-slate-500 italic">Open profile</span>
           )}
         </div>
         <div className="flex items-center text-indigo-600 dark:text-indigo-400 font-semibold group-hover:translate-x-0.5 transition-transform shrink-0">
-          {details_fetched ? 'View Full Profile' : 'Open School'} <ChevronRight className="w-4 h-4 ml-0.5" />
+          <span>View Profile</span> <ChevronRight className="w-4 h-4 ml-0.5" />
         </div>
       </div>
     </div>

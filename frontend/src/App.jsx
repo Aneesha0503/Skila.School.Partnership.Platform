@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import StatsBar from './components/StatsBar';
-import HierarchyNavigator from './components/HierarchyNavigator';
+import TerritoryNavigator from './components/TerritoryNavigator';
 import FilterBar from './components/FilterBar';
 import SchoolCard from './components/SchoolCard';
 import SchoolTable from './components/SchoolTable';
 import SchoolDetailModal from './components/SchoolDetailModal';
 import AddEditSchoolModal from './components/AddEditSchoolModal';
 import SkilaScraperModal from './components/SkilaScraperModal';
-import DistrictRunner from './components/DistrictRunner';
 import IndiaMapHero from './components/IndiaMapHero';
 import AccessControlModal from './components/AccessControlModal';
 import LoginModal from './components/LoginModal';
@@ -911,23 +910,15 @@ function SkilaApp() {
               isConfirmedOnly={confirmedOnly}
             />
 
-            {/* Automated District Discovery & AI Scraper */}
-            <DistrictRunner
-              onDistrictRunComplete={handleDistrictRunComplete}
-              currentState={selectedHierarchy.state}
-              currentDistrict={selectedHierarchy.district}
-              totalSchoolsLoaded={schools.length}
-              userRole={userRole}
-            />
-
-            {/* Administrative Hierarchy Cascading Drill-Down */}
-            <HierarchyNavigator
+            {/* Unified Territory & Administrative Scope Navigator */}
+            <TerritoryNavigator
               hierarchyData={hierarchyData}
               selectedHierarchy={selectedHierarchy}
               onHierarchyChange={handleHierarchyChange}
               onResetHierarchy={handleResetHierarchy}
-              onStepBackHierarchy={handleStepBackHierarchy}
+              onDistrictRunComplete={handleDistrictRunComplete}
               totalMatchingSchools={schools.length}
+              userRole={userRole}
             />
 
             {/* Search & Attribute Filters */}

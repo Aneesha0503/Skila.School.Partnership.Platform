@@ -141,33 +141,12 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
                 </span>
               </div>
 
-              {/* Action Buttons Row */}
-              <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100/80 dark:border-slate-800/80">
+              {/* Action Link Row */}
+              <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100/80 dark:border-slate-800/80">
                 <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
                   <span>View Details</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </span>
-
-                {!details_fetched && userRole === 'admin' && (
-                  <button
-                    type="button"
-                    onClick={(e) => handleRunDetailsClick(e, school.id)}
-                    disabled={isRunning}
-                    className="px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-[11px] inline-flex items-center gap-1 shadow-xs cursor-pointer disabled:opacity-50"
-                  >
-                    {isRunning ? (
-                      <>
-                        <RefreshCw className="w-3 h-3 animate-spin text-slate-950" />
-                        <span>Fetching...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Zap className="w-3 h-3 fill-current" />
-                        <span>Fetch 49 Fields</span>
-                      </>
-                    )}
-                  </button>
-                )}
               </div>
             </div>
           );
@@ -312,42 +291,9 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
                     )}
                   </td>
                   <td className="py-3 px-4 text-right whitespace-nowrap">
-                    {details_fetched ? (
-                      <button 
-                        onClick={() => onSelectSchool(school)}
-                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-semibold inline-flex items-center text-xs whitespace-nowrap cursor-pointer"
-                      >
-                        View Full Profile <ChevronRight className="w-4 h-4 ml-0.5" />
-                      </button>
-                    ) : userRole === 'admin' ? (
-                      <button
-                        type="button"
-                        onClick={(e) => handleRunDetailsClick(e, school.id)}
-                        disabled={isRunning}
-                        className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-xs inline-flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50 whitespace-nowrap shrink-0"
-                        title="Fetch verified 49-field profile for this school"
-                      >
-                        {isRunning ? (
-                          <>
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin text-slate-950" />
-                            <span>Fetching...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Zap className="w-3.5 h-3.5 fill-current" />
-                            <span>Fetch Profile</span>
-                          </>
-                        )}
-                      </button>
-                    ) : (
-                      <span 
-                        title="Single school AI research requires Administrator role"
-                        className="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold text-[11px] inline-flex items-center gap-1 border border-slate-300 dark:border-slate-700"
-                      >
-                        <Lock className="w-3 h-3 text-amber-500" />
-                        <span>Admin Only</span>
-                      </span>
-                    )}
+                    <span className="text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 font-semibold inline-flex items-center text-xs">
+                      View Profile <ChevronRight className="w-4 h-4 ml-0.5" />
+                    </span>
                   </td>
                 </tr>
               );
