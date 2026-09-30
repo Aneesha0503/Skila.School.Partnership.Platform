@@ -3199,44 +3199,35 @@ def get_school_financial_metrics(school: Dict[str, Any]) -> Dict[str, Any]:
     # Contracted Revenue
     raw_contract = formalities.get("contract_value") or formalities.get("mou_full_data", {}).get("financials", {}).get("totalContractValue") or sales.get("annual_fee_range")
     contracted_revenue = clean_currency(raw_contract)
-    if contracted_revenue <= 0:
-        if deal_closed or formalities.get("formalities_completed"):
-            contracted_revenue = max(250000.0, agreed_capacity * 1000.0)
-        else:
-            contracted_revenue = max(180000.0, agreed_capacity * 750.0)
 
-    # Payments / Collected Revenue
+    # Payments / Collected Revenue (strictly from real payment transactions)
     payments = school.get("payments") or []
     if payments and isinstance(payments, list):
         collected_revenue = sum(float(p.get("amount") or 0.0) for p in payments if isinstance(p, dict))
     else:
-        if invoice_status == "Fully Paid":
-            collected_revenue = contracted_revenue
-        elif invoice_status == "Advance Paid":
-            collected_revenue = round(contracted_revenue * 0.50, 2)
-        elif deal_closed or formalities.get("formalities_completed") or mou_status in ["Signed by School", "Fully Executed"]:
-            collected_revenue = round(contracted_revenue * 0.40, 2)
+        collected_revenue = 0.0
+
+    if contracted_revenue <= 0:
+        if collected_revenue > 0:
+            contracted_revenue = collected_revenue
         else:
-            collected_revenue = 0.0
+            contracted_revenue = 0.0
 
     pending_revenue = max(0.0, round(contracted_revenue - collected_revenue, 2))
 
-    # Operational Expenses
+    # Operational Expenses (strictly from real logged expense items)
     custom_expenses = school.get("financial_expenses") or []
     if not isinstance(custom_expenses, list):
         custom_expenses = []
 
-    is_active = deal_closed or mou_status in ["Signed by School", "Fully Executed"] or formalities.get("formalities_completed") or collected_revenue > 0
-    cap = max(150, agreed_capacity)
-    
-    cat_cloud_ai = round(cap * 90.0, 2) if is_active else 0.0
-    cat_hardware = round(cap * 170.0, 2) if is_active else 0.0
-    cat_teacher_train = 15000.0 if is_active else 0.0
-    cat_field_sales = 8500.0 if is_active else 3000.0
-    cat_welcome_kits = round(cap * 35.0, 2) if is_active else 0.0
-    cat_legal_admin = 5000.0 if is_active else 1000.0
+    cat_cloud_ai = 0.0
+    cat_hardware = 0.0
+    cat_teacher_train = 0.0
+    cat_field_sales = 0.0
+    cat_welcome_kits = 0.0
+    cat_legal_admin = 0.0
 
-    # Add custom expenses into matching categories
+    # Categorize actual logged expenses
     for e in custom_expenses:
         if not isinstance(e, dict):
             continue
@@ -3261,7 +3252,9 @@ def get_school_financial_metrics(school: Dict[str, Any]) -> Dict[str, Any]:
     projected_profit = round(contracted_revenue - total_expenses, 2)
     profit_margin_pct = round((net_profit / collected_revenue * 100.0), 1) if collected_revenue > 0 else 0.0
     projected_margin_pct = round((projected_profit / contracted_revenue * 100.0), 1) if contracted_revenue > 0 else 0.0
-    roi_multiplier = round(collected_revenue / total_expenses, 2) if total_expenses > 0 else 1.0
+    roi_multiplier = round(collected_revenue / total_expenses, 2) if total_expenses > 0 else (1.0 if collected_revenue == 0 else round(collected_revenue, 2))
+
+    is_active = deal_closed or mou_status in ["Signed by School", "Fully Executed"] or formalities.get("formalities_completed") or collected_revenue > 0 or contracted_revenue > 0
 
     return {
         "school_id": school_id,
@@ -3297,117 +3290,8 @@ def get_school_financial_metrics(school: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 def ensure_initial_financial_partner_data():
-    """
-    Dynamically initializes financial partnership metrics on top candidate schools
-    using their actual student strength, tier classification, and fee capacity.
-    """
-    try:
-        schools = get_all_schools_raw()
-        active_schools = [
-            s for s in schools 
-            if s.get("sales", {}).get("deal_closed") or 
-               s.get("sales", {}).get("lead_status") == "Closed Won" or 
-               (s.get("formalities") or {}).get("mou_status") == "Signed by School"
-        ]
-        if len(active_schools) >= 4:
-            return
-
-        now = datetime.now(timezone.utc).isoformat()
-        # Dynamically onboard top 6 institutions by strength
-        target_candidates = sorted(
-            schools,
-            key=lambda x: int((x.get("info") or {}).get("student_strength") or 300),
-            reverse=True
-        )[:6]
-
-        for idx, s in enumerate(target_candidates):
-            sid = s.get("id")
-            if not sid:
-                continue
-
-            cap = get_agreed_mou_capacity(s)
-            raw_fee = s.get("sales", {}).get("annual_fee_range")
-            contract_float = clean_currency(raw_fee) or max(250000.0, cap * 950.0)
-            contract_str = f"INR {int(contract_float):,}"
-
-            is_fully_paid = (idx % 2 == 0)
-            inv_status = "Fully Paid" if is_fully_paid else "Advance Paid"
-            paid_amount = contract_float if is_fully_paid else round(contract_float * 0.5, 2)
-
-            doc_ref = db.collection("schools").document(sid)
-            s_data = s
-            sales = s_data.setdefault("sales", {})
-            sales["lead_status"] = "Closed Won"
-            sales["deal_closed"] = True
-
-            formalities = s_data.get("formalities") or sales.get("formalities") or get_default_formalities_dict(sid, s_data, "Admin")
-            formalities["contract_value"] = contract_str
-            formalities["mou_status"] = "Signed by School"
-            formalities["invoice_status"] = inv_status
-            formalities["formalities_completed"] = is_fully_paid
-            formalities["progress_pct"] = 90 if is_fully_paid else 75
-            formalities["mou_full_data"] = {
-                "financials": {
-                    "totalContractValue": contract_str,
-                    "estimatedStudents": cap
-                }
-            }
-            s_data["formalities"] = formalities
-            sales["formalities"] = formalities
-
-            # Payments
-            p_list = s_data.setdefault("payments", [])
-            if not p_list:
-                p_list.append({
-                    "id": f"pay_{uuid.uuid4().hex[:8]}",
-                    "amount": paid_amount,
-                    "date": "2026-03-01",
-                    "payment_type": "Full Contract Payment" if is_fully_paid else "Commercial Advance (50%)",
-                    "payment_mode": "NEFT / RTGS",
-                    "reference_no": f"TXN-SKILA-{uuid.uuid4().hex[:6].upper()}",
-                    "notes": "Verified institutional bank transfer receipt"
-                })
-
-            # Operational expenses dynamically proportional to capacity
-            e_list = s_data.setdefault("financial_expenses", [])
-            if not e_list:
-                e_list.extend([
-                    {
-                        "id": f"exp_{uuid.uuid4().hex[:8]}",
-                        "category": "Cloud Infrastructure & AI Tokens",
-                        "amount": round(cap * 85.0, 2),
-                        "description": f"LMS GPU tokens & cloud playground for {cap} students",
-                        "date": "2026-02-20",
-                        "logged_by": "Finance Ops",
-                        "payment_mode": "Online Transfer",
-                        "created_at": now
-                    },
-                    {
-                        "id": f"exp_{uuid.uuid4().hex[:8]}",
-                        "category": "STEM & Robotics Hardware Kits",
-                        "amount": round(cap * 155.0, 2),
-                        "description": f"Hands-on robotics hardware kits allocation for {cap} students",
-                        "date": "2026-02-25",
-                        "logged_by": "Supply Chain",
-                        "payment_mode": "Bank Transfer",
-                        "created_at": now
-                    },
-                    {
-                        "id": f"exp_{uuid.uuid4().hex[:8]}",
-                        "category": "Teacher Training & Enablement",
-                        "amount": 15000.0,
-                        "description": "2-Day Faculty AI Pedagogy Masterclass Certification",
-                        "date": "2026-03-02",
-                        "logged_by": "Training Team",
-                        "payment_mode": "NEFT",
-                        "created_at": now
-                    }
-                ])
-
-            s_data["updated_at"] = now
-            doc_ref.set(s_data)
-    except Exception as ex:
-        print(f"[Financials] Dynamic init notice: {ex}")
+    """No-op: All financial data is dynamically computed from actual school records."""
+    pass
 
 @app.get("/api/finances/analytics")
 def get_financial_analytics():
@@ -3415,11 +3299,10 @@ def get_financial_analytics():
     Returns platform-wide financial analytics:
     - Contracted Revenue, Cash Collected, Expenses, Net Profit, Profit Margin %
     - Expense categories breakdown
-    - Monthly trends
+    - Monthly trends dynamically computed from transaction dates
     - School-by-school unit economics table
     - Recent expense ledger
     """
-    ensure_initial_financial_partner_data()
     schools = get_all_schools_raw()
 
     all_metrics = []
@@ -3432,6 +3315,7 @@ def get_financial_analytics():
 
     cat_totals = {cat["id"]: 0.0 for cat in FINANCIAL_CATEGORIES}
     all_expenses_ledger = []
+    monthly_agg = {}
 
     for s in schools:
         m = get_school_financial_metrics(s)
@@ -3460,6 +3344,21 @@ def get_financial_analytics():
                     "payment_mode": ce.get("payment_mode") or "Bank Transfer",
                     "receipt_ref": ce.get("receipt_ref") or ""
                 })
+                amt = float(ce.get("amount") or 0.0)
+                dt_str = str(ce.get("date") or "")
+                m_key = dt_str[:7] if len(dt_str) >= 7 and dt_str[:4].isdigit() else datetime.now().strftime("%Y-%m")
+                if m_key not in monthly_agg:
+                    monthly_agg[m_key] = {"revenue": 0.0, "expenses": 0.0}
+                monthly_agg[m_key]["expenses"] += amt
+
+            for p in m.get("payments", []):
+                if isinstance(p, dict):
+                    amt = float(p.get("amount") or 0.0)
+                    dt_str = str(p.get("date") or "")
+                    m_key = dt_str[:7] if len(dt_str) >= 7 and dt_str[:4].isdigit() else datetime.now().strftime("%Y-%m")
+                    if m_key not in monthly_agg:
+                        monthly_agg[m_key] = {"revenue": 0.0, "expenses": 0.0}
+                    monthly_agg[m_key]["revenue"] += amt
 
         all_metrics.append(m)
 
@@ -3470,7 +3369,7 @@ def get_financial_analytics():
     projected_profit = round(total_contracted - total_expenses, 2)
     profit_margin_pct = round((net_profit / total_collected * 100.0), 1) if total_collected > 0 else 0.0
     projected_margin_pct = round((projected_profit / total_contracted * 100.0), 1) if total_contracted > 0 else 0.0
-    roi_multiplier = round(total_collected / total_expenses, 2) if total_expenses > 0 else 1.0
+    roi_multiplier = round(total_collected / total_expenses, 2) if total_expenses > 0 else (1.0 if total_collected == 0 else round(total_collected, 2))
 
     categories_breakdown = []
     for cat in FINANCIAL_CATEGORIES:
@@ -3484,14 +3383,29 @@ def get_financial_analytics():
             "color": cat["color"]
         })
 
-    monthly_trends = [
-        {"month": "Nov 2025", "revenue": round(total_collected * 0.10, 2), "expenses": round(total_expenses * 0.12, 2), "profit": round((total_collected * 0.10) - (total_expenses * 0.12), 2)},
-        {"month": "Dec 2025", "revenue": round(total_collected * 0.15, 2), "expenses": round(total_expenses * 0.14, 2), "profit": round((total_collected * 0.15) - (total_expenses * 0.14), 2)},
-        {"month": "Jan 2026", "revenue": round(total_collected * 0.18, 2), "expenses": round(total_expenses * 0.18, 2), "profit": round((total_collected * 0.18) - (total_expenses * 0.18), 2)},
-        {"month": "Feb 2026", "revenue": round(total_collected * 0.22, 2), "expenses": round(total_expenses * 0.20, 2), "profit": round((total_collected * 0.22) - (total_expenses * 0.20), 2)},
-        {"month": "Mar 2026", "revenue": round(total_collected * 0.25, 2), "expenses": round(total_expenses * 0.24, 2), "profit": round((total_collected * 0.25) - (total_expenses * 0.24), 2)},
-        {"month": "Apr 2026", "revenue": round(total_collected * 0.10, 2), "expenses": round(total_expenses * 0.12, 2), "profit": round((total_collected * 0.10) - (total_expenses * 0.12), 2)},
-    ]
+    monthly_trends = []
+    for m_key in sorted(monthly_agg.keys()):
+        rev = round(monthly_agg[m_key]["revenue"], 2)
+        exp = round(monthly_agg[m_key]["expenses"], 2)
+        prof = round(rev - exp, 2)
+        try:
+            month_label = datetime.strptime(m_key, "%Y-%m").strftime("%b %Y")
+        except Exception:
+            month_label = m_key
+        monthly_trends.append({
+            "month": month_label,
+            "revenue": rev,
+            "expenses": exp,
+            "profit": prof
+        })
+
+    if not monthly_trends:
+        monthly_trends = [{
+            "month": datetime.now().strftime("%b %Y"),
+            "revenue": 0.0,
+            "expenses": 0.0,
+            "profit": 0.0
+        }]
 
     return {
         "status": "success",
@@ -3643,8 +3557,8 @@ def record_school_payment(
 
     formalities = data.get("formalities") or data.get("sales", {}).get("formalities") or {}
     raw_contract = formalities.get("contract_value") or formalities.get("mou_full_data", {}).get("financials", {}).get("totalContractValue") or data.get("sales", {}).get("annual_fee_range")
-    contract_val = clean_currency(raw_contract) or 250000.0
     total_collected = sum(float(p.get("amount") or 0.0) for p in payments)
+    contract_val = clean_currency(raw_contract) or total_collected
 
     if total_collected >= contract_val:
         formalities["invoice_status"] = "Fully Paid"
@@ -3690,7 +3604,6 @@ def export_financial_pnl_csv():
     Exports a comprehensive Profit & Loss (P&L) Statement CSV covering revenue,
     operational expenses, net profit, margins, and payment status for all schools.
     """
-    ensure_initial_financial_partner_data()
     schools = get_all_schools_raw()
 
     output = io.StringIO()

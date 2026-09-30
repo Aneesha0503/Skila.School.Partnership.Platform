@@ -226,7 +226,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
       if (!matchName && !matchDist && !matchState) return false;
     }
     if (statusFilter !== 'All') {
-      if (statusFilter === 'High Margin' && s.profit_margin_pct < 20) return false;
+      if ((statusFilter === 'High Profit' || statusFilter === 'High Margin') && s.profit_margin_pct < 20) return false;
       if (statusFilter === 'Fully Paid' && s.invoice_status !== 'Fully Paid') return false;
       if (statusFilter === 'Advance Paid' && s.invoice_status !== 'Advance Paid') return false;
       if (statusFilter === 'Pending' && s.invoice_status !== 'Pending Invoice') return false;
@@ -249,17 +249,17 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                  Financial Tracker & P&L Statement
+                  School Fees & Expense Tracker (Accounts)
                 </h2>
                 <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-                  {summary.profit_margin_pct >= 0 ? `+${summary.profit_margin_pct}% Net Margin` : `${summary.profit_margin_pct}% Net Margin`}
+                  {summary.profit_margin_pct >= 0 ? `+${summary.profit_margin_pct}% Profit Margin` : `${summary.profit_margin_pct}% Deficit`}
                 </span>
                 <span className="hidden sm:inline-block text-xs px-2.5 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                  {summary.partner_schools_count} Active Partner Schools
+                  {summary.partner_schools_count} Joined Schools
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Realized contracted revenue, operational cost itemization, net profit margins & unit economics.
+                Track fees collected from joined schools, daily operational expenses, and net profit.
               </p>
             </div>
           </div>
@@ -268,12 +268,12 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
           <div className="flex items-center gap-2">
             <a
               href="/api/finances/export"
-              download="Skila_AI_PnL_Financial_Statement.csv"
+              download="Skila_School_Accounts_Statement.csv"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition shadow-2xs cursor-pointer"
-              title="Download Complete P&L Financial Statement as CSV"
+              title="Download Accounts Statement as CSV"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Export P&L (CSV)</span>
+              <span>Export Accounts (CSV)</span>
             </a>
 
             <button
@@ -319,7 +319,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
           {/* 1. Contracted Revenue */}
           <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800">
             <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-              <span>Contracted MOU</span>
+              <span>Total Agreed Fees</span>
               <FileText className="w-3.5 h-3.5 text-blue-500" />
             </div>
             <div className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">
@@ -333,35 +333,35 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
           {/* 2. Cash Collected */}
           <div className="p-3.5 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl border border-blue-200/80 dark:border-blue-900/50">
             <div className="flex items-center justify-between text-xs text-blue-700 dark:text-blue-300 mb-1">
-              <span>Cash Collected</span>
+              <span>Fees Collected (Cash In)</span>
               <Wallet className="w-3.5 h-3.5 text-blue-600" />
             </div>
             <div className="text-lg sm:text-xl font-extrabold text-blue-950 dark:text-blue-100">
               {formatINR(summary.total_collected_revenue)}
             </div>
             <div className="text-[11px] text-blue-600 dark:text-blue-300 mt-0.5">
-              {summary.total_contracted_revenue > 0 ? `${Math.round((summary.total_collected_revenue / summary.total_contracted_revenue) * 100)}% of total contract` : '100%'}
+              {summary.total_contracted_revenue > 0 ? `${Math.round((summary.total_collected_revenue / summary.total_contracted_revenue) * 100)}% collected` : '100%'}
             </div>
           </div>
 
           {/* 3. Operational Expenses */}
           <div className="p-3.5 bg-rose-50/50 dark:bg-rose-950/20 rounded-xl border border-rose-200/80 dark:border-rose-900/50">
             <div className="flex items-center justify-between text-xs text-rose-700 dark:text-rose-300 mb-1">
-              <span>Total Expenses</span>
+              <span>Total Money Spent (Outflow)</span>
               <Receipt className="w-3.5 h-3.5 text-rose-600" />
             </div>
             <div className="text-lg sm:text-xl font-extrabold text-rose-950 dark:text-rose-100">
               {formatINR(summary.total_expenses)}
             </div>
             <div className="text-[11px] text-rose-600 dark:text-rose-300 mt-0.5 truncate">
-              Cloud AI, Hardware & Ops
+              Hardware, AI, visits & operations
             </div>
           </div>
 
           {/* 4. Net Realized Profit */}
           <div className="p-3.5 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800">
             <div className="flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300 mb-1">
-              <span>Net Profit (Cash)</span>
+              <span>Net Profit (Remaining)</span>
               <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
             </div>
             <div className={`text-lg sm:text-xl font-extrabold ${summary.net_profit >= 0 ? 'text-emerald-950 dark:text-emerald-100' : 'text-red-600'}`}>
@@ -375,7 +375,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
           {/* 5. ROI Multiplier & Projected */}
           <div className="p-3.5 bg-purple-50/50 dark:bg-purple-950/20 rounded-xl border border-purple-200/80 dark:border-purple-900/50 col-span-2 md:col-span-1">
             <div className="flex items-center justify-between text-xs text-purple-700 dark:text-purple-300 mb-1">
-              <span>ROI Multiple</span>
+              <span>Return on Spend (ROI)</span>
               <Sparkles className="w-3.5 h-3.5 text-purple-600" />
             </div>
             <div className="text-lg sm:text-xl font-extrabold text-purple-950 dark:text-purple-100">
@@ -399,7 +399,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
               }`}
             >
               <PieChart className="w-3.5 h-3.5" />
-              <span>P&L Overview</span>
+              <span>Overall Summary</span>
             </button>
 
             <button
@@ -411,7 +411,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
               }`}
             >
               <Building2 className="w-3.5 h-3.5" />
-              <span>Unit Economics ({filteredSchools.length})</span>
+              <span>School Accounts ({filteredSchools.length})</span>
             </button>
 
             <button
@@ -423,7 +423,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
               }`}
             >
               <Receipt className="w-3.5 h-3.5" />
-              <span>Expense Ledger ({ledger.length})</span>
+              <span>Expense Bills & Log ({ledger.length})</span>
             </button>
           </div>
 
@@ -434,7 +434,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-rose-800 dark:text-rose-200 bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 hover:bg-rose-100 rounded-lg transition cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Log Expense</span>
+              <span>+ Add Expense Bill</span>
             </button>
 
             <button
@@ -442,7 +442,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 rounded-lg transition cursor-pointer"
             >
               <Wallet className="w-3.5 h-3.5" />
-              <span>Record Payment</span>
+              <span>+ Add Fee Payment</span>
             </button>
           </div>
         </div>
@@ -453,7 +453,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-rose-950 dark:text-rose-100 flex items-center gap-2">
                 <Receipt className="w-4 h-4 text-rose-600" />
-                Log Operational Expense Item
+                Add Operational Expense Bill
               </h3>
               <button onClick={() => setShowExpenseForm(false)} className="text-rose-500 hover:text-rose-700">
                 <X className="w-4 h-4" />
@@ -461,7 +461,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
             </div>
             <form onSubmit={handleLogExpense} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Target School</label>
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Select School</label>
                 <select
                   value={selectedSchoolId}
                   onChange={(e) => setSelectedSchoolId(e.target.value)}
@@ -506,10 +506,10 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Item Description / Purpose</label>
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Bill Description / Purpose</label>
                 <input
                   type="text"
-                  placeholder="e.g. Arduino UNO kits shipment & soldering station tools"
+                  placeholder="e.g. Arduino UNO kits shipment & soldering tools"
                   value={expenseForm.description}
                   onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
                   className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
@@ -523,7 +523,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
                   disabled={formSubmitting}
                   className="w-full py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition cursor-pointer shadow-md disabled:opacity-50"
                 >
-                  {formSubmitting ? 'Recording...' : 'Save Expense'}
+                  {formSubmitting ? 'Saving...' : 'Save Expense Bill'}
                 </button>
               </div>
             </form>
@@ -536,7 +536,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-emerald-950 dark:text-emerald-100 flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-emerald-600" />
-                Record Cash Collection from School
+                Record School Fee Payment
               </h3>
               <button onClick={() => setShowPaymentForm(false)} className="text-emerald-500 hover:text-emerald-700">
                 <X className="w-4 h-4" />
@@ -544,7 +544,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
             </div>
             <form onSubmit={handleRecordPayment} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Partner School</label>
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Select School</label>
                 <select
                   value={selectedSchoolId}
                   onChange={(e) => setSelectedSchoolId(e.target.value)}
@@ -587,7 +587,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">UTR / Bank Transaction Reference</label>
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Bank Reference / Cheque No / UTR</label>
                 <input
                   type="text"
                   placeholder="e.g. UTR-HDFC-9938201948"
@@ -603,7 +603,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
                   disabled={formSubmitting}
                   className="w-full py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition cursor-pointer shadow-md disabled:opacity-50"
                 >
-                  {formSubmitting ? 'Recording...' : 'Confirm Payment'}
+                  {formSubmitting ? 'Saving...' : 'Save Fee Payment'}
                 </button>
               </div>
             </form>
@@ -625,12 +625,12 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
                   {/* Revenue vs Cost Comparison Visual Flow */}
                   <div className="p-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-2xl">
                     <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3">
-                      Revenue Realization & Profit Conversion Flow
+                      Money Flow & Profit Breakdown
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-blue-100 dark:border-blue-900/30">
                         <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold mb-1 flex items-center justify-between">
-                          <span>Total Cash Inflow</span>
+                          <span>Total Fees Received</span>
                           <ArrowDownRight className="w-4 h-4" />
                         </div>
                         <div className="text-xl font-black text-slate-900 dark:text-white">
@@ -643,35 +643,35 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
 
                       <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-rose-100 dark:border-rose-900/30">
                         <div className="text-xs text-rose-600 dark:text-rose-400 font-semibold mb-1 flex items-center justify-between">
-                          <span>Operational Outflow</span>
+                          <span>Total Money Spent</span>
                           <ArrowUpRight className="w-4 h-4" />
                         </div>
                         <div className="text-xl font-black text-slate-900 dark:text-white">
                           {formatINR(summary.total_expenses)}
                         </div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                          Hardware kits, AI servers, visits & workshops
+                          Hardware kits, AI tokens, visits & workshops
                         </div>
                       </div>
 
                       <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
                         <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mb-1 flex items-center justify-between">
-                          <span>Net Retained Margin</span>
+                          <span>Net Profit Saved</span>
                           <TrendingUp className="w-4 h-4" />
                         </div>
                         <div className="text-xl font-black text-emerald-600 dark:text-emerald-400">
                           {formatINR(summary.net_profit)}
                         </div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                          {summary.profit_margin_pct}% of cash collected
+                          {summary.profit_margin_pct}% of collected fees
                         </div>
                       </div>
                     </div>
 
                     <div className="mt-4">
                       <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-                        <span>Cost Absorption ({Math.round((summary.total_expenses / (summary.total_collected_revenue || 1)) * 100)}%)</span>
-                        <span>Net Profit Retention ({summary.profit_margin_pct}%)</span>
+                        <span>Money Spent ({Math.round((summary.total_expenses / (summary.total_collected_revenue || 1)) * 100)}%)</span>
+                        <span>Net Profit Saved ({summary.profit_margin_pct}%)</span>
                       </div>
                       <div className="w-full h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden flex">
                         <div 
@@ -691,7 +691,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
                   {/* Operational Expense Breakdown */}
                   <div>
                     <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3">
-                      Operational Cost Breakdown by Category
+                      Where Money Was Spent (Categories)
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {categories.map(cat => (
@@ -724,35 +724,47 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
                   {/* Monthly Trend Progression */}
                   <div>
                     <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3">
-                      6-Month Cash Flow & Margin Progression
+                      Monthly Cash In & Out History
                     </h3>
                     <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900">
                       <table className="w-full text-left text-xs">
                         <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
                           <tr>
-                            <th className="py-2.5 px-3">Timeline Month</th>
-                            <th className="py-2.5 px-3">Cash Inflow (Revenue)</th>
-                            <th className="py-2.5 px-3">Operational Expenses</th>
-                            <th className="py-2.5 px-3">Net Profit</th>
-                            <th className="py-2.5 px-3">Status</th>
+                            <th className="py-2.5 px-3">Month</th>
+                            <th className="py-2.5 px-3">Fees Received (Inflow)</th>
+                            <th className="py-2.5 px-3">Money Spent (Outflow)</th>
+                            <th className="py-2.5 px-3">Net Remaining</th>
+                            <th className="py-2.5 px-3">Result</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                          {trends.map((t, idx) => (
-                            <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                              <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-white">{t.month}</td>
-                              <td className="py-2.5 px-3 text-blue-600 dark:text-blue-400 font-semibold">{formatINR(t.revenue)}</td>
-                              <td className="py-2.5 px-3 text-rose-600 dark:text-rose-400 font-semibold">{formatINR(t.expenses)}</td>
-                              <td className="py-2.5 px-3 font-extrabold text-emerald-600 dark:text-emerald-400">
-                                {formatINR(t.profit)}
-                              </td>
-                              <td className="py-2.5 px-3">
-                                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
-                                  Profitable
-                                </span>
+                          {trends.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="py-6 text-center text-slate-400">
+                                No monthly transaction records yet.
                               </td>
                             </tr>
-                          ))}
+                          ) : (
+                            trends.map((t, idx) => (
+                              <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-white">{t.month}</td>
+                                <td className="py-2.5 px-3 text-blue-600 dark:text-blue-400 font-semibold">{formatINR(t.revenue)}</td>
+                                <td className="py-2.5 px-3 text-rose-600 dark:text-rose-400 font-semibold">{formatINR(t.expenses)}</td>
+                                <td className={`py-2.5 px-3 font-extrabold ${t.profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                  {formatINR(t.profit)}
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                                    t.profit >= 0
+                                      ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
+                                      : 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300'
+                                  }`}>
+                                    {t.profit >= 0 ? 'Profitable' : 'Deficit'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -760,7 +772,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
                 </div>
               )}
 
-              {/* TAB 2: SCHOOL UNIT ECONOMICS TABLE */}
+              {/* TAB 2: SCHOOL ACCOUNTS TABLE */}
               {activeTab === 'schools' && (
                 <div className="space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -776,7 +788,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
                     </div>
 
                     <div className="flex items-center gap-1.5 text-xs">
-                      {['All', 'High Margin', 'Fully Paid', 'Advance Paid'].map(filterOption => (
+                      {['All', 'High Profit', 'Fully Paid', 'Advance Paid'].map(filterOption => (
                         <button
                           key={filterOption}
                           onClick={() => setStatusFilter(filterOption)}
@@ -796,98 +808,110 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
                     <table className="w-full text-left text-xs">
                       <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
                         <tr>
-                          <th className="py-2.5 px-3">School Name & Location</th>
-                          <th className="py-2.5 px-3">MOU Capacity</th>
-                          <th className="py-2.5 px-3">Contract Value</th>
-                          <th className="py-2.5 px-3">Cash Collected</th>
-                          <th className="py-2.5 px-3">Expenses</th>
-                          <th className="py-2.5 px-3">Net Profit</th>
-                          <th className="py-2.5 px-3">Margin %</th>
-                          <th className="py-2.5 px-3">Invoice</th>
+                          <th className="py-2.5 px-3">School Name & Place</th>
+                          <th className="py-2.5 px-3">Students</th>
+                          <th className="py-2.5 px-3">Agreed Fees</th>
+                          <th className="py-2.5 px-3">Fees Received</th>
+                          <th className="py-2.5 px-3">Pending Fees</th>
+                          <th className="py-2.5 px-3">Money Spent</th>
+                          <th className="py-2.5 px-3">Net Profit / Loss</th>
+                          <th className="py-2.5 px-3">Profit %</th>
+                          <th className="py-2.5 px-3">Payment Status</th>
                           <th className="py-2.5 px-3 text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {filteredSchools.map(s => (
-                          <tr key={s.school_id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
-                            <td className="py-3 px-3">
-                              <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                                <span>{s.school_name}</span>
-                                {s.is_active && (
-                                  <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                                    Partner
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                                {s.district}, {s.state} · <span className="font-medium">{s.tier}</span>
-                              </div>
-                            </td>
-                            <td className="py-3 px-3 font-semibold text-slate-700 dark:text-slate-300">
-                              {s.agreed_capacity} students
-                            </td>
-                            <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">
-                              {formatShortINR(s.contracted_revenue)}
-                            </td>
-                            <td className="py-3 px-3 font-bold text-blue-600 dark:text-blue-400">
-                              {formatShortINR(s.collected_revenue)}
-                            </td>
-                            <td className="py-3 px-3 font-bold text-rose-600 dark:text-rose-400">
-                              {formatShortINR(s.total_expenses)}
-                            </td>
-                            <td className="py-3 px-3 font-extrabold text-emerald-600 dark:text-emerald-400">
-                              {formatShortINR(s.net_profit)}
-                            </td>
-                            <td className="py-3 px-3">
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                                s.profit_margin_pct >= 20 
-                                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                                  : s.profit_margin_pct > 0
-                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
-                                  : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                              }`}>
-                                {s.profit_margin_pct}%
-                              </span>
-                            </td>
-                            <td className="py-3 px-3">
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                                s.invoice_status === 'Fully Paid'
-                                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                                  : s.invoice_status === 'Advance Paid'
-                                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                                  : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                              }`}>
-                                {s.invoice_status}
-                              </span>
-                            </td>
-                            <td className="py-3 px-3 text-right">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <button
-                                  onClick={() => {
-                                    setSelectedSchoolId(s.school_id);
-                                    setShowExpenseForm(true);
-                                    setShowPaymentForm(false);
-                                  }}
-                                  title="Log Expense"
-                                  className="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg transition cursor-pointer"
-                                >
-                                  <Plus className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setSelectedSchoolId(s.school_id);
-                                    setShowPaymentForm(true);
-                                    setShowExpenseForm(false);
-                                  }}
-                                  title="Record Payment"
-                                  className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded-lg transition cursor-pointer"
-                                >
-                                  <Wallet className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
+                        {filteredSchools.length === 0 ? (
+                          <tr>
+                            <td colSpan={10} className="py-8 text-center text-slate-400">
+                              No schools found matching your search.
                             </td>
                           </tr>
-                        ))}
+                        ) : (
+                          filteredSchools.map(s => (
+                            <tr key={s.school_id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
+                              <td className="py-3 px-3">
+                                <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                  <span>{s.school_name}</span>
+                                  {s.is_active && (
+                                    <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                      Joined
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                  {s.district}, {s.state} · <span className="font-medium">{s.tier}</span>
+                                </div>
+                              </td>
+                              <td className="py-3 px-3 font-semibold text-slate-700 dark:text-slate-300">
+                                {s.agreed_capacity}
+                              </td>
+                              <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">
+                                {formatShortINR(s.contracted_revenue)}
+                              </td>
+                              <td className="py-3 px-3 font-bold text-blue-600 dark:text-blue-400">
+                                {formatShortINR(s.collected_revenue)}
+                              </td>
+                              <td className="py-3 px-3 font-bold text-amber-600 dark:text-amber-400">
+                                {formatShortINR(s.pending_revenue)}
+                              </td>
+                              <td className="py-3 px-3 font-bold text-rose-600 dark:text-rose-400">
+                                {formatShortINR(s.total_expenses)}
+                              </td>
+                              <td className={`py-3 px-3 font-extrabold ${s.net_profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                {formatShortINR(s.net_profit)}
+                              </td>
+                              <td className="py-3 px-3">
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                                  s.profit_margin_pct >= 20 
+                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                    : s.profit_margin_pct > 0
+                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                                    : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                }`}>
+                                  {s.profit_margin_pct}%
+                                </span>
+                              </td>
+                              <td className="py-3 px-3">
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                                  s.invoice_status === 'Fully Paid'
+                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                    : s.invoice_status === 'Advance Paid'
+                                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                    : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                                }`}>
+                                  {s.invoice_status}
+                                </span>
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedSchoolId(s.school_id);
+                                      setShowExpenseForm(true);
+                                      setShowPaymentForm(false);
+                                    }}
+                                    title="+ Add Expense Bill"
+                                    className="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg transition cursor-pointer"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedSchoolId(s.school_id);
+                                      setShowPaymentForm(true);
+                                      setShowExpenseForm(false);
+                                    }}
+                                    title="+ Add Fee Payment"
+                                    className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded-lg transition cursor-pointer"
+                                  >
+                                    <Wallet className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -899,14 +923,14 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Itemized operational expense audit log recorded across partner campuses and deployments.
+                      Itemized record of all money spent for school kits, server tokens, travel, and training.
                     </p>
                     <button
                       onClick={() => { setShowExpenseForm(true); setShowPaymentForm(false); }}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>Log New Expense</span>
+                      <span>+ Add Expense Bill</span>
                     </button>
                   </div>
 
@@ -914,53 +938,61 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
                     <table className="w-full text-left text-xs">
                       <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
                         <tr>
-                          <th className="py-2.5 px-3">Date</th>
-                          <th className="py-2.5 px-3">Target School</th>
+                          <th className="py-2.5 px-3">Bill Date</th>
+                          <th className="py-2.5 px-3">School Name</th>
                           <th className="py-2.5 px-3">Cost Category</th>
-                          <th className="py-2.5 px-3">Description / Item</th>
-                          <th className="py-2.5 px-3">Payment Mode</th>
-                          <th className="py-2.5 px-3">Logged By</th>
+                          <th className="py-2.5 px-3">Details / Reason</th>
+                          <th className="py-2.5 px-3">Paid Via</th>
+                          <th className="py-2.5 px-3">Recorded By</th>
                           <th className="py-2.5 px-3 text-right">Amount (INR)</th>
                           <th className="py-2.5 px-3 text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {ledger.map(e => (
-                          <tr key={e.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                            <td className="py-2.5 px-3 font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                              {e.date}
-                            </td>
-                            <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-white">
-                              {e.school_name}
-                            </td>
-                            <td className="py-2.5 px-3">
-                              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                                {e.category}
-                              </span>
-                            </td>
-                            <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 max-w-xs truncate">
-                              {e.description}
-                            </td>
-                            <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400 text-[11px]">
-                              {e.payment_mode}
-                            </td>
-                            <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400 text-[11px]">
-                              {e.logged_by}
-                            </td>
-                            <td className="py-2.5 px-3 text-right font-extrabold text-rose-600 dark:text-rose-400">
-                              {formatINR(e.amount)}
-                            </td>
-                            <td className="py-2.5 px-3 text-center">
-                              <button
-                                onClick={() => handleDeleteExpense(e.school_id, e.id)}
-                                className="p-1 text-slate-400 hover:text-red-600 transition cursor-pointer"
-                                title="Delete Expense Item"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                        {ledger.length === 0 ? (
+                          <tr>
+                            <td colSpan={8} className="py-8 text-center text-slate-400">
+                              No expense bills recorded yet. Click "+ Add Expense Bill" to log real operational costs.
                             </td>
                           </tr>
-                        ))}
+                        ) : (
+                          ledger.map(e => (
+                            <tr key={e.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                              <td className="py-2.5 px-3 font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                                {e.date}
+                              </td>
+                              <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-white">
+                                {e.school_name}
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                  {e.category}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 max-w-xs truncate">
+                                {e.description}
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400 text-[11px]">
+                                {e.payment_mode}
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400 text-[11px]">
+                                {e.logged_by}
+                              </td>
+                              <td className="py-2.5 px-3 text-right font-extrabold text-rose-600 dark:text-rose-400">
+                                {formatINR(e.amount)}
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                <button
+                                  onClick={() => handleDeleteExpense(e.school_id, e.id)}
+                                  className="p-1 text-slate-400 hover:text-red-600 transition cursor-pointer"
+                                  title="Delete Expense Bill"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -973,7 +1005,7 @@ export default function FinancialAnalyticsModal({ isOpen, onClose, onSelectSchoo
         {/* MODAL FOOTER */}
         <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0">
           <div className="flex items-center gap-3">
-            <span>ROI Multiplier: <strong className="text-slate-900 dark:text-white">{summary.roi_multiplier}x</strong></span>
+            <span>Return on Spend: <strong className="text-slate-900 dark:text-white">{summary.roi_multiplier}x</strong></span>
             <span>·</span>
             <span>Total Students Enrolled: <strong className="text-slate-900 dark:text-white">{summary.total_students_served}</strong></span>
           </div>
