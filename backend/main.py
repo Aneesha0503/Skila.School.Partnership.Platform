@@ -4,6 +4,7 @@ import json
 import uuid
 import os
 import smtplib
+import asyncio
 from email.message import EmailMessage
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
@@ -180,9 +181,26 @@ def ensure_default_users():
     except Exception as e:
         print(f"[Auth] Could not initialize default users: {e}")
 
+async def auto_firebase_sync_loop():
+    """
+    Continuous silent background worker that synchronizes with Firebase Cloud Firestore.
+    Runs silently in the backend so non-tech administrators and field agents never have
+    to manually worry about or click sync buttons.
+    """
+    await asyncio.sleep(3)
+    while True:
+        try:
+            await asyncio.to_thread(trigger_firebase_sync)
+        except Exception as e:
+            print(f"[Firebase Background Sync] Silent notice: {e}")
+        # Run automatically every 60 seconds
+        await asyncio.sleep(60)
+
 @app.on_event("startup")
-def on_startup():
+async def on_startup():
     ensure_default_users()
+    asyncio.create_task(auto_firebase_sync_loop())
+    print("[Firebase Engine] Automatic continuous background sync worker activated.")
 
 @app.post("/api/auth/login", response_model=TokenResponse)
 def auth_login(payload: UserLoginRequest):

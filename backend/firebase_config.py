@@ -149,21 +149,22 @@ class ResilientDocumentRef:
         self.doc_id = doc_id
 
     def get(self):
+        self.parent.check_quota_retry()
         if not self.parent.quota_exhausted and self.parent.live:
             try:
                 return self.parent.live.collection(self.col_name).document(self.doc_id).get()
             except Exception as e:
                 err_str = str(e).lower()
                 if "quota exceeded" in err_str or "429" in err_str or "resource_exhausted" in err_str:
-                    print(f"[Firebase] Live Firestore quota exceeded: {e}. Switching to Local Firestore mode.")
-                    self.parent.quota_exhausted = True
+                    self.parent.mark_quota_exhausted(str(e))
                 else:
-                    self.parent.quota_exhausted = True
+                    self.parent.mark_quota_exhausted(str(e))
         return self.parent.local.collection(self.col_name).document(self.doc_id).get()
 
     def set(self, data: dict, merge: bool = False):
         self.parent.local.collection(self.col_name).document(self.doc_id).set(data, merge=merge)
         synced_live = False
+        self.parent.check_quota_retry()
         if not self.parent.quota_exhausted and self.parent.live:
             try:
                 self.parent.live.collection(self.col_name).document(self.doc_id).set(data, merge=merge)
@@ -171,7 +172,7 @@ class ResilientDocumentRef:
             except Exception as e:
                 err_str = str(e).lower()
                 if "quota exceeded" in err_str or "429" in err_str or "resource_exhausted" in err_str:
-                    self.parent.quota_exhausted = True
+                    self.parent.mark_quota_exhausted(str(e))
         if not synced_live:
             self.parent.queue_sync(self.col_name, self.doc_id, "set", data, merge)
         return self
@@ -179,6 +180,7 @@ class ResilientDocumentRef:
     def update(self, data: dict):
         self.parent.local.collection(self.col_name).document(self.doc_id).update(data)
         synced_live = False
+        self.parent.check_quota_retry()
         if not self.parent.quota_exhausted and self.parent.live:
             try:
                 self.parent.live.collection(self.col_name).document(self.doc_id).update(data)
@@ -186,13 +188,14 @@ class ResilientDocumentRef:
             except Exception as e:
                 err_str = str(e).lower()
                 if "quota exceeded" in err_str or "429" in err_str or "resource_exhausted" in err_str:
-                    self.parent.quota_exhausted = True
+                    self.parent.mark_quota_exhausted(str(e))
         if not synced_live:
             self.parent.queue_sync(self.col_name, self.doc_id, "update", data)
 
     def delete(self):
         self.parent.local.collection(self.col_name).document(self.doc_id).delete()
         synced_live = False
+        self.parent.check_quota_retry()
         if not self.parent.quota_exhausted and self.parent.live:
             try:
                 self.parent.live.collection(self.col_name).document(self.doc_id).delete()
@@ -213,6 +216,7 @@ class ResilientCollectionRef:
         return ResilientDocumentRef(self.parent, self.col_name, doc_id)
 
     def stream(self):
+        self.parent.check_quota_retry()
         if not self.parent.quota_exhausted and self.parent.live:
             try:
                 for doc in self.parent.live.collection(self.col_name).stream():
@@ -221,10 +225,9 @@ class ResilientCollectionRef:
             except Exception as e:
                 err_str = str(e).lower()
                 if "quota exceeded" in err_str or "429" in err_str or "resource_exhausted" in err_str:
-                    print(f"[Firebase] Live Firestore quota exceeded: {e}. Switching to Local Firestore mode.")
-                    self.parent.quota_exhausted = True
+                    self.parent.mark_quota_exhausted(str(e))
                 else:
-                    self.parent.quota_exhausted = True
+                    self.parent.mark_quota_exhausted(str(e))
         for doc in self.parent.local.collection(self.col_name).stream():
             yield doc
 
@@ -233,9 +236,27 @@ class ResilientFirestoreClient:
         self.live = live_client
         self.local = local_client
         self.quota_exhausted = False
+        self.quota_exhausted_at = None
         self.sync_queue = []
         from datetime import datetime, timezone
         self.last_sync_time = datetime.now(timezone.utc).isoformat()
+
+    def check_quota_retry(self):
+        """Auto-resets quota limit state if 5 minutes have elapsed, giving live Firebase a fresh retry opportunity."""
+        if self.quota_exhausted and self.quota_exhausted_at:
+            from datetime import datetime, timezone
+            elapsed = (datetime.now(timezone.utc) - self.quota_exhausted_at).total_seconds()
+            if elapsed > 300:
+                print(f"[Firebase Auto-Sync] {int(elapsed)}s passed since quota exhaustion. Attempting auto-reconnect.")
+                self.quota_exhausted = False
+                self.quota_exhausted_at = None
+
+    def mark_quota_exhausted(self, reason: str = ""):
+        from datetime import datetime, timezone
+        self.quota_exhausted = True
+        self.quota_exhausted_at = datetime.now(timezone.utc)
+        if reason:
+            print(f"[Firebase] Quota limit encountered ({reason}). Operating via Local Resilient Cache.")
 
     def collection(self, col_name: str):
         return ResilientCollectionRef(self, col_name)
@@ -251,6 +272,7 @@ class ResilientFirestoreClient:
         })
 
     def get_sync_status(self) -> dict:
+        self.check_quota_retry()
         schools_count = len(self.local._data.get("schools", {}))
         notifs_count = len(self.local._data.get("notifications", {}))
         return {
@@ -268,6 +290,7 @@ class ResilientFirestoreClient:
         if not self.live:
             return {"status": "skipped", "message": "Live Firebase is not configured.", "synced_count": 0}
 
+        self.check_quota_retry()
         from datetime import datetime, timezone
         synced_count = 0
         failed_count = 0
@@ -290,7 +313,7 @@ class ResilientFirestoreClient:
             except Exception as e:
                 err_str = str(e).lower()
                 if "quota exceeded" in err_str or "429" in err_str or "resource_exhausted" in err_str:
-                    self.quota_exhausted = True
+                    self.mark_quota_exhausted(str(e))
                     remaining_queue.append(item)
                     failed_count += 1
                     break
@@ -310,7 +333,7 @@ class ResilientFirestoreClient:
                         synced_count += 1
                     except Exception as ex:
                         if "quota" in str(ex).lower() or "429" in str(ex):
-                            self.quota_exhausted = True
+                            self.mark_quota_exhausted(str(ex))
                             break
             except Exception:
                 pass

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   School, FileSpreadsheet, Plus, Sun, Moon, 
   ShieldCheck, ChevronDown, Check, Lock, UserCheck, Crown, Briefcase, Bell, Clock,
-  LogOut, LogIn, UserPlus, User, Trophy, Award, TrendingUp, Layers, RefreshCw
+  LogOut, LogIn, UserPlus, User, Trophy, Award, TrendingUp, Layers
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -40,41 +40,6 @@ export default function Header({
   const hubsMenuRef = useRef(null);
 
   const { user, isAuthenticated, isAdmin, logout, setLoginModalOpen } = useAuth();
-
-  const [firebaseStatus, setFirebaseStatus] = useState(null);
-  const [syncingFirebase, setSyncingFirebase] = useState(false);
-
-  const checkFirebaseStatus = async () => {
-    try {
-      const res = await fetch('/api/firebase/status');
-      if (res.ok) {
-        const data = await res.json();
-        setFirebaseStatus(data);
-      }
-    } catch {
-      // Ignore background fetch error
-    }
-  };
-
-  const handleManualFirebaseSync = async () => {
-    setSyncingFirebase(true);
-    try {
-      const res = await fetch('/api/firebase/sync', { method: 'POST' });
-      if (res.ok) {
-        await checkFirebaseStatus();
-      }
-    } catch (err) {
-      console.error('Firebase sync error:', err);
-    } finally {
-      setSyncingFirebase(false);
-    }
-  };
-
-  useEffect(() => {
-    checkFirebaseStatus();
-    const interval = setInterval(checkFirebaseStatus, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (user) {
@@ -359,28 +324,10 @@ export default function Header({
               </>
             )}
 
-            {/* Subtle Divider */}
-            <div className="h-5 w-px bg-slate-200 dark:bg-slate-800 mx-0.5 sm:mx-1 shrink-0" />
-
-            {/* Firebase Cloud Sync Indicator & Manual Sync Button */}
-            <button
-              onClick={handleManualFirebaseSync}
-              disabled={syncingFirebase}
-              title={
-                firebaseStatus?.live_active
-                  ? `Firebase Firestore Synced (${firebaseStatus.total_local_schools} schools). Click to re-sync.`
-                  : firebaseStatus?.quota_exhausted
-                  ? `Local Cache Active (${firebaseStatus.pending_sync_count} pending sync). Google Cloud quota exhausted. Click to retry sync.`
-                  : "Sync database with Firebase Cloud Firestore"
-              }
-              className="inline-flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-semibold rounded-lg border transition shadow-2xs cursor-pointer shrink-0 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-            >
-              <span className={`w-2 h-2 rounded-full ${syncingFirebase ? 'bg-amber-500 animate-ping' : firebaseStatus?.live_active ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              <RefreshCw className={`w-3.5 h-3.5 text-slate-500 dark:text-slate-400 ${syncingFirebase ? 'animate-spin text-amber-500' : ''}`} />
-              <span className="hidden xl:inline text-[11px]">
-                {syncingFirebase ? 'Syncing...' : firebaseStatus?.live_active ? 'Synced' : 'Sync'}
-              </span>
-            </button>
+            {/* Subtle Divider between actions and utilities */}
+            {isAuthenticated && (
+              <div className="h-5 w-px bg-slate-200 dark:bg-slate-800 mx-0.5 sm:mx-1 shrink-0" />
+            )}
 
             {/* Admin Notifications Bell - Only visible when signed in */}
             {isAuthenticated && (
