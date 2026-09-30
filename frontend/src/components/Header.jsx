@@ -191,10 +191,10 @@ export default function Header({
                 <button
                   onClick={() => setHubsMenuOpen(!hubsMenuOpen)}
                   className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition cursor-pointer shadow-2xs"
-                  title="Enterprise Hubs & Portals"
+                  title="Quick Menu & Portals"
                 >
                   <Layers className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                  <span>Hubs</span>
+                  <span>Quick Menu</span>
                   {confirmedCount !== undefined && confirmedCount > 0 && (
                     <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200">
                       {confirmedCount}
@@ -205,7 +205,7 @@ export default function Header({
                 {hubsMenuOpen && (
                   <div className="absolute right-0 mt-2 w-64 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
                     <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/80">
-                      Enterprise Portals
+                      Main Portals
                     </div>
                     <button
                       onClick={() => { setHubsMenuOpen(false); onOpenConfirmedModal(); }}
@@ -213,7 +213,7 @@ export default function Header({
                     >
                       <span className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
                         <Trophy className="w-4 h-4 text-amber-500" />
-                        Confirmed Schools
+                        Joined Schools
                       </span>
                       {confirmedCount !== undefined && confirmedCount > 0 && (
                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200">
@@ -227,10 +227,10 @@ export default function Header({
                     >
                       <span className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
                         <TrendingUp className="w-4 h-4 text-emerald-500" />
-                        Financial Tracker (P&L)
+                        Fees & Expenses (Accounts)
                       </span>
                       <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200">
-                        P&L
+                        Fees
                       </span>
                     </button>
                     {userRole === 'admin' && (
@@ -240,7 +240,7 @@ export default function Header({
                       >
                         <span className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
                           <Award className="w-4 h-4 text-violet-500" />
-                          Agent Leaderboard
+                          Team Scoreboard & Ranks
                         </span>
                       </button>
                     )}
@@ -318,15 +318,15 @@ export default function Header({
                     <div>
                       <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                         <Bell className="w-3.5 h-3.5 text-indigo-500" />
-                        <span>{userRole === 'agent' ? `${currentAgentName}'s Field Alerts` : 'Agent Field Alerts'}</span>
+                        <span>{userRole === 'agent' ? `${currentAgentName}'s Updates` : 'Agent Updates & Messages'}</span>
                         <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60">
                           {scopedNotifications.length}
                         </span>
                       </div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400">
                         {userRole === 'agent'
-                          ? 'Your private institutional updates & bucket activity'
-                          : 'Real-time multi-agent field updates & bucket logs'}
+                          ? 'Your private school visit updates'
+                          : 'Latest updates from agents visiting schools'}
                       </div>
                     </div>
 
@@ -357,7 +357,7 @@ export default function Header({
                           }`}
                         >
                           <Clock className="w-3 h-3" />
-                          <span>Timeline Stream</span>
+                          <span>All Updates</span>
                         </button>
                         <button
                           type="button"
@@ -369,7 +369,7 @@ export default function Header({
                           }`}
                         >
                           <Briefcase className="w-3 h-3" />
-                          <span>Agent Buckets</span>
+                          <span>By Agent</span>
                         </button>
                       </div>
 

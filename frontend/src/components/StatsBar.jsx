@@ -25,7 +25,7 @@ export default function StatsBar({ stats, schools, onFilterConfirmedDeals, isCon
       border: 'border-blue-100',
     },
     {
-      label: 'High Range',
+      label: 'Big Private / CBSE',
       value: activeStats.high_range || 0,
       icon: Award,
       color: 'text-purple-600',
@@ -33,7 +33,7 @@ export default function StatsBar({ stats, schools, onFilterConfirmedDeals, isCon
       border: 'border-purple-100',
     },
     {
-      label: 'State High (1.2k+)',
+      label: 'State Big (1200+)',
       value: activeStats.state_high || 0,
       icon: GraduationCap,
       color: 'text-indigo-600',
@@ -41,7 +41,7 @@ export default function StatsBar({ stats, schools, onFilterConfirmedDeals, isCon
       border: 'border-indigo-100',
     },
     {
-      label: 'State Mid (500-1.2k)',
+      label: 'State Medium (500-1.2k)',
       value: activeStats.state_mid || 0,
       icon: BookOpen,
       color: 'text-amber-600',
@@ -49,7 +49,7 @@ export default function StatsBar({ stats, schools, onFilterConfirmedDeals, isCon
       border: 'border-amber-100',
     },
     {
-      label: 'State Low (<500)',
+      label: 'State Small (<500)',
       value: activeStats.state_low || 0,
       icon: Layers,
       color: 'text-slate-600',
@@ -57,7 +57,7 @@ export default function StatsBar({ stats, schools, onFilterConfirmedDeals, isCon
       border: 'border-slate-200',
     },
     {
-      label: 'Total Student Reach',
+      label: 'Total Students',
       value: (activeStats.total_students || 0).toLocaleString(),
       icon: Users,
       color: 'text-emerald-600',
@@ -66,7 +66,7 @@ export default function StatsBar({ stats, schools, onFilterConfirmedDeals, isCon
     },
     {
       id: 'deals_confirmed',
-      label: 'Deals Confirmed',
+      label: 'Joined Schools',
       value: activeStats.deals_closed || 0,
       icon: Trophy,
       color: 'text-amber-500',

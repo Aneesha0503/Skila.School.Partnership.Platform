@@ -9,25 +9,25 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
     const t = tierObj?.tier || '';
     if (t === 'High Range') {
       return {
-        label: '👑 High Range',
-        sub: 'Intl / CBSE / ICSE',
+        label: '👑 Big Private / CBSE',
+        sub: 'CBSE / ICSE / Top Pvt',
         className: 'bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800'
       };
     } else if (t === 'State Board - High Strength') {
       return {
-        label: '🔷 State High',
+        label: '🔷 State Big',
         sub: '1,200+ Students',
         className: 'bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800'
       };
     } else if (t === 'State Board - Mid Strength') {
       return {
-        label: '🔶 State Mid',
+        label: '🔶 State Medium',
         sub: '500–1,200 Students',
         className: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
       };
     } else if (t === 'State Board - Low Strength') {
       return {
-        label: '⚪ State Low',
+        label: '⚪ State Small',
         sub: '<500 Students',
         className: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
       };
@@ -159,12 +159,12 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase text-[10px] font-bold tracking-wider">
               <th className="py-3 px-3 w-12 text-center text-slate-500 dark:text-slate-400 font-mono">#</th>
-              <th className="py-3 px-4">Tier (High to Low)</th>
-              <th className="py-3 px-4">School Name</th>
-              <th className="py-3 px-4">Field Agent</th>
-              <th className="py-3 px-4">Administrative Location</th>
-              <th className="py-3 px-4">Board & Strength</th>
-              <th className="py-3 px-4">Details Status</th>
+              <th className="py-3 px-4">School Type</th>
+              <th className="py-3 px-4">School Name & Place</th>
+              <th className="py-3 px-4">Agent / Notes</th>
+              <th className="py-3 px-4">Location</th>
+              <th className="py-3 px-4">Board & Students</th>
+              <th className="py-3 px-4">Info Status</th>
               <th className="py-3 px-4 text-right">Action</th>
             </tr>
           </thead>
@@ -211,12 +211,12 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
                             )}
                             {isDealClosed && isComp && (
                               <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-600 text-white shadow-2xs">
-                                <span>🎓</span> Active Partner
+                                <span>🎓</span> Joined School
                               </span>
                             )}
                             {isDealClosed && !isComp && form.progress_pct > 0 && (
                               <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs">
-                                <span>📜</span> Formalities: {form.progress_pct}%
+                                <span>📜</span> Joining Steps: {form.progress_pct}%
                               </span>
                             )}
                           </>
@@ -282,17 +282,17 @@ export default function SchoolTable({ schools, onSelectSchool, onRunSchoolDetail
                   <td className="py-3 px-4">
                     {details_fetched ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-semibold">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Full Profile Verified
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Complete Info
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[11px] font-semibold">
-                        <Zap className="w-3 h-3 text-amber-600 dark:text-amber-400" /> Profile Pending
+                        <Zap className="w-3 h-3 text-amber-600 dark:text-amber-400" /> Basic Info
                       </span>
                     )}
                   </td>
                   <td className="py-3 px-4 text-right whitespace-nowrap">
                     <span className="text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 font-semibold inline-flex items-center text-xs">
-                      View Profile <ChevronRight className="w-4 h-4 ml-0.5" />
+                      Open Details <ChevronRight className="w-4 h-4 ml-0.5" />
                     </span>
                   </td>
                 </tr>

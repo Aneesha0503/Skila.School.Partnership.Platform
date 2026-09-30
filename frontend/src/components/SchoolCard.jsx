@@ -14,22 +14,22 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
     const t = tierObj?.tier || '';
     if (t === 'High Range') {
       return {
-        label: '👑 High Range (International / CBSE / ICSE)',
+        label: '👑 Big Private / CBSE',
         className: 'bg-purple-100 text-purple-900 border-purple-300 font-bold'
       };
     } else if (t === 'State Board - High Strength') {
       return {
-        label: '🔷 State High (1,200+ Students)',
+        label: '🔷 State Big (1200+ students)',
         className: 'bg-blue-100 text-blue-900 border-blue-300 font-bold'
       };
     } else if (t === 'State Board - Mid Strength') {
       return {
-        label: '🔶 State Mid (500–1,200 Students)',
+        label: '🔶 State Medium (500–1200 students)',
         className: 'bg-amber-100 text-amber-900 border-amber-300 font-bold'
       };
     } else if (t === 'State Board - Low Strength') {
       return {
-        label: '⚪ State Low (<500 Students)',
+        label: '⚪ State Small (<500 students)',
         className: 'bg-slate-100 text-slate-700 border-slate-300 font-semibold'
       };
     }
@@ -189,8 +189,8 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
         </div>
       ) : (
         <div className="mb-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
-          <span>Basic Profile</span>
-          <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">Click to view</span>
+          <span>Basic Info</span>
+          <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">Click to open</span>
         </div>
       )}
 
@@ -199,15 +199,15 @@ export default function SchoolCard({ school, onSelectSchool, onRunSchoolDetails,
         <div className="truncate">
           {details_fetched && sales?.decision_maker ? (
             <>
-              <span className="text-slate-400 dark:text-slate-500">DM: </span>
+              <span className="text-slate-400 dark:text-slate-500">Contact: </span>
               <span className="font-medium text-slate-700 dark:text-slate-300">{sales?.decision_maker}</span>
             </>
           ) : (
-            <span className="text-slate-400 dark:text-slate-500 italic">Open profile</span>
+            <span className="text-slate-400 dark:text-slate-500 italic">Open details</span>
           )}
         </div>
         <div className="flex items-center text-indigo-600 dark:text-indigo-400 font-semibold group-hover:translate-x-0.5 transition-transform shrink-0">
-          <span>View Profile</span> <ChevronRight className="w-4 h-4 ml-0.5" />
+          <span>Open Details</span> <ChevronRight className="w-4 h-4 ml-0.5" />
         </div>
       </div>
     </div>

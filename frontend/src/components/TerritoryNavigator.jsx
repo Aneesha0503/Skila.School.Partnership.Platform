@@ -114,7 +114,7 @@ export default function TerritoryNavigator({
           </div>
           <div className="min-w-0">
             <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <span>Territory & Administrative Scope</span>
+              <span>Find Schools by Location</span>
               {state && district && (
                 <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate hidden md:inline">
                   — {state} &gt; {district} {mandal ? `> ${mandal}` : ''}
@@ -122,7 +122,7 @@ export default function TerritoryNavigator({
               )}
             </h2>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-              {discoveryMessage || 'Select state and district to scope schools and pipeline metrics'}
+              {discoveryMessage || 'Choose State and District to see schools in that area'}
             </p>
           </div>
         </div>
@@ -135,7 +135,7 @@ export default function TerritoryNavigator({
             <button
               onClick={onResetHierarchy}
               className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 px-2 py-1 rounded-md transition cursor-pointer"
-              title="Reset location drill-down"
+              title="Reset location filter"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset</span>
@@ -179,7 +179,7 @@ export default function TerritoryNavigator({
         {/* Mandal */}
         <div className="sm:col-span-1 md:col-span-4">
           <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">
-            Mandal / Sub-District
+            Mandal / Tehsil
           </label>
           <CustomDropdown
             value={mandal}
@@ -200,7 +200,7 @@ export default function TerritoryNavigator({
           className="inline-flex items-center gap-1.5 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 font-semibold cursor-pointer transition text-[11px]"
         >
           <Layers className="w-3.5 h-3.5" />
-          <span>{showGranular ? 'Hide granular zoning' : 'Granular zoning (Division, Local Body, Ward)'}</span>
+          <span>{showGranular ? 'Hide more area filters' : 'More Area Filters (Division, Panchayat, Ward)'}</span>
           {showGranular ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </button>
 
@@ -211,17 +211,17 @@ export default function TerritoryNavigator({
             onClick={handleTriggerDiscovery}
             disabled={isDiscovering}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-semibold text-xs border border-indigo-200 dark:border-indigo-800/80 transition cursor-pointer shadow-2xs disabled:opacity-50"
-            title="Scan live sources to discover new institutions in this district"
+            title="Search for schools in this district"
           >
             {isDiscovering ? (
               <>
                 <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
-                <span>Scanning...</span>
+                <span>Searching...</span>
               </>
             ) : (
               <>
                 <Search className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                <span>Discover More Schools</span>
+                <span>Find Schools in District</span>
               </>
             )}
           </button>
@@ -233,7 +233,7 @@ export default function TerritoryNavigator({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-800">
           <div>
             <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">
-              Revenue Division
+              Division / Tehsil
             </label>
             <CustomDropdown
               value={revenue_division}
@@ -246,7 +246,7 @@ export default function TerritoryNavigator({
           </div>
           <div>
             <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">
-              Local Body (Municipality/GP)
+              Panchayat / Municipality
             </label>
             <CustomDropdown
               value={local_body_name}
@@ -259,7 +259,7 @@ export default function TerritoryNavigator({
           </div>
           <div>
             <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">
-              Ward / Village
+              Village / Ward / Area
             </label>
             <CustomDropdown
               value={village_locality_ward}

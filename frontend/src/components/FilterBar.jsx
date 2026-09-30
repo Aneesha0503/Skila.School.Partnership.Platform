@@ -75,7 +75,7 @@ export default function FilterBar({
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search school name, UDISE code, or locality..."
+            placeholder="Search school name, city, district, principal..."
             value={search}
             onChange={(e) => onFilterChange('search', e.target.value)}
             className="w-full pl-9 pr-8 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition placeholder-slate-400 dark:placeholder-slate-500 font-medium"
@@ -124,14 +124,14 @@ export default function FilterBar({
             onChange={(e) => onFilterChange('lead_status', e.target.value)}
             className="text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-1.5 px-2.5 font-medium text-slate-700 dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer shadow-2xs shrink-0"
           >
-            <option value="All" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All Statuses</option>
-            <option value="New" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">New</option>
-            <option value="Contacted" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Contacted</option>
-            <option value="Demo Scheduled" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Demo Scheduled</option>
-            <option value="Proposal Shared" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Proposal Shared</option>
-            <option value="Pilot Started" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Pilot Started</option>
-            <option value="Closed Won" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Closed Won</option>
-            <option value="Closed Lost" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Closed Lost</option>
+            <option value="All" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All Status (New, Visited, Joined...)</option>
+            <option value="New" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">New School</option>
+            <option value="Contacted" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Call / Contacted</option>
+            <option value="Demo Scheduled" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Meeting / Demo Fixed</option>
+            <option value="Proposal Shared" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Offer / Proposal Sent</option>
+            <option value="Pilot Started" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Trial Started</option>
+            <option value="Closed Won" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Joined & Signed (Won)</option>
+            <option value="Closed Lost" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Not Interested (Lost)</option>
           </select>
 
           {/* Secondary Filters Popover Button */}
@@ -144,10 +144,10 @@ export default function FilterBar({
                   ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300'
                   : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
               }`}
-              title="Filter by Board, AI Readiness, or Tech Adoption"
+              title="More Filters (Board, Tech, AI)"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Filters</span>
+              <span>More Filters</span>
               {activeSecondaryCount > 0 && (
                 <span className="w-4 h-4 rounded-full bg-indigo-600 text-white text-[10px] font-extrabold flex items-center justify-center">
                   {activeSecondaryCount}
@@ -159,7 +159,7 @@ export default function FilterBar({
             {moreFiltersOpen && (
               <div className="absolute right-0 mt-2 w-72 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-3.5 z-40 animate-in fade-in zoom-in-95 duration-100 space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">Secondary Attributes</span>
+                  <span className="text-xs font-bold text-slate-900 dark:text-white">More School Filters</span>
                   {activeSecondaryCount > 0 && (
                     <button
                       type="button"
@@ -174,7 +174,7 @@ export default function FilterBar({
                 {/* Board */}
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                    Affiliation Board
+                    School Board (CBSE, State, etc.)
                   </label>
                   <select
                     value={board}
@@ -192,35 +192,35 @@ export default function FilterBar({
                 {/* AI Potential */}
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                    Skila AI Potential
+                    Interest in AI & Coding
                   </label>
                   <select
                     value={skila_ai_potential}
                     onChange={(e) => onFilterChange('skila_ai_potential', e.target.value)}
                     className="w-full text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-1.5 px-2.5 font-medium text-slate-800 dark:text-slate-200"
                   >
-                    <option value="All">All Potential</option>
-                    <option value="High">High Potential</option>
-                    <option value="Medium">Medium Potential</option>
-                    <option value="Low">Low Potential</option>
+                    <option value="All">All Levels</option>
+                    <option value="High">High Interest</option>
+                    <option value="Medium">Medium Interest</option>
+                    <option value="Low">Low Interest</option>
                   </select>
                 </div>
 
                 {/* Tech Adoption */}
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                    Technology Adoption
+                    Computer Lab & Tech Facility
                   </label>
                   <select
                     value={technology_adoption_level}
                     onChange={(e) => onFilterChange('technology_adoption_level', e.target.value)}
                     className="w-full text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-1.5 px-2.5 font-medium text-slate-800 dark:text-slate-200"
                   >
-                    <option value="All">All Tech Level</option>
-                    <option value="Advanced">Advanced Tech</option>
-                    <option value="High">High Tech</option>
-                    <option value="Medium">Medium Tech</option>
-                    <option value="Low">Low Tech</option>
+                    <option value="All">All Facilities</option>
+                    <option value="Advanced">Advanced (Full Lab & Smart TVs)</option>
+                    <option value="High">High (Computer Lab Available)</option>
+                    <option value="Medium">Medium (Few Computers)</option>
+                    <option value="Low">Low (No Computer Lab)</option>
                   </select>
                 </div>
 
@@ -281,7 +281,7 @@ export default function FilterBar({
       {/* Tier Filter Pills Row */}
       <div className="flex items-center gap-1.5 flex-wrap pt-2.5 border-t border-slate-100 dark:border-slate-800 text-xs">
         <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mr-1 uppercase tracking-wider flex items-center gap-1">
-          <Layers className="w-3.5 h-3.5 text-indigo-500" /> Tier:
+          <Layers className="w-3.5 h-3.5 text-indigo-500" /> School Type:
         </span>
         <button
           type="button"
@@ -303,7 +303,7 @@ export default function FilterBar({
               : 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800'
           }`}
         >
-          👑 High Range
+          👑 Big Private / CBSE
         </button>
         <button
           type="button"
@@ -314,7 +314,7 @@ export default function FilterBar({
               : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800'
           }`}
         >
-          🔷 State High (1200+)
+          🔷 State Big (1200+)
         </button>
         <button
           type="button"
@@ -325,7 +325,7 @@ export default function FilterBar({
               : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800'
           }`}
         >
-          🔶 State Mid (500–1200)
+          🔶 State Medium (500–1200)
         </button>
         <button
           type="button"
@@ -336,7 +336,7 @@ export default function FilterBar({
               : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700'
           }`}
         >
-          ⚪ State Low (&lt;500)
+          ⚪ State Small (&lt;500)
         </button>
 
         <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block" />
@@ -350,10 +350,10 @@ export default function FilterBar({
               ? 'bg-amber-500 text-white shadow-xs'
               : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 hover:bg-amber-100 dark:hover:bg-amber-900/60'
           }`}
-          title="Filter only schools with confirmed and closed deals"
+          title="Show only joined and closed schools"
         >
           <span>🏆</span>
-          <span>Confirmed Only</span>
+          <span>Joined Schools Only</span>
           {confirmedOnly && (
             <span className="text-[10px] ml-0.5 bg-white/20 px-1 py-0.2 rounded-full font-bold">
               ON

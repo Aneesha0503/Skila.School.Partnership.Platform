@@ -568,22 +568,22 @@ export default function SchoolDetailModal({
     const t = tierObj?.tier || '';
     if (t === 'High Range') {
       return {
-        label: '👑 High Range',
+        label: '👑 Big Private / CBSE',
         className: 'bg-purple-500/20 text-purple-200 border-purple-500/30'
       };
     } else if (t === 'State Board - High Strength') {
       return {
-        label: '🔷 State Board (High Strength)',
+        label: '🔷 State Big (1200+)',
         className: 'bg-blue-500/20 text-blue-200 border-blue-500/30'
       };
     } else if (t === 'State Board - Mid Strength') {
       return {
-        label: '🔶 State Board (Mid Strength)',
+        label: '🔶 State Medium (500–1200)',
         className: 'bg-amber-500/20 text-amber-200 border-amber-500/30'
       };
     } else if (t === 'State Board - Low Strength') {
       return {
-        label: '⚪ State Board (<500)',
+        label: '⚪ State Small (<500)',
         className: 'bg-slate-700/60 text-slate-300 border-slate-600'
       };
     }
@@ -755,7 +755,7 @@ export default function SchoolDetailModal({
               }`}
             >
               <Building2 className="w-3.5 h-3.5" />
-              <span>School Information</span>
+              <span>School Details</span>
             </button>
 
             <button
@@ -767,7 +767,7 @@ export default function SchoolDetailModal({
               }`}
             >
               <Cpu className="w-3.5 h-3.5" />
-              <span>Technology Usage</span>
+              <span>Computers & Lab</span>
             </button>
 
             <button
@@ -779,7 +779,7 @@ export default function SchoolDetailModal({
               }`}
             >
               <DollarSign className="w-3.5 h-3.5" />
-              <span>Sales & CRM Pipeline</span>
+              <span>Visits & Status</span>
             </button>
 
             <button
@@ -791,7 +791,7 @@ export default function SchoolDetailModal({
               }`}
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>Field Notes & Updates</span>
+              <span>Agent Visit Notes</span>
               {visibleAgentNotes.length > 0 && (
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                   activeTab === 'notes' 
@@ -812,7 +812,7 @@ export default function SchoolDetailModal({
               }`}
             >
               <Award className="w-3.5 h-3.5 text-amber-400" />
-              <span>Partnership Formalities</span>
+              <span>Agreement & Joining Steps</span>
               {isDealClosed && (
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                   (formalities?.progress_pct >= 100 || formalities?.formalities_completed)

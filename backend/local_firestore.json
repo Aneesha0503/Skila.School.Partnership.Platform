@@ -7677,6 +7677,67 @@
       "timestamp": "2026-09-30T15:04:22.998092+00:00",
       "is_read": true,
       "type": "agent_field_update"
+    },
+    "notif_39cf342939": {
+      "id": "notif_39cf342939",
+      "school_id": "ba4a53a1-67a9-4332-b084-e7d7355998e8",
+      "school_name": "Skila Test Academy 78b9e9",
+      "agent_name": "Admin",
+      "category": "Deal Closed",
+      "urgency": "High",
+      "message": "🎉 Deal Confirmed & Closed! Skila Test Academy 78b9e9 partnership finalized by Admin.",
+      "timestamp": "2026-09-30T16:19:12.349387+00:00",
+      "is_read": true
+    },
+    "notif_afd9e7510d": {
+      "id": "notif_afd9e7510d",
+      "school_id": "ba4a53a1-67a9-4332-b084-e7d7355998e8",
+      "school_name": "Skila Test Academy 78b9e9",
+      "agent_name": "Admin",
+      "category": "Roster Provisioned & Welcome Kit",
+      "urgency": "High",
+      "message": "🚀 3 Student LMS Accounts Provisioned & Parent Welcome Kits Dispatched via WhatsApp, SMS, Email for Skila Test Academy 78b9e9!",
+      "timestamp": "2026-09-30T16:19:13.040819+00:00",
+      "is_read": true
+    },
+    "notif_dc5cb76c58": {
+      "id": "notif_dc5cb76c58",
+      "school_id": "ba4a53a1-67a9-4332-b084-e7d7355998e8",
+      "school_name": "Skila Test Academy 78b9e9",
+      "agent_name": "Admin Test 78b9e9",
+      "category": "Financial Expense Logged",
+      "urgency": "Normal",
+      "message": "Logged expense of INR 25,000.00 under 'Cloud Infrastructure & AI Tokens' for Skila Test Academy 78b9e9.",
+      "timestamp": "2026-09-30T16:19:13.237663+00:00",
+      "is_read": true
+    },
+    "notif_daf843658f": {
+      "id": "notif_daf843658f",
+      "school_id": "ba4a53a1-67a9-4332-b084-e7d7355998e8",
+      "school_name": "Skila Test Academy 78b9e9",
+      "agent_name": "Admin Test 78b9e9",
+      "category": "Payment Received",
+      "urgency": "High",
+      "message": "Received payment of INR 175,000.00 from Skila Test Academy 78b9e9 via NEFT / RTGS.",
+      "timestamp": "2026-09-30T16:19:13.372931+00:00",
+      "is_read": true
+    },
+    "5a8602f6-f375-4263-aaa1-6732e337e95c": {
+      "id": "5a8602f6-f375-4263-aaa1-6732e337e95c",
+      "note_id": "1fb32bf7-1d7d-44e4-b5f5-41d2a6b6853a",
+      "school_id": "ba4a53a1-67a9-4332-b084-e7d7355998e8",
+      "school_name": "Skila Test Academy 78b9e9",
+      "district": "Hyderabad",
+      "state": "Telangana",
+      "agent_name": "Field Agent 78b9e9",
+      "bucket": "Campus Visits & Demos",
+      "category": "School Visit",
+      "urgency": "Normal",
+      "text_snippet": "Completed orientation with Vice Principal regarding AI lab launch.",
+      "full_text": "Completed orientation with Vice Principal regarding AI lab launch.",
+      "timestamp": "2026-09-30T16:19:14.114149+00:00",
+      "is_read": true,
+      "type": "agent_field_update"
     }
   },
   "users": {
