@@ -35,10 +35,15 @@ export default function CallingSchoolList({
   }, []);
 
   const handleCallSchool = async (school) => {
-    const schoolName = school.info?.school_name || school.name || 'Telangana School';
-    const phone = school.info?.phone || school.contact?.phone || '9849012345';
-    const district = school.hierarchy?.district || 'Hyderabad';
-    const principal = school.info?.principal_name || school.contact?.principal || 'Principal';
+    const schoolName = school.info?.school_name || school.name || 'School';
+    const phone = school.info?.phone || school.contact?.phone || '';
+    const district = school.hierarchy?.district || '';
+    const principal = school.info?.principal_name || school.contact?.principal || '';
+
+    if (!phone) {
+      alert(`No contact phone number is on file for ${schoolName}. Please update the school contact profile.`);
+      return;
+    }
 
     setCallingId(school.id);
     try {
@@ -59,6 +64,8 @@ export default function CallingSchoolList({
       setCallingId(null);
     }
   };
+
+  const uniqueDistricts = ['All', ...Array.from(new Set(schools.map(s => s.hierarchy?.district).filter(Boolean))).sort()];
 
   const filteredSchools = schools.filter((s) => {
     const name = (s.info?.school_name || s.name || '').toLowerCase();
@@ -103,21 +110,15 @@ export default function CallingSchoolList({
             />
           </div>
 
-          {/* District Filter */}
+          {/* Dynamic District Filter */}
           <select
             value={selectedDistrict}
             onChange={(e) => setSelectedDistrict(e.target.value)}
             className="bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
           >
-            <option value="All">All Districts</option>
-            <option value="Hyderabad">Hyderabad</option>
-            <option value="Warangal">Warangal</option>
-            <option value="Karimnagar">Karimnagar</option>
-            <option value="Nizamabad">Nizamabad</option>
-            <option value="Khammam">Khammam</option>
-            <option value="Ranga Reddy">Ranga Reddy</option>
-            <option value="Nalgonda">Nalgonda</option>
-            <option value="Medak">Medak</option>
+            {uniqueDistricts.map((d) => (
+              <option key={d} value={d}>{d === 'All' ? 'All Districts' : d}</option>
+            ))}
           </select>
 
           <button
@@ -155,11 +156,11 @@ export default function CallingSchoolList({
               </thead>
               <tbody className="divide-y divide-slate-800/60">
                 {filteredSchools.map((s) => {
-                  const sName = s.info?.school_name || s.name || 'Telangana School';
-                  const sDist = s.hierarchy?.district || 'Hyderabad';
-                  const sPhone = s.info?.phone || s.contact?.phone || '9849012345';
-                  const sPrincipal = s.info?.principal_name || s.contact?.principal || 'Principal';
-                  const sStudents = s.info?.student_count || s.metrics?.total_students || 450;
+                  const sName = s.info?.school_name || s.name || 'School';
+                  const sDist = s.hierarchy?.district || 'Telangana';
+                  const sPhone = s.info?.phone || s.contact?.phone || '-';
+                  const sPrincipal = s.info?.principal_name || s.contact?.principal || '-';
+                  const sStudents = s.info?.student_strength || s.metrics?.total_students || s.info?.student_count || 0;
                   const aiStatus = s.ai_calling_status || 'NOT_CALLED';
                   const interest = s.ai_interest_level || 'PENDING';
                   const isCalling = callingId === s.id;
@@ -191,7 +192,7 @@ export default function CallingSchoolList({
                       </td>
 
                       <td className="px-4 py-3 font-medium text-slate-300">
-                        {sStudents} Students
+                        {sStudents > 0 ? `${sStudents.toLocaleString()} Students` : 'Not recorded'}
                       </td>
 
                       <td className="px-4 py-3">

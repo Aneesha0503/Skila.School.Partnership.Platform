@@ -27,29 +27,15 @@ export default function CallingAnalytics() {
     loadData();
   }, []);
 
-  const interestMap = data?.interest_distribution || { HOT: 8, WARM: 18, COLD: 6 };
-  const totalCalls = data?.total_calls || (interestMap.HOT + interestMap.WARM + interestMap.COLD) || 32;
+  const interestMap = data?.interest_distribution || { HOT: 0, WARM: 0, COLD: 0 };
+  const totalCalls = data?.total_calls || (interestMap.HOT + interestMap.WARM + interestMap.COLD) || 0;
 
-  const hotPct = Math.round((interestMap.HOT / totalCalls) * 100) || 25;
-  const warmPct = Math.round((interestMap.WARM / totalCalls) * 100) || 55;
-  const coldPct = Math.round((interestMap.COLD / totalCalls) * 100) || 20;
+  const hotPct = totalCalls > 0 ? Math.round((interestMap.HOT / totalCalls) * 100) : 0;
+  const warmPct = totalCalls > 0 ? Math.round((interestMap.WARM / totalCalls) * 100) : 0;
+  const coldPct = totalCalls > 0 ? Math.round((interestMap.COLD / totalCalls) * 100) : 0;
 
-  const districts = data?.district_distribution?.length > 0 
-    ? data.district_distribution 
-    : [
-        { district: 'Warangal', count: 12 },
-        { district: 'Hyderabad', count: 9 },
-        { district: 'Karimnagar', count: 5 },
-        { district: 'Nizamabad', count: 4 },
-        { district: 'Khammam', count: 2 }
-      ];
-
-  const commonObjections = [
-    { title: 'Existing Computer Syllabus', count: 14, pct: 45, solution: 'Highlight Skila AI hands-on AI lab modules vs old rote syllabus' },
-    { title: 'Price Point & Budget Inquiry', count: 9, pct: 30, solution: 'Confirmed target ₹500/yr (₹42/mo per student), non-negotiable by AI' },
-    { title: 'Principal Busy / Exam Preparation', count: 5, pct: 16, solution: 'Scheduled automatic callback at non-academic peak hours' },
-    { title: 'Decision Maker Not Available', count: 3, pct: 9, solution: 'Escalated to human rep to obtain direct mobile of Correspondent' },
-  ];
+  const districts = data?.district_distribution || [];
+  const commonObjections = data?.objections_distribution || [];
 
   return (
     <div className="space-y-6">
@@ -143,41 +129,59 @@ export default function CallingAnalytics() {
             </h3>
             <p className="text-xs text-slate-400 mb-4">Schools contacted by geographic territory</p>
 
-            <div className="space-y-2.5">
-              {districts.map((d, i) => (
-                <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-slate-950/50 border border-slate-800/80">
-                  <span className="text-xs font-semibold text-slate-200">{d.district}</span>
-                  <span className="text-xs font-mono font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
-                    {d.count} calls
-                  </span>
-                </div>
-              ))}
-            </div>
+            {districts.length === 0 ? (
+              <div className="py-8 text-center text-slate-500 text-xs">
+                No outbound calls completed by territory yet.
+              </div>
+            ) : (
+              <div className="space-y-2.5 max-h-48 overflow-y-auto">
+                {districts.map((d, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-slate-950/50 border border-slate-800/80">
+                    <span className="text-xs font-semibold text-slate-200">{d.district}</span>
+                    <span className="text-xs font-mono font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
+                      {d.count} calls
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="mt-4 text-[11px] text-slate-500">
-            Covers SSC, CBSE, and ICSE schools in Telangana.
+            Real-time coverage across Telangana school districts.
           </div>
         </div>
 
         {/* Top Objections Analyzed */}
-        <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md">
-          <h3 className="text-sm font-bold text-white mb-1 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-purple-400" />
-            Top Detected Objections & Handling
-          </h3>
-          <p className="text-xs text-slate-400 mb-4">NLP categorization of principal hesitations</p>
+        <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md flex flex-col justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-white mb-1 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-purple-400" />
+              Top Detected Objections & Concerns
+            </h3>
+            <p className="text-xs text-slate-400 mb-4">Extracted dynamically from AI conversation analysis</p>
 
-          <div className="space-y-3">
-            {commonObjections.map((obj, i) => (
-              <div key={i} className="p-2.5 rounded-xl bg-slate-950/50 border border-slate-800">
-                <div className="flex items-center justify-between text-xs font-bold text-slate-200 mb-0.5">
-                  <span>{obj.title}</span>
-                  <span className="text-indigo-400 font-mono text-[11px]">{obj.pct}%</span>
-                </div>
-                <p className="text-[10px] text-slate-400">{obj.solution}</p>
+            {commonObjections.length === 0 ? (
+              <div className="py-8 text-center text-slate-500 text-xs">
+                No objections logged yet. AI call analytics will populate here as schools are called.
               </div>
-            ))}
+            ) : (
+              <div className="space-y-2.5 max-h-48 overflow-y-auto">
+                {commonObjections.map((obj, i) => (
+                  <div key={i} className="p-2.5 rounded-xl bg-slate-950/50 border border-slate-800">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-200 mb-0.5">
+                      <span>{obj.title}</span>
+                      <span className="text-indigo-400 font-mono text-[11px]">{obj.count} ({obj.pct}%)</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400">Recorded across {obj.count} school dialogue sessions</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 text-[11px] text-slate-500">
+            Categorized via post-call NLP summarization.
           </div>
         </div>
 

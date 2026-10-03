@@ -119,14 +119,14 @@ export default function CallDetailModal({
                 </button>
                 <div>
                   <div className="text-xs font-bold text-slate-200">Call Audio Recording (Sarvam AI / Plivo)</div>
-                  <div className="text-[11px] text-slate-400">Duration: {callData?.duration || 45} seconds • Audio Codec: WAV 16kHz</div>
+                  <div className="text-[11px] text-slate-400">Duration: {callData?.duration || 0} seconds • Audio Codec: WAV 16kHz</div>
                 </div>
               </div>
 
               {/* Scrubber */}
               <div className="flex-1 w-full max-w-md flex items-center gap-3">
                 <span className="text-[11px] font-mono text-slate-400">
-                  00:{Math.floor((audioProgress / 100) * (callData?.duration || 45)).toString().padStart(2, '0')}
+                  00:{Math.floor((audioProgress / 100) * (callData?.duration || 0)).toString().padStart(2, '0')}
                 </span>
                 <div 
                   onClick={(e) => {
@@ -142,7 +142,7 @@ export default function CallDetailModal({
                   />
                 </div>
                 <span className="text-[11px] font-mono text-slate-400">
-                  00:{callData?.duration || 45}
+                  00:{String(callData?.duration || 0).padStart(2, '0')}
                 </span>
               </div>
             </div>
@@ -157,36 +157,36 @@ export default function CallDetailModal({
                   </h3>
                 </div>
                 <div className="text-xs text-indigo-300 font-medium">
-                  Confidence: <span className="font-bold text-emerald-400">{analysisData?.confidence_score || '92%'}</span>
+                  Confidence: <span className="font-bold text-emerald-400">{analysisData?.confidence_score || (interestLevel === 'HOT' ? 'High' : 'Normal')}</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
                   <div className="text-[10px] uppercase font-bold text-slate-400 mb-1">Interest Assessment</div>
-                  <div className="text-sm font-bold text-white">{analysisData?.interest_level || 'WARM'}</div>
+                  <div className="text-sm font-bold text-white">{analysisData?.interest_level || callData?.interest_level || 'WARM'}</div>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    {analysisData?.interest_reason || 'Principal showed clear curiosity regarding Skila AI computer lab curriculum.'}
+                    {analysisData?.interest_reason || analysisData?.summary || 'Principal responded to Skila AI outreach call.'}
                   </p>
                 </div>
 
                 <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
                   <div className="text-[10px] uppercase font-bold text-slate-400 mb-1">Student Strength & Budget</div>
                   <div className="text-sm font-bold text-emerald-400">
-                    {analysisData?.student_count || callData?.student_count || '350 - 500'} Students
+                    {analysisData?.student_count || callData?.student_count ? `${analysisData?.student_count || callData?.student_count} Students` : 'Not specified during call'}
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Budget status: {analysisData?.budget_readiness || 'Ready for annual school fee integration (₹500-600)'}
+                    Budget status: {analysisData?.budget_readiness || 'Standard school fee model (₹500-600/student)'}
                   </p>
                 </div>
 
                 <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
                   <div className="text-[10px] uppercase font-bold text-slate-400 mb-1">Decision Authority</div>
                   <div className="text-sm font-bold text-indigo-300">
-                    {analysisData?.decision_maker_identified ? 'Direct Principal / Correspondent' : 'Staff / Office In-Charge'}
+                    {analysisData?.decision_maker_identified ? 'Direct Principal / Correspondent' : 'Staff / Unverified'}
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Next Action: {analysisData?.recommended_action || 'Schedule live classroom demonstration'}
+                    Next Action: {analysisData?.recommended_action || (callData?.demo_requested ? 'Schedule in-person demo' : 'Follow up as requested')}
                   </p>
                 </div>
               </div>

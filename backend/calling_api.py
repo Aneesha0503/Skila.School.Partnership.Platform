@@ -59,10 +59,10 @@ def get_providers(force_mock: bool = False):
 # ==========================================
 class CallInitiateRequest(BaseModel):
     school_id: Optional[str] = None
-    school_name: Optional[str] = "Government High School"
-    phone_number: str
-    district: Optional[str] = "Hyderabad"
-    principal_name: Optional[str] = "Principal"
+    school_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    district: Optional[str] = None
+    principal_name: Optional[str] = None
     force_mock: Optional[bool] = False
 
 class TurnRequest(BaseModel):
@@ -71,7 +71,7 @@ class TurnRequest(BaseModel):
 
 class CampaignCreateRequest(BaseModel):
     name: str
-    district: Optional[str] = "All Telangana"
+    district: Optional[str] = None
     target_count: Optional[int] = 50
     daily_call_limit: Optional[int] = 20
 
@@ -138,22 +138,39 @@ async def initiate_single_call(payload: CallInitiateRequest):
     call_id = f"call_{uuid.uuid4().hex[:10]}"
     telephony, voice, llm, is_real = get_providers(force_mock=payload.force_mock)
 
-    # Resolve school profile
-    school_info = {
-        "school_id": payload.school_id or f"sch_{uuid.uuid4().hex[:6]}",
-        "school_name": payload.school_name,
-        "phone_number": payload.phone_number,
-        "district": payload.district,
-        "principal_name": payload.principal_name
-    }
+    # Resolve school profile dynamically from DB or payload
+    school_name = (payload.school_name or "").strip()
+    phone_number = (payload.phone_number or "").strip()
+    district = (payload.district or "").strip()
+    principal_name = (payload.principal_name or "").strip()
+    student_count = None
+
     if payload.school_id:
         doc = db.collection("schools").document(payload.school_id).get()
         if doc.exists:
             s_dict = doc.to_dict()
             info = s_dict.get("info") or {}
-            school_info["school_name"] = info.get("school_name") or s_dict.get("name") or payload.school_name
-            school_info["phone_number"] = info.get("phone") or s_dict.get("contact", {}).get("phone") or payload.phone_number
-            school_info["district"] = (s_dict.get("hierarchy") or {}).get("district") or payload.district
+            contact = s_dict.get("contact") or {}
+            hierarchy = s_dict.get("hierarchy") or {}
+            metrics = s_dict.get("metrics") or {}
+
+            school_name = info.get("school_name") or s_dict.get("name") or school_name
+            phone_number = phone_number or info.get("phone") or contact.get("phone") or ""
+            district = hierarchy.get("district") or district
+            principal_name = info.get("principal_name") or contact.get("principal") or principal_name
+            student_count = info.get("student_strength") or metrics.get("total_students")
+
+    if not phone_number:
+        raise HTTPException(status_code=400, detail="A valid phone number is required to initiate an AI call.")
+
+    school_info = {
+        "school_id": payload.school_id or f"sch_{uuid.uuid4().hex[:6]}",
+        "school_name": school_name or "School Lead",
+        "phone_number": phone_number,
+        "district": district or "Telangana",
+        "principal_name": principal_name or "Principal",
+        "student_count": student_count
+    }
 
     now = datetime.now(timezone.utc).isoformat()
 
@@ -167,12 +184,12 @@ async def initiate_single_call(payload: CallInitiateRequest):
             "school_id": sid,
             "school_name": summary.get("school_name"),
             "district": summary.get("district"),
-            "phone_number": payload.phone_number,
+            "phone_number": school_info["phone_number"],
             "duration": summary.get("duration", 0),
             "status": summary.get("state", {}).get("lead_status", "COMPLETED"),
             "interest_level": summary.get("state", {}).get("interest_level", "WARM"),
             "demo_requested": summary.get("state", {}).get("demo_requested", False),
-            "student_count": summary.get("state", {}).get("student_count"),
+            "student_count": summary.get("state", {}).get("student_count") or school_info.get("student_count"),
             "recording_url": f"https://storage.googleapis.com/skila-calls/{cid}.wav",
             "created_at": now,
             "ended_at": summary.get("ended_at", now),
@@ -209,7 +226,7 @@ async def initiate_single_call(payload: CallInitiateRequest):
                 "school_id": sid,
                 "school_name": summary.get("school_name"),
                 "district": summary.get("district"),
-                "phone": payload.phone_number,
+                "phone": school_info["phone_number"],
                 "urgency": "High",
                 "action": "BOOK_DEMO",
                 "notes": analysis.get("interest_reason") or "Principal requested live Skila AI demo",
@@ -226,7 +243,7 @@ async def initiate_single_call(payload: CallInitiateRequest):
                     "school_name": summary.get("school_name"),
                     "district": summary.get("district"),
                     "scheduled_status": "Requested",
-                    "student_count": summary.get("state", {}).get("student_count") or 500,
+                    "student_count": summary.get("state", {}).get("student_count") or school_info.get("student_count") or 0,
                     "created_at": now
                 })
 
@@ -429,23 +446,7 @@ def get_campaigns():
     """Lists outbound call campaigns."""
     col = db.collection("campaigns")
     docs = [d.to_dict() for d in col.stream()]
-    if not docs:
-        # Seed initial campaign
-        init_camp = {
-            "id": "camp_telangana_main",
-            "name": "Telangana School Outreach 2026",
-            "district": "All Telangana",
-            "status": "RUNNING",
-            "total_leads": 120,
-            "calls_made": 42,
-            "connected": 28,
-            "interested": 14,
-            "hot_leads": 8,
-            "demos_requested": 6,
-            "created_at": datetime.now(timezone.utc).isoformat()
-        }
-        db.collection("campaigns").document(init_camp["id"]).set(init_camp)
-        docs = [init_camp]
+    docs.sort(key=lambda x: x.get("created_at") or "", reverse=True)
     return {"status": "success", "campaigns": docs}
 
 
@@ -456,15 +457,15 @@ def create_campaign(payload: CampaignCreateRequest):
     camp_data = {
         "id": cid,
         "name": payload.name,
-        "district": payload.district,
+        "district": payload.district or "All Telangana",
         "status": "NEW",
-        "total_leads": payload.target_count,
+        "total_leads": payload.target_count or 50,
         "calls_made": 0,
         "connected": 0,
         "interested": 0,
         "hot_leads": 0,
         "demos_requested": 0,
-        "daily_limit": payload.daily_call_limit,
+        "daily_limit": payload.daily_call_limit or 20,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     db.collection("campaigns").document(cid).set(camp_data)
@@ -496,7 +497,7 @@ def update_campaign_status(campaign_id: str, action: str = Query(...)):
 
 @router.get("/analytics")
 def get_calling_analytics():
-    """Returns analytics covering call outcomes, interest levels, and Telangana districts."""
+    """Returns dynamic analytics covering call outcomes, interest levels, objections, and districts."""
     calls = [d.to_dict() for d in db.collection("calls").stream()]
 
     districts_map = {}
@@ -504,21 +505,43 @@ def get_calling_analytics():
     interest_map = {"HOT": 0, "WARM": 0, "COLD": 0}
 
     for c in calls:
-        dist = c.get("district") or "Hyderabad"
-        districts_map[dist] = districts_map.get(dist, 0) + 1
+        dist = c.get("district")
+        if dist:
+            districts_map[dist] = districts_map.get(dist, 0) + 1
 
         st = c.get("status") or "COMPLETED"
         lead_status_map[st] = lead_status_map.get(st, 0) + 1
 
         lvl = c.get("interest_level") or "WARM"
-        interest_map[lvl] = interest_map.get(lvl, 0) + 1
+        if lvl in interest_map:
+            interest_map[lvl] += 1
+        else:
+            interest_map[lvl] = 1
+
+    # Extract dynamic objections from actual AI analyses
+    analyses = [d.to_dict() for d in db.collection("ai_analyses").stream()]
+    objections_count = {}
+    total_objections = 0
+    for a in analyses:
+        analysis_data = a.get("analysis") or {}
+        for obj in analysis_data.get("objections", []):
+            if obj and isinstance(obj, str):
+                cleaned = obj.strip()
+                objections_count[cleaned] = objections_count.get(cleaned, 0) + 1
+                total_objections += 1
+
+    objections_dist = []
+    for k, v in sorted(objections_count.items(), key=lambda x: x[1], reverse=True):
+        pct = round((v / total_objections * 100)) if total_objections > 0 else 0
+        objections_dist.append({"title": k, "count": v, "pct": pct})
 
     return {
         "status": "success",
         "total_calls": len(calls),
         "interest_distribution": interest_map,
         "status_distribution": lead_status_map,
-        "district_distribution": [{"district": k, "count": v} for k, v in districts_map.items()]
+        "district_distribution": [{"district": k, "count": v} for k, v in sorted(districts_map.items(), key=lambda x: x[1], reverse=True)],
+        "objections_distribution": objections_dist
     }
 
 

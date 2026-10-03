@@ -24,21 +24,36 @@ export default function CallingDashboard({
     hot_rate: 0
   });
   const [recentCalls, setRecentCalls] = useState([]);
+  const [schoolsList, setSchoolsList] = useState([]);
+  const [selectedSchoolId, setSelectedSchoolId] = useState('');
   
-  // Quick dialer state
-  const [quickSchoolName, setQuickSchoolName] = useState('Nalanda High School');
-  const [quickPhone, setQuickPhone] = useState('9849012345');
-  const [quickDistrict, setQuickDistrict] = useState('Warangal');
-  const [quickPrincipal, setQuickPrincipal] = useState('Srinivas Rao');
+  // Quick dialer state (dynamic, starts empty)
+  const [quickSchoolName, setQuickSchoolName] = useState('');
+  const [quickPhone, setQuickPhone] = useState('');
+  const [quickDistrict, setQuickDistrict] = useState('');
+  const [quickPrincipal, setQuickPrincipal] = useState('');
   const [callingInProgress, setCallingInProgress] = useState(false);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const data = await fetchCallingDashboard();
-      if (data.status === 'success') {
-        setMetrics(data.metrics || {});
-        setRecentCalls(data.recent_calls || []);
+      const [dashData, schoolsRes] = await Promise.all([
+        fetchCallingDashboard().catch(() => ({ status: 'error' })),
+        fetch('/api/schools').then(r => r.ok ? r.json() : []).catch(() => [])
+      ]);
+
+      if (dashData.status === 'success') {
+        setMetrics(dashData.metrics || {});
+        setRecentCalls(dashData.recent_calls || []);
+      }
+
+      const allSchools = Array.isArray(schoolsRes) ? schoolsRes : (schoolsRes.schools || []);
+      setSchoolsList(allSchools);
+
+      // Extract unique districts from loaded schools
+      if (allSchools.length > 0 && !quickDistrict) {
+        const firstDist = allSchools.find(s => s.hierarchy?.district)?.hierarchy?.district || '';
+        if (firstDist) setQuickDistrict(firstDist);
       }
     } catch (err) {
       console.error('Failed to load calling dashboard:', err);
@@ -51,16 +66,42 @@ export default function CallingDashboard({
     loadData();
   }, []);
 
+  const handleSelectDirectorySchool = (schoolId) => {
+    setSelectedSchoolId(schoolId);
+    if (!schoolId) {
+      setQuickSchoolName('');
+      setQuickPhone('');
+      setQuickDistrict('');
+      setQuickPrincipal('');
+      return;
+    }
+    const found = schoolsList.find(s => s.id === schoolId);
+    if (found) {
+      const sName = found.info?.school_name || found.name || '';
+      const sPhone = found.info?.phone || found.contact?.phone || '';
+      const sDist = found.hierarchy?.district || '';
+      const sPrincipal = found.info?.principal_name || found.contact?.principal || '';
+      setQuickSchoolName(sName);
+      setQuickPhone(sPhone);
+      setQuickDistrict(sDist);
+      setQuickPrincipal(sPrincipal);
+    }
+  };
+
   const handleQuickDial = async (e) => {
     e.preventDefault();
-    if (!quickPhone.trim()) return;
+    if (!quickPhone.trim()) {
+      alert('Please enter a phone number to make a call.');
+      return;
+    }
     setCallingInProgress(true);
     try {
       const res = await initiateAICall({
-        school_name: quickSchoolName,
+        school_id: selectedSchoolId || null,
+        school_name: quickSchoolName || 'School Lead',
         phone_number: quickPhone,
-        district: quickDistrict,
-        principal_name: quickPrincipal,
+        district: quickDistrict || 'Telangana',
+        principal_name: quickPrincipal || 'Principal',
         force_mock: false
       });
       if (onStartCall) {
@@ -73,8 +114,12 @@ export default function CallingDashboard({
     }
   };
 
+  const uniqueDistricts = Array.from(
+    new Set(schoolsList.map(s => s.hierarchy?.district).filter(Boolean))
+  ).sort();
+
   const kpis = [
-    { label: 'Schools In Scope', val: metrics.total_schools || 184, sub: 'Telangana Directory', icon: Users, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { label: 'Schools In Scope', val: metrics.total_schools || schoolsList.length || 0, sub: 'Telangana Directory', icon: Users, color: 'text-blue-500', bg: 'bg-blue-500/10' },
     { label: 'AI Calls Made', val: metrics.calls_made || 0, sub: `${metrics.answer_rate || 0}% Connect Rate`, icon: PhoneForwarded, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
     { label: 'Connected Calls', val: metrics.connected || 0, sub: 'Active Telugu Dialogues', icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
     { label: 'Interested Leads', val: metrics.interested || 0, sub: 'Curriculum & Tech fit', icon: TrendingUp, color: 'text-amber-500', bg: 'bg-amber-500/10' },
@@ -160,12 +205,33 @@ export default function CallingDashboard({
             </p>
 
             <form onSubmit={handleQuickDial} className="space-y-3">
+              {schoolsList.length > 0 && (
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">
+                    Select School from Directory (Auto-Fill)
+                  </label>
+                  <select
+                    value={selectedSchoolId}
+                    onChange={(e) => handleSelectDirectorySchool(e.target.value)}
+                    className="w-full bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="">-- Choose school or enter details manually below --</option>
+                    {schoolsList.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.info?.school_name || s.name} ({s.hierarchy?.district || 'Telangana'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label className="text-[11px] font-semibold text-slate-400 block mb-1">School Name</label>
                 <input
                   type="text"
                   value={quickSchoolName}
                   onChange={(e) => setQuickSchoolName(e.target.value)}
+                  placeholder="e.g. ZPHS High School"
                   className="w-full bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
                   required
                 />
@@ -177,6 +243,7 @@ export default function CallingDashboard({
                   type="text"
                   value={quickPrincipal}
                   onChange={(e) => setQuickPrincipal(e.target.value)}
+                  placeholder="e.g. Headmaster"
                   className="w-full bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
                 />
               </div>
@@ -188,26 +255,33 @@ export default function CallingDashboard({
                     type="tel"
                     value={quickPhone}
                     onChange={(e) => setQuickPhone(e.target.value)}
+                    placeholder="e.g. 9849012345"
                     className="w-full bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
                     required
                   />
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-slate-400 block mb-1">District</label>
-                  <select
-                    value={quickDistrict}
-                    onChange={(e) => setQuickDistrict(e.target.value)}
-                    className="w-full bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
-                  >
-                    <option value="Hyderabad">Hyderabad</option>
-                    <option value="Warangal">Warangal</option>
-                    <option value="Karimnagar">Karimnagar</option>
-                    <option value="Nizamabad">Nizamabad</option>
-                    <option value="Khammam">Khammam</option>
-                    <option value="Ranga Reddy">Ranga Reddy</option>
-                    <option value="Nalgonda">Nalgonda</option>
-                    <option value="Medak">Medak</option>
-                  </select>
+                  {uniqueDistricts.length > 0 ? (
+                    <select
+                      value={quickDistrict}
+                      onChange={(e) => setQuickDistrict(e.target.value)}
+                      className="w-full bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    >
+                      <option value="">Select District</option>
+                      {uniqueDistricts.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={quickDistrict}
+                      onChange={(e) => setQuickDistrict(e.target.value)}
+                      placeholder="e.g. Hyderabad"
+                      className="w-full bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    />
+                  )}
                 </div>
               </div>
 
@@ -249,12 +323,12 @@ export default function CallingDashboard({
             </div>
           ) : (
             <div className="space-y-2.5">
-              {recentCalls.map((call) => {
+              {recentCalls.map((call, idx) => {
                 const interest = call.interest_level || 'WARM';
                 const isHot = interest === 'HOT' || call.status === 'HOT' || call.demo_requested;
                 return (
                   <div
-                    key={call.call_id}
+                    key={call.call_id ? `${call.call_id}-${idx}` : `call-${idx}`}
                     onClick={() => onViewCallDetails(call.call_id, call)}
                     className="p-3.5 rounded-xl bg-slate-950/50 hover:bg-slate-800/60 border border-slate-800/80 hover:border-slate-700 transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                   >

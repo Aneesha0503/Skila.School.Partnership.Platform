@@ -80,8 +80,8 @@ export default function HotLeadsView({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {hotLeads.map((lead) => {
-            const students = lead.student_count || 450;
-            const dealValue = students * 500; // Target pricing: ₹500/student/year
+            const students = lead.student_count || 0;
+            const dealValue = students > 0 ? students * 500 : 0; // Target pricing: ₹500/student/year
 
             return (
               <div
@@ -92,10 +92,10 @@ export default function HotLeadsView({
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div>
                       <h3 className="text-sm font-bold text-white tracking-tight">
-                        {lead.school_name || 'Telangana High School'}
+                        {lead.school_name || 'School Lead'}
                       </h3>
                       <p className="text-xs text-slate-400">
-                        {lead.district} • Phone: <span className="font-mono text-slate-300">{lead.phone_number}</span>
+                        {lead.district || 'Telangana'} • Phone: <span className="font-mono text-slate-300">{lead.phone_number || '-'}</span>
                       </p>
                     </div>
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1 shrink-0">
@@ -108,14 +108,20 @@ export default function HotLeadsView({
                   <div className="p-3 mb-3 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center justify-between">
                     <div>
                       <div className="text-[10px] text-slate-400 uppercase font-semibold">Student Strength</div>
-                      <div className="text-xs font-bold text-slate-200">{students} Students</div>
+                      <div className="text-xs font-bold text-slate-200">
+                        {students > 0 ? `${students.toLocaleString()} Students` : 'To be verified on demo'}
+                      </div>
                     </div>
                     <div className="text-right">
                       <div className="text-[10px] text-slate-400 uppercase font-semibold">Est. Deal Value</div>
-                      <div className="text-xs font-bold text-emerald-400 flex items-center justify-end">
-                        <IndianRupee className="w-3 h-3" />
-                        {dealValue.toLocaleString('en-IN')} / yr
-                      </div>
+                      {dealValue > 0 ? (
+                        <div className="text-xs font-bold text-emerald-400 flex items-center justify-end">
+                          <IndianRupee className="w-3 h-3" />
+                          {dealValue.toLocaleString('en-IN')} / yr
+                        </div>
+                      ) : (
+                        <div className="text-xs font-semibold text-slate-400">Assessed on Demo</div>
+                      )}
                     </div>
                   </div>
 
@@ -126,9 +132,9 @@ export default function HotLeadsView({
                       Why it qualified:
                     </div>
                     <p className="text-[11px] leading-relaxed text-slate-300">
-                      {lead.demo_requested 
+                      {lead.interest_reason || (lead.demo_requested 
                         ? 'Principal explicitly requested a live classroom demonstration for teachers and students.'
-                        : 'Expressed clear alignment with Skila AI curriculum and indicated readiness for annual student fee.'}
+                        : 'Expressed clear alignment with Skila AI curriculum and indicated readiness for annual student fee.')}
                     </p>
                   </div>
                 </div>

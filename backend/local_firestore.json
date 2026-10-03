@@ -7871,7 +7871,7 @@
       "password_hash": "5246c3dd3939e59b759be37cc8085171$d9dcf448abd00a704e64fc374de03b7150a4da5c43a393f58efc2a2cc55d5ef3",
       "is_active": true,
       "created_at": "2026-09-29T14:09:45.708486+00:00",
-      "last_login": "2026-09-29T14:12:26.186531+00:00"
+      "last_login": "2026-10-03T18:54:14.380540+00:00"
     },
     "33899895-3f35-49e9-ab4f-e3451cd84078": {
       "id": "33899895-3f35-49e9-ab4f-e3451cd84078",
@@ -7989,6 +7989,38 @@
       "created_at": "2026-10-03T18:50:13.895484+00:00",
       "ended_at": "2026-10-03T18:50:13.950020+00:00",
       "provider_mode": "MOCK"
+    },
+    "call_1f494127f7": {
+      "call_id": "call_1f494127f7",
+      "school_id": "sch_7ede0d",
+      "school_name": "Nalanda High School",
+      "district": "Warangal",
+      "phone_number": "9849012345",
+      "duration": 60,
+      "status": "DEMO_REQUESTED",
+      "interest_level": "HOT",
+      "demo_requested": false,
+      "student_count": null,
+      "recording_url": "https://storage.googleapis.com/skila-calls/call_1f494127f7.wav",
+      "created_at": "2026-10-03T18:54:46.565328+00:00",
+      "ended_at": "2026-10-03T18:55:47.169893+00:00",
+      "provider_mode": "MOCK"
+    },
+    "call_8b2ad05ff4": {
+      "call_id": "call_8b2ad05ff4",
+      "school_id": "sch_897e2c",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "phone_number": "+919876543210",
+      "duration": 0,
+      "status": "DEMO_REQUESTED",
+      "interest_level": "HOT",
+      "demo_requested": true,
+      "student_count": 750,
+      "recording_url": "https://storage.googleapis.com/skila-calls/call_8b2ad05ff4.wav",
+      "created_at": "2026-10-03T19:00:57.230880+00:00",
+      "ended_at": "2026-10-03T19:00:57.266883+00:00",
+      "provider_mode": "MOCK"
     }
   },
   "transcripts": {
@@ -8057,6 +8089,72 @@
       ],
       "full_text": "00:00 Ananya (Skila AI):\nNamaskaram sir, nenu Skila AI nunchi automated AI assistant ni. Mee school kosam educational technology solution gurinchi short ga maatladataniki call chestunnanu. Ippudu maatladataniki convenient ga unda?\n\n00:00 Principal:\nNamaskaram andi, maa school lo 750 students unnaru, kani digital tools sarigga levu.\n\n00:00 Ananya (Skila AI):\nGreat sir, 750 students unna school ki maa AI books and personalized learning tool chaala effective ga work chestundi. Currently mee school lo edaina digital LMS platform use chestunnara?\n\n00:00 Principal:\nSure demo arrange cheyyandi, weekend chudam.\n\n00:00 Ananya (Skila AI):\nChaala santhosham sir! Maa Senior Academic Consultant meeku demo ivvadaniki connect avtaru. Mee WhatsApp number ki details and schedule share chestunnanu. Mee valuable time ichinanduku chaala dhanyavaadalu sir!\n",
       "created_at": "2026-10-03T18:50:13.895484+00:00"
+    },
+    "call_1f494127f7": {
+      "call_id": "call_1f494127f7",
+      "school_id": "sch_7ede0d",
+      "transcript_lines": [
+        {
+          "timestamp": "00:00",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Namaskaram sir, nenu Skila AI nunchi automated AI assistant ni. Mee school kosam educational technology solution gurinchi short ga maatladataniki call chestunnanu. Ippudu maatladataniki convenient ga unda?"
+        },
+        {
+          "timestamp": "00:25",
+          "speaker": "Principal",
+          "text": "ఔను, మీ Skila AI ప్రోగ్రామ్ గురించి చెప్పండి, సిలబస్ ఏముంటుంది?"
+        },
+        {
+          "timestamp": "00:25",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Arthamaindi sir. Skila AI personalized learning and interactive curriculum meeda mee school ki live demo chupinchadam maa target. Ee week lo 15-minute online or campus demo arrange cheyyagalamu?"
+        },
+        {
+          "timestamp": "00:34",
+          "speaker": "Principal",
+          "text": "ఇప్పుడు బిజీగా ఉన్నాను, రేపు సాయంత్రం 4 గంటలకి కాల్ చేయండి."
+        },
+        {
+          "timestamp": "00:34",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Arthamaindi sir. Skila AI personalized learning and interactive curriculum meeda mee school ki live demo chupinchadam maa target. Ee week lo 15-minute online or campus demo arrange cheyyagalamu?"
+        }
+      ],
+      "full_text": "00:00 Ananya (Skila AI):\nNamaskaram sir, nenu Skila AI nunchi automated AI assistant ni. Mee school kosam educational technology solution gurinchi short ga maatladataniki call chestunnanu. Ippudu maatladataniki convenient ga unda?\n\n00:25 Principal:\nఔను, మీ Skila AI ప్రోగ్రామ్ గురించి చెప్పండి, సిలబస్ ఏముంటుంది?\n\n00:25 Ananya (Skila AI):\nArthamaindi sir. Skila AI personalized learning and interactive curriculum meeda mee school ki live demo chupinchadam maa target. Ee week lo 15-minute online or campus demo arrange cheyyagalamu?\n\n00:34 Principal:\nఇప్పుడు బిజీగా ఉన్నాను, రేపు సాయంత్రం 4 గంటలకి కాల్ చేయండి.\n\n00:34 Ananya (Skila AI):\nArthamaindi sir. Skila AI personalized learning and interactive curriculum meeda mee school ki live demo chupinchadam maa target. Ee week lo 15-minute online or campus demo arrange cheyyagalamu?\n",
+      "created_at": "2026-10-03T18:54:46.565328+00:00"
+    },
+    "call_8b2ad05ff4": {
+      "call_id": "call_8b2ad05ff4",
+      "school_id": "sch_897e2c",
+      "transcript_lines": [
+        {
+          "timestamp": "00:00",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Namaskaram sir, nenu Skila AI nunchi automated AI assistant ni. Mee school kosam educational technology solution gurinchi short ga maatladataniki call chestunnanu. Ippudu maatladataniki convenient ga unda?"
+        },
+        {
+          "timestamp": "00:00",
+          "speaker": "Principal",
+          "text": "Namaskaram andi, maa school lo 750 students unnaru, kani digital tools sarigga levu."
+        },
+        {
+          "timestamp": "00:00",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Great sir, 750 students unna school ki maa AI books and personalized learning tool chaala effective ga work chestundi. Currently mee school lo edaina digital LMS platform use chestunnara?"
+        },
+        {
+          "timestamp": "00:00",
+          "speaker": "Principal",
+          "text": "Sure demo arrange cheyyandi, weekend chudam."
+        },
+        {
+          "timestamp": "00:00",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Chaala santhosham sir! Maa Senior Academic Consultant meeku demo ivvadaniki connect avtaru. Mee WhatsApp number ki details and schedule share chestunnanu. Mee valuable time ichinanduku chaala dhanyavaadalu sir!"
+        }
+      ],
+      "full_text": "00:00 Ananya (Skila AI):\nNamaskaram sir, nenu Skila AI nunchi automated AI assistant ni. Mee school kosam educational technology solution gurinchi short ga maatladataniki call chestunnanu. Ippudu maatladataniki convenient ga unda?\n\n00:00 Principal:\nNamaskaram andi, maa school lo 750 students unnaru, kani digital tools sarigga levu.\n\n00:00 Ananya (Skila AI):\nGreat sir, 750 students unna school ki maa AI books and personalized learning tool chaala effective ga work chestundi. Currently mee school lo edaina digital LMS platform use chestunnara?\n\n00:00 Principal:\nSure demo arrange cheyyandi, weekend chudam.\n\n00:00 Ananya (Skila AI):\nChaala santhosham sir! Maa Senior Academic Consultant meeku demo ivvadaniki connect avtaru. Mee WhatsApp number ki details and schedule share chestunnanu. Mee valuable time ichinanduku chaala dhanyavaadalu sir!\n",
+      "created_at": "2026-10-03T19:00:57.230880+00:00"
     }
   },
   "ai_analyses": {
@@ -8119,6 +8217,64 @@
         "summary": "Spoke with school administrator in Telugu regarding Skila AI-powered books and LMS. Verified approximately 0 student strength. Lead requested live demonstration."
       },
       "created_at": "2026-10-03T18:50:13.895484+00:00"
+    },
+    "call_1f494127f7": {
+      "call_id": "call_1f494127f7",
+      "school_id": "sch_7ede0d",
+      "school_name": "Nalanda High School",
+      "analysis": {
+        "lead_status": "DEMO_REQUESTED",
+        "interest_level": "HOT",
+        "interest_reason": "Principal expressed interest and agreed to explore digital AI curriculum.",
+        "student_count": 0,
+        "current_lms": false,
+        "current_erp": false,
+        "pain_points": [
+          "Teacher digital enablement",
+          "Student personalized attention"
+        ],
+        "objections": [],
+        "language_detected": "Telugu-English",
+        "demo_requested": true,
+        "callback_requested": false,
+        "callback_time": "",
+        "details_requested": false,
+        "pricing_discussed": false,
+        "management_approval_required": false,
+        "next_action": "BOOK_DEMO",
+        "summary": "Spoke with school administrator in Telugu regarding Skila AI-powered books and LMS. Verified approximately 0 student strength. Lead requested live demonstration."
+      },
+      "created_at": "2026-10-03T18:54:46.565328+00:00"
+    },
+    "call_8b2ad05ff4": {
+      "call_id": "call_8b2ad05ff4",
+      "school_id": "sch_897e2c",
+      "school_name": "ZPHS Ghatkesar",
+      "analysis": {
+        "lead_status": "DEMO_REQUESTED",
+        "interest_level": "HOT",
+        "interest_reason": "Principal expressed interest and agreed to explore digital AI curriculum.",
+        "student_count": 0,
+        "current_lms": true,
+        "current_erp": false,
+        "pain_points": [
+          "Teacher digital enablement",
+          "Student personalized attention"
+        ],
+        "objections": [
+          "Existing vendor software installed"
+        ],
+        "language_detected": "Telugu-English",
+        "demo_requested": true,
+        "callback_requested": false,
+        "callback_time": "",
+        "details_requested": true,
+        "pricing_discussed": false,
+        "management_approval_required": false,
+        "next_action": "BOOK_DEMO",
+        "summary": "Spoke with school administrator in Telugu regarding Skila AI-powered books and LMS. Verified approximately 0 student strength. Lead requested live demonstration."
+      },
+      "created_at": "2026-10-03T19:00:57.230880+00:00"
     }
   },
   "followups": {
@@ -8147,6 +8303,32 @@
       "notes": "Principal expressed interest and agreed to explore digital AI curriculum.",
       "created_at": "2026-10-03T18:50:13.895484+00:00",
       "completed": false
+    },
+    "fol_4a77a8d8": {
+      "id": "fol_4a77a8d8",
+      "call_id": "call_1f494127f7",
+      "school_id": "sch_7ede0d",
+      "school_name": "Nalanda High School",
+      "district": "Warangal",
+      "phone": "9849012345",
+      "urgency": "High",
+      "action": "BOOK_DEMO",
+      "notes": "Principal expressed interest and agreed to explore digital AI curriculum.",
+      "created_at": "2026-10-03T18:54:46.565328+00:00",
+      "completed": false
+    },
+    "fol_1ed9e021": {
+      "id": "fol_1ed9e021",
+      "call_id": "call_8b2ad05ff4",
+      "school_id": "sch_897e2c",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "phone": "+919876543210",
+      "urgency": "High",
+      "action": "BOOK_DEMO",
+      "notes": "Principal expressed interest and agreed to explore digital AI curriculum.",
+      "created_at": "2026-10-03T19:00:57.230880+00:00",
+      "completed": false
     }
   },
   "demos": {
@@ -8169,6 +8351,31 @@
       "scheduled_status": "Requested",
       "student_count": 750,
       "created_at": "2026-10-03T18:50:13.895484+00:00"
+    },
+    "demo_60f0f1b1": {
+      "id": "demo_60f0f1b1",
+      "call_id": "call_8b2ad05ff4",
+      "school_id": "sch_897e2c",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "scheduled_status": "Requested",
+      "student_count": 750,
+      "created_at": "2026-10-03T19:00:57.230880+00:00"
+    }
+  },
+  "campaigns": {
+    "camp_telangana_main": {
+      "id": "camp_telangana_main",
+      "name": "Telangana School Outreach 2026",
+      "district": "All Telangana",
+      "status": "RUNNING",
+      "total_leads": 120,
+      "calls_made": 42,
+      "connected": 28,
+      "interested": 14,
+      "hot_leads": 8,
+      "demos_requested": 6,
+      "created_at": "2026-10-03T18:56:03.657091+00:00"
     }
   }
 }

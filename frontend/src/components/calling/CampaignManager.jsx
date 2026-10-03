@@ -7,11 +7,12 @@ import { fetchCampaigns, createCampaign, triggerCampaignAction } from '../../uti
 
 export default function CampaignManager() {
   const [campaigns, setCampaigns] = useState([]);
+  const [districtsList, setDistrictsList] = useState(['All Telangana']);
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newCampaign, setNewCampaign] = useState({
-    name: 'Karimnagar High Schools AI Outreach',
-    district: 'Karimnagar',
+    name: '',
+    district: 'All Telangana',
     target_count: 50,
     daily_call_limit: 20
   });
@@ -19,10 +20,17 @@ export default function CampaignManager() {
   const loadCampaigns = async () => {
     try {
       setLoading(true);
-      const res = await fetchCampaigns();
-      if (res.status === 'success') {
-        setCampaigns(res.campaigns || []);
-      }
+      const [campRes, schoolsRes] = await Promise.all([
+        fetchCampaigns().catch(() => ({ campaigns: [] })),
+        fetch('/api/schools').then(r => r.ok ? r.json() : []).catch(() => [])
+      ]);
+      setCampaigns(campRes.campaigns || []);
+
+      const schools = Array.isArray(schoolsRes) ? schoolsRes : (schoolsRes.schools || []);
+      const uniqueDistricts = Array.from(
+        new Set(schools.map(s => s.hierarchy?.district).filter(Boolean))
+      ).sort();
+      setDistrictsList(['All Telangana', ...uniqueDistricts]);
     } catch (err) {
       console.error('Failed to load campaigns:', err);
     } finally {
@@ -237,15 +245,9 @@ export default function CampaignManager() {
                   onChange={(e) => setNewCampaign({ ...newCampaign, district: e.target.value })}
                   className="w-full bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
                 >
-                  <option value="All Telangana">All Telangana (33 Districts)</option>
-                  <option value="Hyderabad">Hyderabad</option>
-                  <option value="Warangal">Warangal</option>
-                  <option value="Karimnagar">Karimnagar</option>
-                  <option value="Nizamabad">Nizamabad</option>
-                  <option value="Khammam">Khammam</option>
-                  <option value="Ranga Reddy">Ranga Reddy</option>
-                  <option value="Nalgonda">Nalgonda</option>
-                  <option value="Medak">Medak</option>
+                  {districtsList.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
                 </select>
               </div>
 
