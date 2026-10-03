@@ -356,10 +356,32 @@ def get_all_schools_raw() -> List[Dict[str, Any]]:
     col = db.collection("schools")
     docs = col.stream()
     schools = []
+    
+    local_map = {}
+    if hasattr(db, "local"):
+        try:
+            for ld in db.local.collection("schools").stream():
+                local_map[ld.id] = ld.to_dict()
+        except Exception:
+            pass
+
     for d in docs:
         data = d.to_dict()
-        if not data.get("id"):
-            data["id"] = d.id
+        sid = data.get("id") or d.id
+        data["id"] = sid
+
+        if sid in local_map:
+            loc = local_map[sid]
+            info = data.setdefault("info", {})
+            loc_info = loc.get("info") or {}
+            for k in ["mobile", "principal_name", "correspondent_name", "email", "website", "student_strength", "teacher_strength"]:
+                if not info.get(k) and loc_info.get(k):
+                    info[k] = loc_info[k]
+            sales = data.setdefault("sales", {})
+            loc_sales = loc.get("sales") or {}
+            if not sales.get("decision_maker_contact") and loc_sales.get("decision_maker_contact"):
+                sales["decision_maker_contact"] = loc_sales["decision_maker_contact"]
+
         if not data.get("tier"):
             data["tier"] = get_school_tier(data)
         schools.append(data)

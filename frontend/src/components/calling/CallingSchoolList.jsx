@@ -5,6 +5,20 @@ import {
 } from 'lucide-react';
 import { initiateAICall, fetchCallingSettings } from '../../utils/callingApi';
 
+export const getSchoolPhone = (school) => {
+  if (!school) return '';
+  return (
+    school.info?.mobile ||
+    school.sales?.decision_maker_contact ||
+    school.info?.phone ||
+    school.contact?.phone ||
+    school.contact?.mobile ||
+    school.phone ||
+    school.mobile ||
+    ''
+  );
+};
+
 export default function CallingSchoolList({ 
   onStartCall, 
   onViewCallDetails,
@@ -16,6 +30,7 @@ export default function CallingSchoolList({
   const [selectedDistrict, setSelectedDistrict] = useState('All');
   const [callingId, setCallingId] = useState(null);
   const [hasPlivo, setHasPlivo] = useState(false);
+  const [phoneModal, setPhoneModal] = useState(null);
 
   const fetchSchools = async () => {
     try {
@@ -44,27 +59,36 @@ export default function CallingSchoolList({
     fetchSchools();
   }, []);
 
-  const handleCallSchool = async (school) => {
+  const executeCall = async (school, phoneToUse) => {
     const schoolName = school.info?.school_name || school.name || 'School';
-    const phone = school.info?.phone || school.contact?.phone || '';
-    const district = school.hierarchy?.district || '';
-    const principal = school.info?.principal_name || school.contact?.principal || '';
-
-    if (!phone) {
-      alert(`No contact phone number is on file for ${schoolName}. Please update the school contact profile.`);
-      return;
-    }
+    const district = school.hierarchy?.district || 'Telangana';
+    const principal = school.info?.principal_name || school.contact?.principal || 'Principal';
 
     setCallingId(school.id);
     try {
       const res = await initiateAICall({
         school_id: school.id,
         school_name: schoolName,
-        phone_number: phone,
+        phone_number: phoneToUse,
         district: district,
         principal_name: principal,
         force_mock: false
       });
+
+      // Update school in local state so the UI immediately shows the new phone number
+      setSchools((prev) =>
+        prev.map((s) => {
+          if (s.id === school.id) {
+            return {
+              ...s,
+              info: { ...(s.info || {}), mobile: phoneToUse },
+              sales: { ...(s.sales || {}), decision_maker_contact: phoneToUse }
+            };
+          }
+          return s;
+        })
+      );
+
       if (onStartCall) {
         onStartCall(res);
       }
@@ -75,12 +99,38 @@ export default function CallingSchoolList({
     }
   };
 
+  const handleCallSchool = async (school) => {
+    const phone = getSchoolPhone(school);
+    if (!phone) {
+      setPhoneModal({
+        school,
+        phoneInput: '',
+        saveToProfile: true,
+        isSubmitting: false
+      });
+      return;
+    }
+    await executeCall(school, phone);
+  };
+
+  const handlePhoneModalSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!phoneModal || !phoneModal.phoneInput.trim()) return;
+
+    const phoneToUse = phoneModal.phoneInput.trim();
+    const targetSchool = phoneModal.school;
+    setPhoneModal(prev => ({ ...prev, isSubmitting: true }));
+
+    await executeCall(targetSchool, phoneToUse);
+    setPhoneModal(null);
+  };
+
   const uniqueDistricts = ['All', ...Array.from(new Set(schools.map(s => s.hierarchy?.district).filter(Boolean))).sort()];
 
   const filteredSchools = schools.filter((s) => {
     const name = (s.info?.school_name || s.name || '').toLowerCase();
     const dist = (s.hierarchy?.district || '').toLowerCase();
-    const phone = (s.info?.phone || s.contact?.phone || '').toLowerCase();
+    const phone = getSchoolPhone(s).toLowerCase();
     const q = search.toLowerCase();
 
     if (q && !name.includes(q) && !dist.includes(q) && !phone.includes(q)) {
@@ -195,7 +245,7 @@ export default function CallingSchoolList({
                 {filteredSchools.map((s) => {
                   const sName = s.info?.school_name || s.name || 'School';
                   const sDist = s.hierarchy?.district || 'Telangana';
-                  const sPhone = s.info?.phone || s.contact?.phone || '-';
+                  const sPhone = getSchoolPhone(s);
                   const sPrincipal = s.info?.principal_name || s.contact?.principal || '-';
                   const sStudents = s.info?.student_strength || s.metrics?.total_students || s.info?.student_count || 0;
                   const aiStatus = s.ai_calling_status || 'NOT_CALLED';
@@ -225,7 +275,19 @@ export default function CallingSchoolList({
 
                       <td className="px-4 py-3">
                         <div className="text-slate-200">{sPrincipal}</div>
-                        <div className="text-[11px] font-mono text-slate-400">{sPhone}</div>
+                        {sPhone ? (
+                          <div className="text-[11px] font-mono text-slate-400 flex items-center gap-1 mt-0.5">
+                            <Phone className="w-3 h-3 text-slate-500" />
+                            <span>{sPhone}</span>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setPhoneModal({ school: s, phoneInput: '', saveToProfile: true, isSubmitting: false })}
+                            className="text-[11px] text-amber-400 hover:text-amber-300 font-medium underline flex items-center gap-1 mt-0.5 cursor-pointer"
+                          >
+                            + Add Phone
+                          </button>
+                        )}
                       </td>
 
                       <td className="px-4 py-3 font-medium text-slate-300">
@@ -272,6 +334,90 @@ export default function CallingSchoolList({
           </div>
         )}
       </div>
+
+      {/* Enter Phone Number Modal if school lacks phone */}
+      {phoneModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-750 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-400">
+                  <PhoneCall className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Enter Contact Number</h3>
+                  <p className="text-[11px] text-slate-400">Direct AI Outreach &amp; Lead Qualification</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setPhoneModal(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3 bg-slate-950/70 rounded-xl border border-slate-800 space-y-1">
+              <div className="text-xs font-bold text-slate-200">
+                {phoneModal.school.info?.school_name || phoneModal.school.name}
+              </div>
+              <div className="text-[11px] text-slate-400">
+                {phoneModal.school.hierarchy?.district || 'Telangana'} • Principal: {phoneModal.school.info?.principal_name || 'Principal'}
+              </div>
+            </div>
+
+            <form onSubmit={handlePhoneModalSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Destination Phone Number:
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
+                  <input
+                    type="tel"
+                    autoFocus
+                    placeholder="+91 98490 12345"
+                    value={phoneModal.phoneInput}
+                    onChange={(e) => setPhoneModal({ ...phoneModal, phoneInput: e.target.value })}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-750 focus:border-indigo-500 focus:outline-none rounded-xl text-white text-xs font-mono"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Enter mobile number with country code (e.g. +91 98490 12345 or 9849012345).
+                </p>
+              </div>
+
+              <label className="flex items-center gap-2 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={phoneModal.saveToProfile}
+                  onChange={(e) => setPhoneModal({ ...phoneModal, saveToProfile: e.target.checked })}
+                  className="rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-0 cursor-pointer"
+                />
+                <span className="text-xs text-slate-300">Save this phone number to school profile for future calls</span>
+              </label>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setPhoneModal(null)}
+                  className="px-3.5 py-1.5 text-xs text-slate-400 hover:text-white rounded-lg transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!phoneModal.phoneInput.trim() || phoneModal.isSubmitting}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-lg transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <PhoneCall className="w-3.5 h-3.5" />
+                  {phoneModal.isSubmitting ? 'Starting Call...' : 'Start AI Call'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

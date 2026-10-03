@@ -87,7 +87,7 @@ export default function CallingDashboard({
     const found = schoolsList.find(s => s.id === schoolId);
     if (found) {
       const sName = found.info?.school_name || found.name || '';
-      const sPhone = found.info?.phone || found.contact?.phone || '';
+      const sPhone = found.info?.mobile || found.sales?.decision_maker_contact || found.info?.phone || found.contact?.phone || found.contact?.mobile || found.phone || '';
       const sDist = found.hierarchy?.district || '';
       const sPrincipal = found.info?.principal_name || found.contact?.principal || '';
       setQuickSchoolName(sName);

@@ -163,14 +163,47 @@ async def initiate_single_call(payload: CallInitiateRequest):
             s_dict = doc.to_dict()
             info = s_dict.get("info") or {}
             contact = s_dict.get("contact") or {}
+            sales = s_dict.get("sales") or {}
             hierarchy = s_dict.get("hierarchy") or {}
             metrics = s_dict.get("metrics") or {}
 
+            if not info.get("mobile") and hasattr(db, "local"):
+                loc_doc = db.local.collection("schools").document(payload.school_id).get()
+                if loc_doc.exists:
+                    loc_d = loc_doc.to_dict()
+                    loc_info = loc_d.get("info") or {}
+                    loc_sales = loc_d.get("sales") or {}
+                    for k in ["mobile", "principal_name", "correspondent_name", "email", "website", "student_strength"]:
+                        if not info.get(k) and loc_info.get(k):
+                            info[k] = loc_info[k]
+                    if not sales.get("decision_maker_contact") and loc_sales.get("decision_maker_contact"):
+                        sales["decision_maker_contact"] = loc_sales["decision_maker_contact"]
+
             school_name = info.get("school_name") or s_dict.get("name") or school_name
-            phone_number = phone_number or info.get("phone") or contact.get("phone") or ""
+            phone_number = (
+                phone_number or 
+                info.get("mobile") or 
+                info.get("phone") or 
+                sales.get("decision_maker_contact") or 
+                contact.get("phone") or 
+                contact.get("mobile") or 
+                s_dict.get("phone") or 
+                ""
+            )
             district = hierarchy.get("district") or district
             principal_name = info.get("principal_name") or contact.get("principal") or principal_name
             student_count = info.get("student_strength") or metrics.get("total_students")
+
+            # If a phone number was passed in payload and wasn't in DB, persist it
+            if payload.phone_number and (not info.get("mobile") or not sales.get("decision_maker_contact")):
+                info["mobile"] = payload.phone_number
+                sales["decision_maker_contact"] = payload.phone_number
+                s_dict["info"] = info
+                s_dict["sales"] = sales
+                try:
+                    db.collection("schools").document(payload.school_id).set(s_dict)
+                except Exception as ex:
+                    print(f"[Calling DB Update Warning] {ex}")
 
     if not phone_number:
         raise HTTPException(status_code=400, detail="A valid phone number is required to initiate an AI call.")
@@ -290,7 +323,7 @@ async def initiate_single_call(payload: CallInitiateRequest):
     webhook_url = f"{public_url}/api/calling/plivo/webhook" if public_url else "/api/calling/plivo/webhook"
 
     tel_res = await telephony.create_call(
-        to_number=payload.phone_number,
+        to_number=school_info["phone_number"],
         webhook_url=webhook_url,
         extra_data={"call_id": call_id, "school_id": school_info["school_id"]}
     )
@@ -312,7 +345,7 @@ async def initiate_single_call(payload: CallInitiateRequest):
         "school_id": school_info["school_id"],
         "school_name": school_info["school_name"],
         "district": school_info["district"],
-        "phone_number": payload.phone_number,
+        "phone_number": school_info["phone_number"],
         "duration": 0,
         "status": "CALLING" if is_real else "CONNECTED",
         "interest_level": "WARM",
@@ -325,12 +358,12 @@ async def initiate_single_call(payload: CallInitiateRequest):
         "call_id": call_id,
         "provider_mode": "REAL" if is_real else "MOCK",
         "is_real_telephony": is_real,
-        "phone_number": payload.phone_number,
+        "phone_number": school_info["phone_number"],
         "telephony": tel_res,
         "initial_turn": greeting_turn["turn"],
         "audio_base64": greeting_turn["tts"].get("audio_base64", ""),
         "message": (
-            f"Carrier phone call ringing {payload.phone_number} via Plivo"
+            f"Carrier phone call ringing {school_info['phone_number']} via Plivo"
             if is_real
             else f"In-Browser Telugu voice call started for {school_info['school_name']}"
         ),
