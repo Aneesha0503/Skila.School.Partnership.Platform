@@ -7799,6 +7799,67 @@
       "timestamp": "2026-09-30T16:24:49.238508+00:00",
       "is_read": true,
       "type": "agent_field_update"
+    },
+    "notif_6d0e110256": {
+      "id": "notif_6d0e110256",
+      "school_id": "eeedff60-2e26-4582-9a12-d58322ab9626",
+      "school_name": "Skila Test Academy 06ca4c",
+      "agent_name": "Admin",
+      "category": "Deal Closed",
+      "urgency": "High",
+      "message": "🎉 Deal Confirmed & Closed! Skila Test Academy 06ca4c partnership finalized by Admin.",
+      "timestamp": "2026-09-30T16:39:44.676869+00:00",
+      "is_read": true
+    },
+    "notif_a31befd458": {
+      "id": "notif_a31befd458",
+      "school_id": "eeedff60-2e26-4582-9a12-d58322ab9626",
+      "school_name": "Skila Test Academy 06ca4c",
+      "agent_name": "Admin",
+      "category": "Roster Provisioned & Welcome Kit",
+      "urgency": "High",
+      "message": "🚀 3 Student LMS Accounts Provisioned & Parent Welcome Kits Dispatched via WhatsApp, SMS, Email for Skila Test Academy 06ca4c!",
+      "timestamp": "2026-09-30T16:39:45.274206+00:00",
+      "is_read": true
+    },
+    "notif_60c83c6431": {
+      "id": "notif_60c83c6431",
+      "school_id": "eeedff60-2e26-4582-9a12-d58322ab9626",
+      "school_name": "Skila Test Academy 06ca4c",
+      "agent_name": "Admin Test 06ca4c",
+      "category": "Financial Expense Logged",
+      "urgency": "Normal",
+      "message": "Logged expense of INR 25,000.00 under 'Cloud Infrastructure & AI Tokens' for Skila Test Academy 06ca4c.",
+      "timestamp": "2026-09-30T16:39:45.450681+00:00",
+      "is_read": true
+    },
+    "notif_c3ac03f194": {
+      "id": "notif_c3ac03f194",
+      "school_id": "eeedff60-2e26-4582-9a12-d58322ab9626",
+      "school_name": "Skila Test Academy 06ca4c",
+      "agent_name": "Admin Test 06ca4c",
+      "category": "Payment Received",
+      "urgency": "High",
+      "message": "Received payment of INR 175,000.00 from Skila Test Academy 06ca4c via NEFT / RTGS.",
+      "timestamp": "2026-09-30T16:39:45.613934+00:00",
+      "is_read": true
+    },
+    "e1127d6f-605b-4463-92e3-c78bacae7fb6": {
+      "id": "e1127d6f-605b-4463-92e3-c78bacae7fb6",
+      "note_id": "b8540b1d-b005-4305-a558-fa0e50fb82c0",
+      "school_id": "eeedff60-2e26-4582-9a12-d58322ab9626",
+      "school_name": "Skila Test Academy 06ca4c",
+      "district": "Hyderabad",
+      "state": "Telangana",
+      "agent_name": "Field Agent 06ca4c",
+      "bucket": "Campus Visits & Demos",
+      "category": "School Visit",
+      "urgency": "Normal",
+      "text_snippet": "Completed orientation with Vice Principal regarding AI lab launch.",
+      "full_text": "Completed orientation with Vice Principal regarding AI lab launch.",
+      "timestamp": "2026-09-30T16:39:46.311843+00:00",
+      "is_read": true,
+      "type": "agent_field_update"
     }
   },
   "users": {
@@ -7831,6 +7892,283 @@
       "is_active": true,
       "created_at": "2026-09-29T20:26:31.516681+00:00",
       "last_login": "2026-09-29T20:27:36.731714+00:00"
+    }
+  },
+  "calls": {
+    "call_17e5b76ca8": {
+      "call_id": "call_17e5b76ca8",
+      "school_id": "sch_4bb038",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "phone_number": "9876543210",
+      "duration": 0,
+      "status": "CONNECTED",
+      "interest_level": "WARM",
+      "created_at": "2026-10-03T18:39:16.636695+00:00",
+      "provider_mode": "MOCK"
+    },
+    "call_af7d87359f": {
+      "call_id": "call_af7d87359f",
+      "school_id": "sch_6e83bb",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "phone_number": "+919876543210",
+      "duration": 0,
+      "status": "CONNECTED",
+      "interest_level": "WARM",
+      "created_at": "2026-10-03T18:39:52.785650+00:00",
+      "provider_mode": "MOCK"
+    },
+    "call_5093679485": {
+      "call_id": "call_5093679485",
+      "school_id": "sch_374eb1",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "phone_number": "+919876543210",
+      "duration": 0,
+      "status": "CONNECTED",
+      "interest_level": "WARM",
+      "created_at": "2026-10-03T18:40:33.696713+00:00",
+      "provider_mode": "MOCK"
+    },
+    "test_call": {
+      "test": true
+    },
+    "call_86283d0dad": {
+      "call_id": "call_86283d0dad",
+      "school_id": "sch_d78007",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "phone_number": "+919876543210",
+      "duration": 0,
+      "status": "CONNECTED",
+      "interest_level": "WARM",
+      "created_at": "2026-10-03T18:47:42.292819+00:00",
+      "provider_mode": "MOCK"
+    },
+    "call_aade8069ab": {
+      "call_id": "call_aade8069ab",
+      "school_id": "sch_bd65d0",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "phone_number": "+919876543210",
+      "duration": 0,
+      "status": "DEMO_REQUESTED",
+      "interest_level": "HOT",
+      "demo_requested": true,
+      "student_count": 750,
+      "recording_url": "https://storage.googleapis.com/skila-calls/call_aade8069ab.wav",
+      "created_at": "2026-10-03T18:48:49.346089+00:00",
+      "ended_at": "2026-10-03T18:48:50.005045+00:00",
+      "provider_mode": "MOCK"
+    },
+    "call_e9a5ec7f86": {
+      "call_id": "call_e9a5ec7f86",
+      "school_id": "sch_ade4bc",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "phone_number": "+919876543210",
+      "duration": 0,
+      "status": "CONNECTED",
+      "interest_level": "WARM",
+      "created_at": "2026-10-03T18:49:24.757559+00:00",
+      "provider_mode": "MOCK"
+    },
+    "call_6ebbc9af9f": {
+      "call_id": "call_6ebbc9af9f",
+      "school_id": "sch_70bf63",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "phone_number": "+919876543210",
+      "duration": 0,
+      "status": "DEMO_REQUESTED",
+      "interest_level": "HOT",
+      "demo_requested": true,
+      "student_count": 750,
+      "recording_url": "https://storage.googleapis.com/skila-calls/call_6ebbc9af9f.wav",
+      "created_at": "2026-10-03T18:50:13.895484+00:00",
+      "ended_at": "2026-10-03T18:50:13.950020+00:00",
+      "provider_mode": "MOCK"
+    }
+  },
+  "transcripts": {
+    "call_aade8069ab": {
+      "call_id": "call_aade8069ab",
+      "school_id": "sch_bd65d0",
+      "transcript_lines": [
+        {
+          "timestamp": "00:00",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Namaskaram sir, nenu Skila AI nunchi automated AI assistant ni. Mee school kosam educational technology solution gurinchi short ga maatladataniki call chestunnanu. Ippudu maatladataniki convenient ga unda?"
+        },
+        {
+          "timestamp": "00:00",
+          "speaker": "Principal",
+          "text": "Namaskaram andi, maa school lo 750 students unnaru, kani digital tools sarigga levu."
+        },
+        {
+          "timestamp": "00:00",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Great sir, 750 students unna school ki maa AI books and personalized learning tool chaala effective ga work chestundi. Currently mee school lo edaina digital LMS platform use chestunnara?"
+        },
+        {
+          "timestamp": "00:00",
+          "speaker": "Principal",
+          "text": "Sure demo arrange cheyyandi, weekend chudam."
+        },
+        {
+          "timestamp": "00:00",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Chaala santhosham sir! Maa Senior Academic Consultant meeku demo ivvadaniki connect avtaru. Mee WhatsApp number ki details and schedule share chestunnanu. Mee valuable time ichinanduku chaala dhanyavaadalu sir!"
+        }
+      ],
+      "full_text": "00:00 Ananya (Skila AI):\nNamaskaram sir, nenu Skila AI nunchi automated AI assistant ni. Mee school kosam educational technology solution gurinchi short ga maatladataniki call chestunnanu. Ippudu maatladataniki convenient ga unda?\n\n00:00 Principal:\nNamaskaram andi, maa school lo 750 students unnaru, kani digital tools sarigga levu.\n\n00:00 Ananya (Skila AI):\nGreat sir, 750 students unna school ki maa AI books and personalized learning tool chaala effective ga work chestundi. Currently mee school lo edaina digital LMS platform use chestunnara?\n\n00:00 Principal:\nSure demo arrange cheyyandi, weekend chudam.\n\n00:00 Ananya (Skila AI):\nChaala santhosham sir! Maa Senior Academic Consultant meeku demo ivvadaniki connect avtaru. Mee WhatsApp number ki details and schedule share chestunnanu. Mee valuable time ichinanduku chaala dhanyavaadalu sir!\n",
+      "created_at": "2026-10-03T18:48:49.346089+00:00"
+    },
+    "call_6ebbc9af9f": {
+      "call_id": "call_6ebbc9af9f",
+      "school_id": "sch_70bf63",
+      "transcript_lines": [
+        {
+          "timestamp": "00:00",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Namaskaram sir, nenu Skila AI nunchi automated AI assistant ni. Mee school kosam educational technology solution gurinchi short ga maatladataniki call chestunnanu. Ippudu maatladataniki convenient ga unda?"
+        },
+        {
+          "timestamp": "00:00",
+          "speaker": "Principal",
+          "text": "Namaskaram andi, maa school lo 750 students unnaru, kani digital tools sarigga levu."
+        },
+        {
+          "timestamp": "00:00",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Great sir, 750 students unna school ki maa AI books and personalized learning tool chaala effective ga work chestundi. Currently mee school lo edaina digital LMS platform use chestunnara?"
+        },
+        {
+          "timestamp": "00:00",
+          "speaker": "Principal",
+          "text": "Sure demo arrange cheyyandi, weekend chudam."
+        },
+        {
+          "timestamp": "00:00",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Chaala santhosham sir! Maa Senior Academic Consultant meeku demo ivvadaniki connect avtaru. Mee WhatsApp number ki details and schedule share chestunnanu. Mee valuable time ichinanduku chaala dhanyavaadalu sir!"
+        }
+      ],
+      "full_text": "00:00 Ananya (Skila AI):\nNamaskaram sir, nenu Skila AI nunchi automated AI assistant ni. Mee school kosam educational technology solution gurinchi short ga maatladataniki call chestunnanu. Ippudu maatladataniki convenient ga unda?\n\n00:00 Principal:\nNamaskaram andi, maa school lo 750 students unnaru, kani digital tools sarigga levu.\n\n00:00 Ananya (Skila AI):\nGreat sir, 750 students unna school ki maa AI books and personalized learning tool chaala effective ga work chestundi. Currently mee school lo edaina digital LMS platform use chestunnara?\n\n00:00 Principal:\nSure demo arrange cheyyandi, weekend chudam.\n\n00:00 Ananya (Skila AI):\nChaala santhosham sir! Maa Senior Academic Consultant meeku demo ivvadaniki connect avtaru. Mee WhatsApp number ki details and schedule share chestunnanu. Mee valuable time ichinanduku chaala dhanyavaadalu sir!\n",
+      "created_at": "2026-10-03T18:50:13.895484+00:00"
+    }
+  },
+  "ai_analyses": {
+    "call_aade8069ab": {
+      "call_id": "call_aade8069ab",
+      "school_id": "sch_bd65d0",
+      "school_name": "ZPHS Ghatkesar",
+      "analysis": {
+        "lead_status": "DEMO_REQUESTED",
+        "interest_level": "HOT",
+        "interest_reason": "Principal expressed interest and agreed to explore digital AI curriculum.",
+        "student_count": 0,
+        "current_lms": true,
+        "current_erp": false,
+        "pain_points": [
+          "Teacher digital enablement",
+          "Student personalized attention"
+        ],
+        "objections": [
+          "Existing vendor software installed"
+        ],
+        "language_detected": "Telugu-English",
+        "demo_requested": true,
+        "callback_requested": false,
+        "callback_time": "",
+        "details_requested": true,
+        "pricing_discussed": false,
+        "management_approval_required": false,
+        "next_action": "BOOK_DEMO",
+        "summary": "Spoke with school administrator in Telugu regarding Skila AI-powered books and LMS. Verified approximately 0 student strength. Lead requested live demonstration."
+      },
+      "created_at": "2026-10-03T18:48:49.346089+00:00"
+    },
+    "call_6ebbc9af9f": {
+      "call_id": "call_6ebbc9af9f",
+      "school_id": "sch_70bf63",
+      "school_name": "ZPHS Ghatkesar",
+      "analysis": {
+        "lead_status": "DEMO_REQUESTED",
+        "interest_level": "HOT",
+        "interest_reason": "Principal expressed interest and agreed to explore digital AI curriculum.",
+        "student_count": 0,
+        "current_lms": true,
+        "current_erp": false,
+        "pain_points": [
+          "Teacher digital enablement",
+          "Student personalized attention"
+        ],
+        "objections": [
+          "Existing vendor software installed"
+        ],
+        "language_detected": "Telugu-English",
+        "demo_requested": true,
+        "callback_requested": false,
+        "callback_time": "",
+        "details_requested": true,
+        "pricing_discussed": false,
+        "management_approval_required": false,
+        "next_action": "BOOK_DEMO",
+        "summary": "Spoke with school administrator in Telugu regarding Skila AI-powered books and LMS. Verified approximately 0 student strength. Lead requested live demonstration."
+      },
+      "created_at": "2026-10-03T18:50:13.895484+00:00"
+    }
+  },
+  "followups": {
+    "fol_8bd6e716": {
+      "id": "fol_8bd6e716",
+      "call_id": "call_aade8069ab",
+      "school_id": "sch_bd65d0",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "phone": "+919876543210",
+      "urgency": "High",
+      "action": "BOOK_DEMO",
+      "notes": "Principal expressed interest and agreed to explore digital AI curriculum.",
+      "created_at": "2026-10-03T18:48:49.346089+00:00",
+      "completed": false
+    },
+    "fol_d31da8bf": {
+      "id": "fol_d31da8bf",
+      "call_id": "call_6ebbc9af9f",
+      "school_id": "sch_70bf63",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "phone": "+919876543210",
+      "urgency": "High",
+      "action": "BOOK_DEMO",
+      "notes": "Principal expressed interest and agreed to explore digital AI curriculum.",
+      "created_at": "2026-10-03T18:50:13.895484+00:00",
+      "completed": false
+    }
+  },
+  "demos": {
+    "demo_5a0c95f8": {
+      "id": "demo_5a0c95f8",
+      "call_id": "call_aade8069ab",
+      "school_id": "sch_bd65d0",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "scheduled_status": "Requested",
+      "student_count": 750,
+      "created_at": "2026-10-03T18:48:49.346089+00:00"
+    },
+    "demo_e73022ec": {
+      "id": "demo_e73022ec",
+      "call_id": "call_6ebbc9af9f",
+      "school_id": "sch_70bf63",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "scheduled_status": "Requested",
+      "student_count": 750,
+      "created_at": "2026-10-03T18:50:13.895484+00:00"
     }
   }
 }

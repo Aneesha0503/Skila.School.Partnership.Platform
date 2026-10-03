@@ -17,9 +17,10 @@ import MOUPreviewModal from './components/MOUPreviewModal';
 import PartnershipCertificateModal from './components/PartnershipCertificateModal';
 import StudentRosterModal from './components/StudentRosterModal';
 import FinancialAnalyticsModal from './components/FinancialAnalyticsModal';
+import CallingHub from './components/calling/CallingHub';
 import AuthGateSection from './components/AuthGateSection';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { School, RefreshCw } from 'lucide-react';
+import { School, RefreshCw, Phone, ArrowRight } from 'lucide-react';
 import { 
   parseSearchParams, 
   buildSearchParams, 
@@ -56,6 +57,9 @@ function SkilaApp() {
   const [accessModalOpen, setAccessModalOpen] = useState(false);
   const [agentPerformanceModalOpen, setAgentPerformanceModalOpen] = useState(false);
   const [financialModalOpen, setFinancialModalOpen] = useState(false);
+  const [platformMode, setPlatformMode] = useState(() => {
+    return localStorage.getItem('skila_platform_mode') || 'calling';
+  });
 
   // Administrative Hierarchy State
   const [selectedHierarchy, setSelectedHierarchy] = useState({
@@ -884,6 +888,12 @@ function SkilaApp() {
         }
         onOpenAgentPerformanceModal={() => setAgentPerformanceModalOpen(true)}
         onOpenFinancialModal={() => setFinancialModalOpen(true)}
+        onOpenCallingHub={() => {
+          const next = platformMode === 'calling' ? 'crm' : 'calling';
+          setPlatformMode(next);
+          localStorage.setItem('skila_platform_mode', next);
+        }}
+        platformMode={platformMode}
       />
 
       {/* Main Content Area */}
@@ -901,9 +911,47 @@ function SkilaApp() {
 
         {/* Without sign in, except hero section, every functionality is invisible */}
         {isAuthenticated ? (
-          <>
-            {/* KPI Summary Cards */}
-            <StatsBar 
+          platformMode === 'calling' ? (
+            <CallingHub 
+              onBackToCRM={() => {
+                setPlatformMode('crm');
+                localStorage.setItem('skila_platform_mode', 'crm');
+              }}
+            />
+          ) : (
+            <>
+              {/* Quick AI Calling Banner */}
+              <div className="mb-4 p-3.5 rounded-xl bg-gradient-to-r from-indigo-900/40 via-purple-900/30 to-indigo-950/40 border border-indigo-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shrink-0">
+                    <Phone className="w-4 h-4 animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-100 flex items-center gap-2">
+                      Skila AI Telugu Outbound Calling Platform
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        ACTIVE
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Autonomous Telugu outbound calling with Ananya AI assistant. Qualifies Telangana schools & books in-person demos.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setPlatformMode('calling');
+                    localStorage.setItem('skila_platform_mode', 'calling');
+                  }}
+                  className="self-start sm:self-center px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                >
+                  <span>Launch Calling Hub</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* KPI Summary Cards */}
+              <StatsBar 
               stats={stats} 
               schools={schools} 
               onFilterConfirmedDeals={handleToggleConfirmedOnly}
@@ -996,7 +1044,7 @@ function SkilaApp() {
               />
             )}
           </>
-        ) : (
+        )) : (
           <AuthGateSection 
             onOpenLogin={handleOpenLogin} 
             onOpenRegister={handleOpenRegister} 

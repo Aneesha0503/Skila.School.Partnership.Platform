@@ -14,7 +14,7 @@ try:
     from firebase_admin import credentials, firestore
 
     if not firebase_admin._apps:
-        if os.path.exists(SERVICE_ACCOUNT_FILE):
+        if not os.environ.get("FORCE_LOCAL_FIRESTORE") and os.path.exists(SERVICE_ACCOUNT_FILE):
             cred = credentials.Certificate(SERVICE_ACCOUNT_FILE)
             firebase_admin.initialize_app(cred)
             db = firestore.client()

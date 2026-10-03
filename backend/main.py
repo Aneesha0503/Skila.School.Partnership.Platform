@@ -42,6 +42,9 @@ from mistral_scraper import get_school_tier
 
 db = get_db()
 
+from calling_api import router as calling_router
+app.include_router(calling_router)
+
 # ==========================================
 # AUTHENTICATION & ROLE-BASED ACCESS CONTROL
 # ==========================================

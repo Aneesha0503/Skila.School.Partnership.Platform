@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   School, FileSpreadsheet, Plus, Sun, Moon, 
   ShieldCheck, ChevronDown, Check, Lock, UserCheck, Crown, Briefcase, Bell, Clock,
-  LogOut, LogIn, UserPlus, User, Trophy, Award, TrendingUp, Layers
+  LogOut, LogIn, UserPlus, User, Trophy, Award, TrendingUp, Layers, PhoneCall
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -25,7 +25,9 @@ export default function Header({
   onOpenConfirmedModal,
   confirmedCount = 0,
   onOpenAgentPerformanceModal,
-  onOpenFinancialModal
+  onOpenFinancialModal,
+  onOpenCallingHub,
+  platformMode = 'crm'
 }) {
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -185,6 +187,25 @@ export default function Header({
           {/* Right Header Navigation & Access Controls */}
           <div className="flex items-center gap-1.5 sm:gap-2">
             
+            {/* AI Telugu Calling Hub Mode Switcher */}
+            {isAuthenticated && onOpenCallingHub && (
+              <button
+                onClick={onOpenCallingHub}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer shadow-sm ${
+                  platformMode === 'calling'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-emerald-600/30 ring-2 ring-emerald-400/50'
+                    : 'bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-indigo-500/25'
+                }`}
+                title="Skila AI Telugu Outbound Calling Platform"
+              >
+                <PhoneCall className="w-3.5 h-3.5 text-white animate-pulse" />
+                <span className="hidden sm:inline">AI Calling</span>
+                <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-emerald-400 text-slate-950 uppercase">
+                  Telugu
+                </span>
+              </button>
+            )}
+
             {/* Unified Hubs Dropdown (Universal Desktop & Mobile) */}
             {isAuthenticated && (
               <div className="relative" ref={hubsMenuRef}>
@@ -207,6 +228,18 @@ export default function Header({
                     <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/80">
                       Main Portals
                     </div>
+                    <button
+                      onClick={() => { setHubsMenuOpen(false); onOpenCallingHub && onOpenCallingHub(); }}
+                      className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between transition cursor-pointer border-b border-slate-100 dark:border-slate-800"
+                    >
+                      <span className="flex items-center gap-2 text-slate-700 dark:text-slate-200 font-bold">
+                        <PhoneCall className="w-4 h-4 text-emerald-500" />
+                        AI Calling (Telugu First)
+                      </span>
+                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200">
+                        Ananya
+                      </span>
+                    </button>
                     <button
                       onClick={() => { setHubsMenuOpen(false); onOpenConfirmedModal(); }}
                       className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between transition cursor-pointer"
