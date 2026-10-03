@@ -4,7 +4,7 @@ Telugu-First Outbound Calling Engine with Plivo, Sarvam AI, OpenAI, and Pipecat 
 """
 from .telephony import TelephonyProvider, PlivoTelephonyProvider, MockTelephonyProvider
 from .voice import VoiceProvider, SarvamVoiceProvider, MockVoiceProvider
-from .brain import LLMProvider, OpenAIProvider, MockLLMProvider
+from .brain import LLMProvider, OpenAIProvider, GeminiProvider, MockLLMProvider
 from .pipeline import CallSession, VoicePipelineManager
 from .prompts import SKILA_AI_SYSTEM_PROMPT, POST_CALL_ANALYSIS_PROMPT
 
@@ -17,6 +17,7 @@ __all__ = [
     "MockVoiceProvider",
     "LLMProvider",
     "OpenAIProvider",
+    "GeminiProvider",
     "MockLLMProvider",
     "CallSession",
     "VoicePipelineManager",

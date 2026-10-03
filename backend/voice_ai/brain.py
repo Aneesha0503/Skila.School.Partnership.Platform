@@ -191,10 +191,149 @@ FORMAT OUTPUT AS JSON:
             }
 
 
+class GeminiProvider(LLMProvider):
+    """Google Gemini LLM Provider using the official google-genai SDK."""
+
+    def __init__(self, api_key: Optional[str] = None, model: str = "gemini-2.5-flash"):
+        self.api_key = api_key or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY", "")
+        self.model = model
+        self.is_configured = bool(self.api_key)
+
+    async def generate_response(
+        self,
+        conversation_history: List[Dict[str, str]],
+        current_state: Dict[str, Any],
+        user_utterance: str,
+        school_info: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        if not self.is_configured:
+            raise ValueError("GEMINI_API_KEY / GOOGLE_API_KEY is not configured.")
+
+        from google import genai
+        from google.genai import types
+
+        client = genai.Client(api_key=self.api_key)
+
+        school_context = ""
+        if school_info:
+            school_context = f"\nSchool Name: {school_info.get('school_name', '')}, District: {school_info.get('district', '')}, Contact: {school_info.get('principal_name', '')}"
+
+        system_instruction = f"""{SKILA_AI_SYSTEM_PROMPT}
+
+CURRENT CONTEXT & CALL STATE:
+{school_context}
+Current State: {json.dumps(current_state, ensure_ascii=False)}
+
+TASK:
+1. Respond to the principal naturally in conversational Telugu (with natural English code-switching).
+2. Keep response concise (1 to 2 sentences max) suitable for rapid voice synthesis.
+3. Update extracted information in JSON output.
+
+FORMAT OUTPUT AS JSON:
+{{
+  "reply": "Telugu response text here",
+  "extracted_student_count": null,
+  "current_lms_mentioned": null,
+  "current_erp_mentioned": null,
+  "pain_points": [],
+  "demo_requested": false,
+  "pricing_inquiry": false,
+  "callback_requested": false,
+  "not_interested": false,
+  "do_not_call": false
+}}"""
+
+        prompt_parts = [system_instruction, "\nCONVERSATION HISTORY:"]
+        for turn in conversation_history[-8:]:
+            prompt_parts.append(f"{turn.get('role', 'user')}: {turn.get('content', '')}")
+        prompt_parts.append(f"user: {user_utterance}")
+        full_prompt = "\n".join(prompt_parts)
+
+        try:
+            resp = client.models.generate_content(
+                model=self.model,
+                contents=full_prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.3,
+                    max_output_tokens=300
+                )
+            )
+            raw_text = resp.text or "{}"
+            parsed = json.loads(raw_text)
+
+            updated_state = dict(current_state)
+            if parsed.get("extracted_student_count") is not None:
+                updated_state["student_count"] = parsed["extracted_student_count"]
+            if parsed.get("current_lms_mentioned") is not None:
+                updated_state["current_lms"] = parsed["current_lms_mentioned"]
+            if parsed.get("current_erp_mentioned") is not None:
+                updated_state["current_erp"] = parsed["current_erp_mentioned"]
+            if parsed.get("pain_points"):
+                pts = updated_state.setdefault("pain_points", [])
+                for p in parsed["pain_points"]:
+                    if p not in pts:
+                        pts.append(p)
+            if parsed.get("demo_requested"):
+                updated_state["demo_requested"] = True
+            if parsed.get("pricing_inquiry"):
+                updated_state["pricing_discussed"] = True
+                updated_state["pricing_discussion_required"] = True
+            if parsed.get("callback_requested"):
+                updated_state["callback_requested"] = True
+            if parsed.get("not_interested"):
+                updated_state["lead_status"] = "NOT_INTERESTED"
+                updated_state["interest_level"] = "COLD"
+            if parsed.get("do_not_call"):
+                updated_state["lead_status"] = "DO_NOT_CALL"
+                updated_state["interest_level"] = "COLD"
+
+            return {
+                "reply": parsed.get("reply", "Namaskaram sir, mee school requirements gurinchi cheppandi."),
+                "updated_state": updated_state
+            }
+        except Exception as e:
+            print(f"[Gemini Chat Error] {e}")
+            return {
+                "reply": "Arthamaindi sir. Mee school student strength and requirements batti maa team live demo lo clear ga explain chestaru.",
+                "updated_state": current_state
+            }
+
+    async def analyze_call(
+        self,
+        transcript: str,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        if not self.is_configured:
+            return await MockLLMProvider().analyze_call(transcript, metadata)
+
+        from google import genai
+        from google.genai import types
+
+        client = genai.Client(api_key=self.api_key)
+        prompt = POST_CALL_ANALYSIS_PROMPT.format(transcript=transcript)
+
+        try:
+            resp = client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.2,
+                    max_output_tokens=600
+                )
+            )
+            return json.loads(resp.text or "{}")
+        except Exception as e:
+            print(f"[Gemini Post Call Analysis Error] {e}")
+            return await MockLLMProvider().analyze_call(transcript, metadata)
+
+
 class MockLLMProvider(LLMProvider):
     """
-    Mock LLM Provider for sandbox testing and interactive browser call simulator.
-    Provides natural Telugu/English simulated conversational logic with zero API key dependencies.
+    State-Aware Dynamic Conversational Engine for local sandbox simulations.
+    Adapts intelligently across all 8 sales funnel stages, supports Telugu script & English,
+    and dynamically answers questions without hardcoded repetitive fallbacks.
     """
 
     async def generate_response(
@@ -206,70 +345,171 @@ class MockLLMProvider(LLMProvider):
     ) -> Dict[str, Any]:
         text = user_utterance.lower().strip()
         updated = dict(current_state)
+        user_turns = len([m for m in conversation_history if m.get("role") == "user"])
 
-        # 1. Opening response / greeting
-        if len(conversation_history) <= 1:
-            if any(w in text for w in ["yes", "ha", "avunu", "cheppandi", "okay", "matladandi", "convenient"]):
-                reply = "Dhanyavaadalu sir. Skila AI lo interactive AI-powered books and school LMS unnai. Mee school lo approximately entha mandi students unnaru sir?"
-            elif any(w in text for w in ["busy", "later", "ippudu kudaradu", "call back", "tarvata"]):
+        # -------------------------------------------------------------
+        # TURN 1: Responding to opening greeting ("Is it convenient to speak?")
+        # -------------------------------------------------------------
+        if user_turns <= 1:
+            # 1A. Callee agrees to talk (Acknowledges availability -> transitions to QUALIFY)
+            if any(w in text for w in [
+                "yes", "ha", "avunu", "cheppandi", "matladandi", "okay", "convenient", "sure", "sare",
+                "ఔను", "చెప్పండి", "సరే", "మాట్లాడండి", "చెప్పు", "హ", "ఓకే", "వింటున్నా", "continue"
+            ]):
+                reply = "Dhanyavaadalu sir. Skila AI school educational solutions and AI-powered books gurinchi brief ga maatladataniki call chesanu. Mee school lo primary nunchi 10th varaku approximately entha mandi students unnaru sir?"
+                updated["funnel_stage"] = "QUALIFY"
+                return {"reply": reply, "updated_state": updated}
+
+            # 1B. Busy / Call later
+            if any(w in text for w in [
+                "busy", "later", "ippudu kudaradu", "call back", "tarvata", "repu",
+                "బిజీ", "కుదరదు", "రేపు", "తర్వాత", "సాయంత్రం", "మళ్ళీ"
+            ]):
                 updated["callback_requested"] = True
                 updated["lead_status"] = "CALLBACK_REQUESTED"
                 reply = "Tappakunda sir, mee time respect chestanu. Ee roju evening or repu morning ye time lo malli call cheyyagalamu?"
-            elif any(w in text for w in ["who", "evaru", "enti"]):
-                reply = "Nenu Skila AI nunchi Ananya ni sir. Memu Telangana schools ki AI-powered books and modern LMS technology provide chestunnamu. Mee school lo digital learning use chestunnara?"
-            elif any(w in text for w in ["dont call", "vaddu", "remove", "cut"]):
+                return {"reply": reply, "updated_state": updated}
+
+            # 1C. Identity inquiry ("Who is calling?", "What is this?")
+            if any(w in text for w in [
+                "who", "evaru", "enti", "company", "organization", "ఎవరు", "ఏంటి", "మీరెవరు"
+            ]):
+                reply = "Nenu Skila AI nunchi Ananya ni sir. Memu Telangana schools ki interactive AI-powered books and modern LMS technology provide chestunnamu. Mee school lo digital learning use chestunnara?"
+                return {"reply": reply, "updated_state": updated}
+
+            # 1D. Direct rejection on call start
+            if any(w in text for w in [
+                "dont call", "vaddu", "remove", "cut", "not interested", "వద్దు", "చేయొద్దు", "ఆసక్తి లేదు"
+            ]):
                 updated["lead_status"] = "DO_NOT_CALL"
                 updated["interest_level"] = "COLD"
                 reply = "Apologies for the disturbance sir. Mee number ni maa calling list nunchi immediately remove chestunnanu. Have a good day."
-            else:
-                reply = "Skila AI school educational solutions gurinchi brief ga matladataniki call chesanu sir. Mee school lo students strength entha undi sir?"
+                return {"reply": reply, "updated_state": updated}
+
+            # 1E. Callee gave number immediately on turn 1
+            digits = re.findall(r'\b\d{2,4}\b', text)
+            if digits:
+                cnt = int(digits[0])
+                updated["student_count"] = cnt
+                updated["funnel_stage"] = "EXPLAIN"
+                reply = f"Great sir, {cnt} students unna school ki maa AI books and personalized learning tool chaala effective ga work chestundi. Currently mee school lo edaina digital LMS platform use chestunnara?"
+                return {"reply": reply, "updated_state": updated}
+
+            # 1F. General opening fallback
+            reply = "Skila AI educational solutions and modern AI books gurinchi brief ga maatladataniki call chesanu sir. Mee school lo students strength entha undi sir?"
+            updated["funnel_stage"] = "QUALIFY"
             return {"reply": reply, "updated_state": updated}
 
-        # 2. Extract student strength
-        digits = re.findall(r'\b\d{2,4}\b', text)
-        if digits:
-            cnt = int(digits[0])
-            updated["student_count"] = cnt
-            reply = f"Great sir, {cnt} students unna school ki maa AI books and personalized learning tool chaala effective ga work chestundi. Currently mee school lo edaina digital LMS platform use chestunnara?"
+        # -------------------------------------------------------------
+        # TURNS 2+: Mid-Conversation Dynamic Understanding & Objection Handling
+        # -------------------------------------------------------------
+
+        # 2A. Do Not Call / Hostile Rejection
+        if any(w in text for w in ["dont call", "remove", "కాల్ చేయొద్దు", "చేయకండి"]):
+            updated["lead_status"] = "DO_NOT_CALL"
+            updated["interest_level"] = "COLD"
+            reply = "Apologies for the disturbance sir. Mee number ni maa calling list nunchi immediately remove chestunnanu. Have a peaceful day."
             return {"reply": reply, "updated_state": updated}
 
-        # 3. Existing LMS objection
-        if any(w in text for w in ["already", "undi", "lms undi", "using", "teachmint", "lead"]):
-            updated["current_lms"] = True
-            reply = "Chaala manchidi sir. Maa solution existing system ni replace cheyyalsina avasaram ledu. Students ki AI-powered learning and AI books additional ga ela result istayo oka short 15-minute demo lo chupinchagalamu. Convenient ga untunda sir?"
-            return {"reply": reply, "updated_state": updated}
-
-        # 4. Pricing / Discount questions
-        if any(w in text for w in ["cost", "price", "fees", "discount", "entha", "rate", "budget"]):
-            updated["pricing_discussed"] = True
-            updated["pricing_discussion_required"] = True
-            reply = "Maa standard pricing per student ₹500 nunchi ₹600 per year varaku untundi sir. Kani exact commercial proposal mee student strength batti maa senior team direct ga confirm chestundi. Oka short live demo lo complete details chupinchagalamu."
-            return {"reply": reply, "updated_state": updated}
-
-        # 5. Demo / Meeting agreement
-        if any(w in text for w in ["demo", "yes", "chudam", "okay", "rammanu", "send someone", "sure", "sare"]):
-            updated["demo_requested"] = True
-            updated["interest_level"] = "HOT"
-            updated["lead_status"] = "DEMO_REQUESTED"
-            reply = "Chaala santhosham sir! Maa Senior Academic Consultant meeku demo ivvadaniki connect avtaru. Mee WhatsApp number ki details and schedule share chestunnanu. Mee valuable time ichinanduku chaala dhanyavaadalu sir!"
-            return {"reply": reply, "updated_state": updated}
-
-        # 6. Send WhatsApp details
-        if any(w in text for w in ["whatsapp", "brochure", "send details", "pampandi", "message"]):
-            updated["details_requested"] = True
-            updated["interest_level"] = "WARM"
-            reply = "Sure sir, note chesukuntanu. Mee official WhatsApp ki institutional brochure share chestaru. Andulo meeku convenient time lo live demo schedule chesukovachu sir."
-            return {"reply": reply, "updated_state": updated}
-
-        # 7. Rejection
-        if any(w in text for w in ["no", "not interested", "vaddu", "interest ledu", "akkarledu"]):
+        # 2B. Polite Rejection
+        if any(w in text for w in ["not interested", "interest ledu", "akkarledu", "వద్దు", "ఆసక్తి లేదు", "వద్దు లెండి"]):
             updated["lead_status"] = "NOT_INTERESTED"
             updated["interest_level"] = "COLD"
             reply = "No problem sir. Mee valuable time ichinanduku chaala dhanyavaadalu. Have a wonderful day!"
             return {"reply": reply, "updated_state": updated}
 
-        # Default fallback response
-        reply = "Arthamaindi sir. Skila AI personalized learning and interactive curriculum meeda mee school ki live demo chupinchadam maa target. Ee week lo 15-minute online or campus demo arrange cheyyagalamu?"
+        # 2C. Busy / Callback request with dynamic time acknowledgement
+        if any(w in text for w in ["busy", "later", "call back", "tarvata", "repu", "బిజీ", "రేపు", "తర్వాత", "సాయంత్రం", "కుదరదు"]):
+            updated["callback_requested"] = True
+            updated["lead_status"] = "CALLBACK_REQUESTED"
+            time_str = "repu evening" if any(w in text for w in ["repu", "రేపు", "tomorrow", "evening", "సాయంత్రం"]) else "convenient time lo"
+            reply = f"Tappakunda sir, mee time respect chestanu. Meeru cheppina vidhamga {time_str} maa team malli call chesi connect avtaru. Dhanyavaadalu sir!"
+            return {"reply": reply, "updated_state": updated}
+
+        # 2D. Student Strength Extraction
+        digits = re.findall(r'\b\d{2,4}\b', text)
+        if digits and not current_state.get("student_count"):
+            cnt = int(digits[0])
+            updated["student_count"] = cnt
+            updated["funnel_stage"] = "EXPLAIN"
+            reply = f"Great sir, {cnt} students unna school ki maa interactive AI books and smart LMS tool teachers ki, students ki chaala baga help chestundi. Currently homework and student attendance kosam edaina software use chestunnara sir?"
+            return {"reply": reply, "updated_state": updated}
+
+        # 2E. Questions on Syllabus / Curriculum / Books
+        if any(w in text for w in [
+            "syllabus", "curriculum", "cbse", "state board", "books", "subjects",
+            "సిలబస్", "బుక్స్", "సబ్జెక్ట్స్", "బోర్డు", "పాఠాలు", "సిలబస్ ఏముంటుంది"
+        ]):
+            updated["funnel_stage"] = "GENERATE_INTEREST"
+            reply = "Maa AI books Telangana State Board and CBSE curriculum ki fully align ayyi untayi sir. Concept clarity kosam Telugu and English bilingual AI tutor untundi. Deeni student engagement ela untundo oka 15-minute live demo lo chupinchagalamu sir."
+            return {"reply": reply, "updated_state": updated}
+
+        # 2F. Questions on Teachers / Training / Ease of Use
+        if any(w in text for w in [
+            "teacher", "training", "faculty", "staff", "difficult", "easy",
+            "టీచర్స్", "ట్రైనింగ్", "నేర్పిస్తారా", "కష్టమా"
+        ]):
+            updated["funnel_stage"] = "GENERATE_INTEREST"
+            reply = "Teachers ki zero-effort onboarding untundi sir. Maa academic team direct ga school ki vachi complete hands-on training istaru. Lesson plan creation and auto-quizzes tho teachers daily time chaala save avtundi."
+            return {"reply": reply, "updated_state": updated}
+
+        # 2G. Pricing / Fee Inquiry (Strict Guardrail: ₹500–₹600, no discount on call)
+        if any(w in text for w in [
+            "cost", "price", "fees", "fee", "discount", "entha", "rate", "budget", "ధర", "ఖర్చు", "ఫీజు", "ఎంత"
+        ]):
+            updated["pricing_discussed"] = True
+            updated["pricing_discussion_required"] = True
+            updated["funnel_stage"] = "GENERATE_INTEREST"
+            reply = "Maa standard institutional pricing per student ₹500 nunchi ₹600 per year varaku untundi sir, including AI books and LMS. Exact commercial proposal mee student strength batti maa senior consultant walkthrough lo direct ga confirm chestaru."
+            return {"reply": reply, "updated_state": updated}
+
+        # 2H. Existing LMS Objection
+        if bool(re.search(r'\b(already|lms|teachmint|lead|using)\b', text)) or any(w in text for w in [
+            "lms undi", "already undi", "software undi", "వేరేది", "వేరేది ఉంది", "వాడుతున్నాం", "మా దగ్గర ఉంది"
+        ]):
+            updated["current_lms"] = True
+            updated["funnel_stage"] = "GENERATE_INTEREST"
+            reply = "Chaala manchidi sir. Maa solution existing LMS ni replace cheyyalsina avasaram ledu. Skila AI interactive books and personalized AI tutor existing setup tho seamlessly integrate avtundi. Idi students results ni ela penchutundo oka short 15-minute walkthrough lo chupinchagalamu sir."
+            return {"reply": reply, "updated_state": updated}
+
+        # 2I. WhatsApp / Brochure request
+        if any(w in text for w in [
+            "whatsapp", "brochure", "send details", "pampandi", "message", "వాట్సాప్", "వివరాలు", "పంపండి"
+        ]):
+            updated["details_requested"] = True
+            updated["interest_level"] = "WARM"
+            updated["funnel_stage"] = "BOOK_DEMO"
+            reply = "Tappakunda sir, mee official WhatsApp ki Skila AI institutional brochure share chestunnanu. Andulo curriculum details chusukuni, meeku convenient time lo 15-minute live demo schedule chesukovachu sir."
+            return {"reply": reply, "updated_state": updated}
+
+        # 2J. Demo Agreement / Willingness to see product (Book Demo -> Human Sales Handoff)
+        if any(w in text for w in [
+            "demo", "rammanu", "chudam", "show me", "walkthrough", "schedule", "arrange",
+            "డెమో", "రమ్మను", "చూద్దాం", "చూపించండి", "షెడ్యూల్", "కలుద్దాం", "రండి"
+        ]) or (any(w in text for w in ["yes", "sure", "sare", "okay", "సరే", "చూడండి"]) and current_state.get("funnel_stage") in ["GENERATE_INTEREST", "BOOK_DEMO"]):
+            updated["demo_requested"] = True
+            updated["interest_level"] = "HOT"
+            updated["lead_status"] = "DEMO_REQUESTED"
+            updated["funnel_stage"] = "SALES_HANDOFF"
+            reply = "Chaala santhosham sir! Mee school management and teachers kosam 15-minute live demo schedule confirm chesamu. Maa Senior Academic Consultant meeku direct ga connect avtaru. Mee WhatsApp number ki complete invitation and schedule share chestunnanu. Dhanyavaadalu sir!"
+            return {"reply": reply, "updated_state": updated}
+
+        # 2K. Intelligent Dynamic Fallbacks (NO repeating static lines!)
+        if any(w in text for w in ["?", "enti", "ela", "evaru", "what", "how", "why", "ఎలా", "ఏంటి", "ఎందుకు"]):
+            reply = "Skila AI main target students concept learning penchadam and teachers academic workload automate cheyyadam sir. Ee technology mee school classrooms lo ela implement avtundo oka brief 15-minute campus demo lo chupinchamantara sir?"
+            return {"reply": reply, "updated_state": updated}
+
+        if any(w in text for w in ["manchidi", "good", "nice", "super", "bagundi", "బాగుంది", "మంచిది"]):
+            reply = "Dhanyavaadalu sir! Ee modern technology tho students learning outcomes lo visible improvement chudochu. Ee week lo meeku convenient unna roju short online or campus demo arrange cheyyagalamu sir?"
+            return {"reply": reply, "updated_state": updated}
+
+        if user_turns == 2:
+            reply = "Arthamaindi sir. Mee school academic goals and student strength batti custom demonstration arrange cheyyadam maa target. Ee week Tuesday or Wednesday ye day meeku convenient ga untundi sir?"
+        elif user_turns == 3:
+            reply = "Kachitanga sir, mee requirements note chesukuntanu. Maa Senior Consultant live walkthrough lo interactive AI books and analytics complete ga chupistaru. Ee week lo 15-minute schedule fix chesukovacha sir?"
+        else:
+            reply = "Dhanyavaadalu sir. Mee school ki best academic support provide cheyyadame maa priority. Mee convenient time lo 15-minute institutional demo schedule chesi maa Senior Consultant direct ga reach avtaru."
+
         return {"reply": reply, "updated_state": updated}
 
     async def analyze_call(

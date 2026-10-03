@@ -27,12 +27,14 @@ export default function CallingSettings() {
   const [plivoAuthToken, setPlivoAuthToken] = useState('');
   const [plivoPhoneNumber, setPlivoPhoneNumber] = useState('');
   const [sarvamApiKey, setSarvamApiKey] = useState('');
+  const [geminiApiKey, setGeminiApiKey] = useState('');
   const [openaiApiKey, setOpenaiApiKey] = useState('');
   const [publicWebhookUrl, setPublicWebhookUrl] = useState('');
 
   // Password visibility toggles
   const [showPlivoToken, setShowPlivoToken] = useState(false);
   const [showSarvamKey, setShowSarvamKey] = useState(false);
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
   const [showOpenaiKey, setShowOpenaiKey] = useState(false);
 
   // Verification & Testing State
@@ -56,6 +58,7 @@ export default function CallingSettings() {
         setPlivoAuthId(creds.plivo_auth_id_masked || '');
         setPlivoPhoneNumber(creds.plivo_phone_number || '');
         setSarvamApiKey(creds.sarvam_api_key_masked || '');
+        setGeminiApiKey(creds.gemini_api_key_masked || '');
         setOpenaiApiKey(creds.openai_api_key_masked || '');
         setPublicWebhookUrl(creds.public_webhook_url || '');
       }
@@ -98,6 +101,7 @@ export default function CallingSettings() {
       if (plivoAuthToken) payload.plivo_auth_token = plivoAuthToken;
       if (plivoPhoneNumber) payload.plivo_phone_number = plivoPhoneNumber;
       if (sarvamApiKey && !sarvamApiKey.includes('...')) payload.sarvam_api_key = sarvamApiKey;
+      if (geminiApiKey && !geminiApiKey.includes('...')) payload.gemini_api_key = geminiApiKey;
       if (openaiApiKey && !openaiApiKey.includes('...')) payload.openai_api_key = openaiApiKey;
       if (publicWebhookUrl !== undefined) payload.public_webhook_url = publicWebhookUrl;
 
@@ -283,6 +287,33 @@ export default function CallingSettings() {
                 />
                 <span className="text-[10px] text-slate-400 mt-1 block">
                   Powers Sarvam Saarika (Telugu Speech-to-Text) and Bulbul (Telugu Voice Synthesis).
+                </span>
+              </div>
+
+              {/* Google Gemini API Key */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-slate-300">
+                    Google Gemini API Key <span className="text-emerald-400 font-normal">(Free • Gemini 2.5 Flash Conversational Brain)</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowGeminiKey(!showGeminiKey)}
+                    className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                  >
+                    {showGeminiKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    {showGeminiKey ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+                <input
+                  type={showGeminiKey ? 'text' : 'password'}
+                  value={geminiApiKey}
+                  onChange={(e) => setGeminiApiKey(e.target.value)}
+                  placeholder="e.g. AIzaSy..."
+                  className="w-full bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-indigo-500"
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  Recommended free conversational brain. Get your free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="text-emerald-400 underline">aistudio.google.com</a>.
                 </span>
               </div>
 

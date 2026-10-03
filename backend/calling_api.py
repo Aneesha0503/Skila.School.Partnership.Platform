@@ -14,7 +14,7 @@ from firebase_config import get_db
 from voice_ai import (
     TelephonyProvider, PlivoTelephonyProvider, MockTelephonyProvider,
     VoiceProvider, SarvamVoiceProvider, MockVoiceProvider,
-    LLMProvider, OpenAIProvider, MockLLMProvider,
+    LLMProvider, OpenAIProvider, GeminiProvider, MockLLMProvider,
     CallSession, VoicePipelineManager
 )
 
@@ -28,10 +28,11 @@ pipeline_mgr = VoicePipelineManager()
 def get_providers(force_mock: bool = False):
     """
     Instantiates telephony, voice, and LLM providers.
-    Uses real Plivo, Sarvam, and OpenAI if credentials are present and not forced to mock.
+    Uses real Plivo, Sarvam, Gemini, or OpenAI if credentials are present.
     """
     has_plivo = bool(os.environ.get("PLIVO_AUTH_ID") and os.environ.get("PLIVO_AUTH_TOKEN"))
     has_sarvam = bool(os.environ.get("SARVAM_API_KEY"))
+    has_gemini = bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
     has_openai = bool(os.environ.get("OPENAI_API_KEY"))
 
     if not force_mock and has_plivo:
@@ -44,12 +45,14 @@ def get_providers(force_mock: bool = False):
     else:
         voice = MockVoiceProvider()
 
-    if not force_mock and has_openai:
+    if not force_mock and has_gemini:
+        llm = GeminiProvider()
+    elif not force_mock and has_openai:
         llm = OpenAIProvider()
     else:
         llm = MockLLMProvider()
 
-    is_real_mode = not force_mock and (has_plivo and has_sarvam and has_openai)
+    is_real_mode = not force_mock and (has_plivo and has_sarvam and (has_gemini or has_openai))
     return telephony, voice, llm, is_real_mode
 
 
@@ -85,6 +88,7 @@ class CredentialsUpdateRequest(BaseModel):
     plivo_auth_token: Optional[str] = None
     plivo_phone_number: Optional[str] = None
     sarvam_api_key: Optional[str] = None
+    gemini_api_key: Optional[str] = None
     openai_api_key: Optional[str] = None
     public_webhook_url: Optional[str] = None
 
@@ -625,6 +629,7 @@ def get_calling_settings():
     """Returns active AI assistant configuration and vendor credentials status."""
     has_plivo = bool(os.environ.get("PLIVO_AUTH_ID") and os.environ.get("PLIVO_AUTH_TOKEN"))
     has_sarvam = bool(os.environ.get("SARVAM_API_KEY"))
+    has_gemini = bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
     has_openai = bool(os.environ.get("OPENAI_API_KEY"))
 
     doc = db.collection("settings").document("ai_calling").get()
@@ -634,8 +639,11 @@ def get_calling_settings():
     plivo_token = os.environ.get("PLIVO_AUTH_TOKEN", "").strip()
     plivo_phone = os.environ.get("PLIVO_PHONE_NUMBER", "").strip()
     sarvam_key = os.environ.get("SARVAM_API_KEY", "").strip()
+    gemini_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY", "")
     openai_key = os.environ.get("OPENAI_API_KEY", "").strip()
     public_url = os.environ.get("PUBLIC_APP_URL", "").strip()
+
+    brain_status = "Active (Google Gemini 2.5 Flash)" if has_gemini else ("Active (OpenAI GPT-4o)" if has_openai else "Simulation / Heuristic LLM")
 
     return {
         "status": "success",
@@ -651,16 +659,18 @@ def get_calling_settings():
             "target_pricing": "₹500 to ₹600 per student per year (Non-negotiable by AI)",
             "telephony_status": "Connected (Plivo Carrier Telephony)" if has_plivo else "In-Browser Simulation (No Plivo Keys)",
             "voice_stt_tts_status": "Active (Sarvam AI Telugu)" if has_sarvam else "Simulation / Browser Speech Synthesis",
-            "brain_llm_status": "Active (OpenAI GPT-4o)" if has_openai else "Simulation / Heuristic LLM",
-            "active_mode": "REAL TELEPHONY" if (has_plivo and has_sarvam and has_openai) else "MOCK SIMULATION",
+            "brain_llm_status": brain_status,
+            "active_mode": "REAL TELEPHONY" if (has_plivo and has_sarvam and (has_gemini or has_openai)) else "MOCK SIMULATION",
             "has_plivo": has_plivo,
             "has_sarvam": has_sarvam,
+            "has_gemini": has_gemini,
             "has_openai": has_openai,
             "credentials": {
                 "plivo_auth_id_masked": mask_key(plivo_id),
                 "plivo_auth_token_set": bool(plivo_token),
                 "plivo_phone_number": plivo_phone or "+91...",
                 "sarvam_api_key_masked": mask_key(sarvam_key),
+                "gemini_api_key_masked": mask_key(gemini_key),
                 "openai_api_key_masked": mask_key(openai_key),
                 "public_webhook_url": public_url
             }
@@ -682,7 +692,7 @@ def update_calling_settings(payload: SettingsUpdateRequest):
 def update_credentials(payload: CredentialsUpdateRequest):
     """
     Securely saves vendor API credentials to backend/.env and updates active os.environ.
-    Allows real-time activation of Plivo carrier phone calls and Sarvam speech models.
+    Allows real-time activation of Plivo carrier phone calls, Sarvam speech models, and Gemini/OpenAI brains.
     """
     updates = {}
     if payload.plivo_auth_id is not None:
@@ -709,6 +719,12 @@ def update_credentials(payload: CredentialsUpdateRequest):
         set_key(ENV_FILE_PATH, "SARVAM_API_KEY", v)
         updates["sarvam_api_key"] = bool(v)
 
+    if payload.gemini_api_key is not None:
+        v = payload.gemini_api_key.strip()
+        os.environ["GEMINI_API_KEY"] = v
+        set_key(ENV_FILE_PATH, "GEMINI_API_KEY", v)
+        updates["gemini_api_key"] = bool(v)
+
     if payload.openai_api_key is not None:
         v = payload.openai_api_key.strip()
         os.environ["OPENAI_API_KEY"] = v
@@ -723,9 +739,10 @@ def update_credentials(payload: CredentialsUpdateRequest):
 
     has_plivo = bool(os.environ.get("PLIVO_AUTH_ID") and os.environ.get("PLIVO_AUTH_TOKEN"))
     has_sarvam = bool(os.environ.get("SARVAM_API_KEY"))
+    has_gemini = bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
     has_openai = bool(os.environ.get("OPENAI_API_KEY"))
 
-    active_mode = "REAL TELEPHONY" if (has_plivo and has_sarvam and has_openai) else "MOCK SIMULATION"
+    active_mode = "REAL TELEPHONY" if (has_plivo and has_sarvam and (has_gemini or has_openai)) else "MOCK SIMULATION"
 
     return {
         "status": "success",
@@ -734,6 +751,7 @@ def update_credentials(payload: CredentialsUpdateRequest):
         "active_mode": active_mode,
         "has_plivo": has_plivo,
         "has_sarvam": has_sarvam,
+        "has_gemini": has_gemini,
         "has_openai": has_openai
     }
 
