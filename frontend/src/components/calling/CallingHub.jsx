@@ -135,6 +135,7 @@ export default function CallingHub({
           <CallingSchoolList
             onStartCall={handleStartCall}
             onViewCallDetails={handleViewCallDetails}
+            onNavigateToSettings={() => setActiveTab('settings')}
           />
         )}
 
@@ -178,6 +179,7 @@ export default function CallingHub({
           callData={activeCallData}
           onClose={() => setActiveCallData(null)}
           onCallCompleted={handleCallCompleted}
+          onNavigateToSettings={() => setActiveTab('settings')}
         />
       )}
 

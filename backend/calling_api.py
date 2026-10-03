@@ -1,15 +1,14 @@
-"""
-FastAPI Router for Skila AI Outbound Calling Platform.
-Mounts REST & WebSocket endpoints for single calls, bulk campaigns, live transcripts,
-AI evaluation, and human handoff.
-"""
 import os
 import uuid
 import asyncio
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect, Query, Body, Header
+from fastapi import APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect, Query, Body, Header, Request, Response
 from pydantic import BaseModel
+from dotenv import load_dotenv, set_key
+
+load_dotenv()
+ENV_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
 
 from firebase_config import get_db
 from voice_ai import (
@@ -80,6 +79,19 @@ class SettingsUpdateRequest(BaseModel):
     ai_role_title: Optional[str] = "Skila AI School Outreach Assistant"
     primary_language: Optional[str] = "te-IN"
     force_mock_mode: Optional[bool] = False
+
+class CredentialsUpdateRequest(BaseModel):
+    plivo_auth_id: Optional[str] = None
+    plivo_auth_token: Optional[str] = None
+    plivo_phone_number: Optional[str] = None
+    sarvam_api_key: Optional[str] = None
+    openai_api_key: Optional[str] = None
+    public_webhook_url: Optional[str] = None
+
+class TestPlivoRequest(BaseModel):
+    auth_id: Optional[str] = None
+    auth_token: Optional[str] = None
+
 
 
 # ==========================================
@@ -274,11 +286,22 @@ async def initiate_single_call(payload: CallInitiateRequest):
     pipeline_mgr.register_session(session)
 
     # Trigger Telephony call
+    public_url = (os.environ.get("PUBLIC_APP_URL") or "").strip().rstrip("/")
+    webhook_url = f"{public_url}/api/calling/plivo/webhook" if public_url else "/api/calling/plivo/webhook"
+
     tel_res = await telephony.create_call(
         to_number=payload.phone_number,
-        webhook_url="/api/calling/plivo/webhook",
+        webhook_url=webhook_url,
         extra_data={"call_id": call_id, "school_id": school_info["school_id"]}
     )
+
+    if is_real and not tel_res.get("success"):
+        pipeline_mgr.remove_session(call_id)
+        carrier_err = tel_res.get("error") or "Failed to place outbound call via Plivo"
+        raise HTTPException(
+            status_code=400,
+            detail=f"{carrier_err}. Please verify your Plivo credentials and balance in Calling Settings."
+        )
 
     # Generate initial greeting from Ananya
     greeting_turn = await session.start_call()
@@ -301,10 +324,20 @@ async def initiate_single_call(payload: CallInitiateRequest):
         "status": "success",
         "call_id": call_id,
         "provider_mode": "REAL" if is_real else "MOCK",
+        "is_real_telephony": is_real,
+        "phone_number": payload.phone_number,
         "telephony": tel_res,
         "initial_turn": greeting_turn["turn"],
         "audio_base64": greeting_turn["tts"].get("audio_base64", ""),
-        "message": f"Outbound call initiated to {school_info['school_name']} in Telugu"
+        "message": (
+            f"Carrier phone call ringing {payload.phone_number} via Plivo"
+            if is_real
+            else f"In-Browser Telugu voice call started for {school_info['school_name']}"
+        ),
+        "simulation_notice": None if is_real else (
+            "Simulation Mode: Plivo carrier credentials not configured in Settings/.env. "
+            "Your mobile phone will not ring. Audio will play through browser speakers."
+        )
     }
 
 
@@ -545,6 +578,15 @@ def get_calling_analytics():
     }
 
 
+def mask_key(k: Optional[str]) -> str:
+    if not k:
+        return ""
+    clean = k.strip()
+    if len(clean) <= 6:
+        return "***"
+    return clean[:4] + "..." + clean[-4:]
+
+
 @router.get("/settings")
 def get_calling_settings():
     """Returns active AI assistant configuration and vendor credentials status."""
@@ -554,6 +596,13 @@ def get_calling_settings():
 
     doc = db.collection("settings").document("ai_calling").get()
     saved = doc.to_dict() if doc.exists else {}
+
+    plivo_id = os.environ.get("PLIVO_AUTH_ID", "").strip()
+    plivo_token = os.environ.get("PLIVO_AUTH_TOKEN", "").strip()
+    plivo_phone = os.environ.get("PLIVO_PHONE_NUMBER", "").strip()
+    sarvam_key = os.environ.get("SARVAM_API_KEY", "").strip()
+    openai_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    public_url = os.environ.get("PUBLIC_APP_URL", "").strip()
 
     return {
         "status": "success",
@@ -567,10 +616,21 @@ def get_calling_settings():
                 "Ippudu maatladataniki convenient ga unda?"
             ),
             "target_pricing": "₹500 to ₹600 per student per year (Non-negotiable by AI)",
-            "telephony_status": "Connected (Plivo)" if has_plivo else "Simulation Mode (Mock Plivo)",
-            "voice_stt_tts_status": "Active (Sarvam AI Telugu)" if has_sarvam else "Simulation Mode (Mock Voice)",
-            "brain_llm_status": "Active (OpenAI GPT-4o)" if has_openai else "Simulation Mode (Mock Brain)",
-            "active_mode": "REAL TELEPHONY" if (has_plivo and has_sarvam and has_openai) else "MOCK SIMULATION"
+            "telephony_status": "Connected (Plivo Carrier Telephony)" if has_plivo else "In-Browser Simulation (No Plivo Keys)",
+            "voice_stt_tts_status": "Active (Sarvam AI Telugu)" if has_sarvam else "Simulation / Browser Speech Synthesis",
+            "brain_llm_status": "Active (OpenAI GPT-4o)" if has_openai else "Simulation / Heuristic LLM",
+            "active_mode": "REAL TELEPHONY" if (has_plivo and has_sarvam and has_openai) else "MOCK SIMULATION",
+            "has_plivo": has_plivo,
+            "has_sarvam": has_sarvam,
+            "has_openai": has_openai,
+            "credentials": {
+                "plivo_auth_id_masked": mask_key(plivo_id),
+                "plivo_auth_token_set": bool(plivo_token),
+                "plivo_phone_number": plivo_phone or "+91...",
+                "sarvam_api_key_masked": mask_key(sarvam_key),
+                "openai_api_key_masked": mask_key(openai_key),
+                "public_webhook_url": public_url
+            }
         }
     }
 
@@ -583,3 +643,113 @@ def update_calling_settings(payload: SettingsUpdateRequest):
     data["updated_at"] = datetime.now(timezone.utc).isoformat()
     ref.set(data)
     return {"status": "success", "message": "Calling settings updated successfully"}
+
+
+@router.post("/settings/credentials")
+def update_credentials(payload: CredentialsUpdateRequest):
+    """
+    Securely saves vendor API credentials to backend/.env and updates active os.environ.
+    Allows real-time activation of Plivo carrier phone calls and Sarvam speech models.
+    """
+    updates = {}
+    if payload.plivo_auth_id is not None:
+        v = payload.plivo_auth_id.strip()
+        os.environ["PLIVO_AUTH_ID"] = v
+        set_key(ENV_FILE_PATH, "PLIVO_AUTH_ID", v)
+        updates["plivo_auth_id"] = bool(v)
+
+    if payload.plivo_auth_token is not None:
+        v = payload.plivo_auth_token.strip()
+        os.environ["PLIVO_AUTH_TOKEN"] = v
+        set_key(ENV_FILE_PATH, "PLIVO_AUTH_TOKEN", v)
+        updates["plivo_auth_token"] = bool(v)
+
+    if payload.plivo_phone_number is not None:
+        v = payload.plivo_phone_number.strip()
+        os.environ["PLIVO_PHONE_NUMBER"] = v
+        set_key(ENV_FILE_PATH, "PLIVO_PHONE_NUMBER", v)
+        updates["plivo_phone_number"] = bool(v)
+
+    if payload.sarvam_api_key is not None:
+        v = payload.sarvam_api_key.strip()
+        os.environ["SARVAM_API_KEY"] = v
+        set_key(ENV_FILE_PATH, "SARVAM_API_KEY", v)
+        updates["sarvam_api_key"] = bool(v)
+
+    if payload.openai_api_key is not None:
+        v = payload.openai_api_key.strip()
+        os.environ["OPENAI_API_KEY"] = v
+        set_key(ENV_FILE_PATH, "OPENAI_API_KEY", v)
+        updates["openai_api_key"] = bool(v)
+
+    if payload.public_webhook_url is not None:
+        v = payload.public_webhook_url.strip().rstrip("/")
+        os.environ["PUBLIC_APP_URL"] = v
+        set_key(ENV_FILE_PATH, "PUBLIC_APP_URL", v)
+        updates["public_webhook_url"] = bool(v)
+
+    has_plivo = bool(os.environ.get("PLIVO_AUTH_ID") and os.environ.get("PLIVO_AUTH_TOKEN"))
+    has_sarvam = bool(os.environ.get("SARVAM_API_KEY"))
+    has_openai = bool(os.environ.get("OPENAI_API_KEY"))
+
+    active_mode = "REAL TELEPHONY" if (has_plivo and has_sarvam and has_openai) else "MOCK SIMULATION"
+
+    return {
+        "status": "success",
+        "message": "Credentials saved to .env and active runtime successfully!",
+        "updates": updates,
+        "active_mode": active_mode,
+        "has_plivo": has_plivo,
+        "has_sarvam": has_sarvam,
+        "has_openai": has_openai
+    }
+
+
+@router.post("/settings/test-plivo")
+async def test_plivo_credentials(payload: Optional[TestPlivoRequest] = None):
+    """
+    Validates Plivo credentials against the live Plivo REST API.
+    Returns account balance and carrier status, or exact error.
+    """
+    auth_id = (payload.auth_id if payload and payload.auth_id else os.environ.get("PLIVO_AUTH_ID", "")).strip()
+    auth_token = (payload.auth_token if payload and payload.auth_token else os.environ.get("PLIVO_AUTH_TOKEN", "")).strip()
+
+    if not auth_id or not auth_token:
+        return {
+            "success": False,
+            "error": "Plivo Auth ID and Auth Token are required. Please enter and save them in AI Settings."
+        }
+
+    provider = PlivoTelephonyProvider(auth_id=auth_id, auth_token=auth_token)
+    res = await provider.test_connection()
+    return res
+
+
+@router.api_route("/plivo/webhook", methods=["GET", "POST"])
+async def plivo_answer_webhook(
+    request: Request,
+    CallUUID: Optional[str] = Query(None),
+    From: Optional[str] = Query(None),
+    To: Optional[str] = Query(None)
+):
+    """
+    Plivo executes this webhook when callee answers their physical phone.
+    Returns Plivo XML with speech greeting or audio stream.
+    """
+    greeting = (
+        "Namaskaram andi! Nenu Skila AI nunchi Ananya ni maatladatunnanu. "
+        "Mee school kosam artificial intelligence educational solution gurinchi maatladataniki call chesamu. "
+        "Ippudu maatladadaniki convenient ga unda?"
+    )
+    xml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Speak language="te-IN" voice="Polly.Aditi">{greeting}</Speak>
+    <Wait length="2" />
+</Response>"""
+    return Response(content=xml_content, media_type="application/xml")
+
+
+@router.api_route("/plivo/hangup", methods=["GET", "POST"])
+async def plivo_hangup_webhook(request: Request):
+    """Plivo webhook when the phone call is terminated."""
+    return {"status": "success", "message": "Call completed"}

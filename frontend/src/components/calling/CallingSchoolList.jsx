@@ -1,27 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { 
   School, Phone, PhoneCall, Search, Filter, MapPin, 
-  Users, CheckCircle2, Flame, Sparkles, RefreshCw, ArrowUpDown 
+  Users, CheckCircle2, Flame, Sparkles, RefreshCw, ArrowUpDown, Key, Radio, AlertTriangle 
 } from 'lucide-react';
-import { initiateAICall } from '../../utils/callingApi';
+import { initiateAICall, fetchCallingSettings } from '../../utils/callingApi';
 
 export default function CallingSchoolList({ 
   onStartCall, 
-  onViewCallDetails 
+  onViewCallDetails,
+  onNavigateToSettings 
 }) {
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('All');
   const [callingId, setCallingId] = useState(null);
+  const [hasPlivo, setHasPlivo] = useState(false);
 
   const fetchSchools = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/schools');
+      const [res, settingsRes] = await Promise.all([
+        fetch('/api/schools'),
+        fetchCallingSettings().catch(() => ({ status: 'error' }))
+      ]);
+
       if (res.ok) {
         const data = await res.json();
         setSchools(data.schools || data || []);
+      }
+
+      if (settingsRes.status === 'success' && settingsRes.settings) {
+        setHasPlivo(!!settingsRes.settings.has_plivo);
       }
     } catch (err) {
       console.error('Failed to load schools:', err);
@@ -131,6 +141,33 @@ export default function CallingSchoolList({
         </div>
       </div>
 
+      {/* Telephony Mode Alert */}
+      <div className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+        hasPlivo
+          ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
+          : 'bg-amber-950/30 border-amber-500/30 text-amber-300'
+      }`}>
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full shrink-0 ${hasPlivo ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`}></span>
+          <span>
+            {hasPlivo ? (
+              <><strong>Plivo Telephony Carrier Ready:</strong> Clicking "Call Phone" places real outbound calls to mobile numbers.</>
+            ) : (
+              <><strong>In-Browser Simulation Active:</strong> Carrier credentials not set in .env. Calls will speak directly via your browser speakers & mic.</>
+            )}
+          </span>
+        </div>
+        {!hasPlivo && onNavigateToSettings && (
+          <button
+            onClick={onNavigateToSettings}
+            className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 transition shrink-0 flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+          >
+            <Key className="w-3 h-3" />
+            Configure Plivo in Settings
+          </button>
+        )}
+      </div>
+
       {/* Schools Table */}
       <div className="rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md overflow-hidden">
         {loading ? (
@@ -224,7 +261,7 @@ export default function CallingSchoolList({
                           className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs rounded-lg shadow-sm hover:shadow-emerald-600/30 transition inline-flex items-center gap-1.5 cursor-pointer"
                         >
                           <PhoneCall className="w-3.5 h-3.5" />
-                          {isCalling ? 'Dialing...' : 'Call with AI'}
+                          {isCalling ? 'Connecting...' : (hasPlivo ? 'Call Phone' : 'Call (Browser)')}
                         </button>
                       </td>
                     </tr>

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
   PhoneCall, PhoneForwarded, Users, CheckCircle, Flame, Calendar, 
-  Clock, TrendingUp, Sparkles, AlertCircle, ArrowUpRight, Search, Play, Phone 
+  Clock, TrendingUp, Sparkles, AlertCircle, ArrowUpRight, Search, Play, Phone, Key, Radio, Volume2 
 } from 'lucide-react';
-import { fetchCallingDashboard, initiateAICall } from '../../utils/callingApi';
+import { fetchCallingDashboard, initiateAICall, fetchCallingSettings } from '../../utils/callingApi';
 
 export default function CallingDashboard({
   onStartCall,
@@ -26,6 +26,7 @@ export default function CallingDashboard({
   const [recentCalls, setRecentCalls] = useState([]);
   const [schoolsList, setSchoolsList] = useState([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState('');
+  const [telephonyConfig, setTelephonyConfig] = useState({ has_plivo: false, status: 'Simulation Mode' });
   
   // Quick dialer state (dynamic, starts empty)
   const [quickSchoolName, setQuickSchoolName] = useState('');
@@ -37,14 +38,22 @@ export default function CallingDashboard({
   const loadData = async () => {
     try {
       setLoading(true);
-      const [dashData, schoolsRes] = await Promise.all([
+      const [dashData, schoolsRes, settingsRes] = await Promise.all([
         fetchCallingDashboard().catch(() => ({ status: 'error' })),
-        fetch('/api/schools').then(r => r.ok ? r.json() : []).catch(() => [])
+        fetch('/api/schools').then(r => r.ok ? r.json() : []).catch(() => []),
+        fetchCallingSettings().catch(() => ({ status: 'error' }))
       ]);
 
       if (dashData.status === 'success') {
         setMetrics(dashData.metrics || {});
         setRecentCalls(dashData.recent_calls || []);
+      }
+
+      if (settingsRes.status === 'success' && settingsRes.settings) {
+        setTelephonyConfig({
+          has_plivo: !!settingsRes.settings.has_plivo,
+          status: settingsRes.settings.telephony_status || 'Simulation Mode'
+        });
       }
 
       const allSchools = Array.isArray(schoolsRes) ? schoolsRes : (schoolsRes.schools || []);
@@ -285,6 +294,27 @@ export default function CallingDashboard({
                 </div>
               </div>
 
+              {/* Telephony Connection Mode Badge */}
+              <div className={`p-2.5 rounded-xl border text-[11px] flex items-center justify-between gap-2 ${
+                telephonyConfig.has_plivo
+                  ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
+                  : 'bg-amber-950/30 border-amber-500/30 text-amber-300'
+              }`}>
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${telephonyConfig.has_plivo ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`}></span>
+                  <span>{telephonyConfig.has_plivo ? 'Plivo Carrier Ready (Rings mobile phone)' : 'In-Browser Simulation (Speakers & Mic)'}</span>
+                </div>
+                {!telephonyConfig.has_plivo && (
+                  <button
+                    type="button"
+                    onClick={() => onNavigateTab('settings')}
+                    className="text-[10px] font-bold underline hover:text-white cursor-pointer shrink-0"
+                  >
+                    Setup Plivo
+                  </button>
+                )}
+              </div>
+
               <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400">
                 <div className="font-semibold text-slate-300 mb-0.5">Telugu Speech Persona:</div>
                 Ananya initiates with formal Telugu greetings, verifies availability, qualifies students, answers curriculum questions, and offers demo booking.
@@ -296,7 +326,7 @@ export default function CallingDashboard({
                 className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-lg hover:shadow-emerald-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <PhoneCall className="w-4 h-4" />
-                {callingInProgress ? 'Connecting Ananya...' : 'Start Telugu Call Now'}
+                {callingInProgress ? 'Connecting Ananya...' : (telephonyConfig.has_plivo ? 'Place Outbound Carrier Call' : 'Start In-Browser Telugu Call')}
               </button>
             </form>
           </div>

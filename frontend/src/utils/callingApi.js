@@ -153,3 +153,30 @@ export async function updateCallingSettings(data) {
   if (!res.ok) throw new Error('Failed to update settings');
   return res.json();
 }
+
+export async function saveCarrierCredentials(data) {
+  const res = await fetch('/api/calling/settings/credentials', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to save credentials' }));
+    throw new Error(err.detail || 'Failed to save credentials');
+  }
+  return res.json();
+}
+
+export async function testPlivoConnection(data = {}) {
+  const res = await fetch('/api/calling/settings/test-plivo', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Connection test failed' }));
+    throw new Error(err.error || err.detail || 'Connection test failed');
+  }
+  return res.json();
+}
+

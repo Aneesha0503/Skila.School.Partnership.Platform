@@ -116,12 +116,12 @@ export default function CallingHistoryView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {calls.map((c) => {
+                {calls.map((c, idx) => {
                   const interest = c.interest_level || 'WARM';
                   const isHot = interest === 'HOT' || c.status === 'HOT' || c.demo_requested;
 
                   return (
-                    <tr key={c.call_id} className="hover:bg-slate-800/40 transition">
+                    <tr key={c.call_id || `call-${idx}`} className="hover:bg-slate-800/40 transition">
                       <td className="px-5 py-3 font-semibold text-white">
                         <div className="flex items-center gap-2">
                           <span>{c.school_name || 'Telangana School'}</span>

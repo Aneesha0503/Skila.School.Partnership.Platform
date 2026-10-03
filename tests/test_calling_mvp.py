@@ -82,6 +82,39 @@ def run_tests():
     assert metrics.get('calls_made', 0) >= 1
     assert metrics.get('hot_leads', 0) >= 1
 
+    # 8. Verify Calling Settings
+    settings_res = client.get('/api/calling/settings')
+    assert settings_res.status_code == 200
+    s_data = settings_res.json().get('settings', {})
+    print("[OK] Calling Settings retrieved. Telephony status:", s_data.get('telephony_status'))
+    assert 'telephony_status' in s_data
+    assert 'credentials' in s_data
+
+    # 9. Verify Plivo Webhook XML Response
+    webhook_res = client.post('/api/calling/plivo/webhook')
+    assert webhook_res.status_code == 200
+    assert 'application/xml' in webhook_res.headers.get('content-type', '')
+    assert '<Response>' in webhook_res.text
+    assert '<Speak' in webhook_res.text
+    print("[OK] Plivo Webhook XML Endpoint Verified:", webhook_res.text[:60], "...")
+
+    # 10. Verify Credentials Update API
+    cred_res = client.post('/api/calling/settings/credentials', json={
+        'public_webhook_url': 'https://skila-demo.ngrok-free.app'
+    })
+    assert cred_res.status_code == 200
+    assert cred_res.json().get('status') == 'success'
+    print("[OK] Credentials Endpoint Verified")
+
+    # 11. Verify Test Plivo Endpoint with empty/invalid keys
+    test_plivo_res = client.post('/api/calling/settings/test-plivo', json={
+        'auth_id': 'TEST_AUTH_ID',
+        'auth_token': 'TEST_AUTH_TOKEN'
+    })
+    assert test_plivo_res.status_code == 200
+    # Plivo API will reject fake keys with success: False
+    print("[OK] Test Plivo Endpoint response:", test_plivo_res.json())
+
     print("\n[SUCCESS] ALL SKILA AI CALLING BACKEND TESTS PASSED!")
 
 if __name__ == "__main__":

@@ -9,6 +9,9 @@ from email.message import EmailMessage
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException, Query, Response, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
