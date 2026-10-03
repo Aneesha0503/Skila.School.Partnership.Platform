@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   PhoneCall, PhoneOff, Mic, MicOff, Volume2, VolumeX, Sparkles, User, 
-  Clock, ShieldAlert, Award, ArrowRight, CheckCircle2, MessageSquare, AlertTriangle, Key 
+  Clock, ShieldAlert, Award, ArrowRight, CheckCircle2, MessageSquare, AlertTriangle, Key,
+  HelpCircle, Info, Radio, Zap, X, BookOpen, Calendar
 } from 'lucide-react';
 import { sendSpeechTurn, endAICall } from '../../utils/callingApi';
 
@@ -19,6 +20,7 @@ export default function ActiveCallModal({
   const [customInput, setCustomInput] = useState('');
   const [transcript, setTranscript] = useState([]);
   const [speechNotice, setSpeechNotice] = useState('');
+  const [showExplainer, setShowExplainer] = useState(false);
   const [liveState, setLiveState] = useState({
     interest_level: 'WARM',
     lead_status: 'CONNECTED',
@@ -305,30 +307,38 @@ export default function ActiveCallModal({
 
   const quickResponses = [
     {
+      category: "Curriculum",
       telugu: "ఔను, మీ Skila AI ప్రోగ్రామ్ గురించి చెప్పండి, సిలబస్ ఏముంటుంది?",
       label: "Ask about curriculum (Interested)"
     },
     {
+      category: "Pricing",
       telugu: "స్టూడెంట్ కి ఎంత ఫీజు అవుతుంది? డిస్కౌంట్ ఏమైనా ఉంటుందా?",
       label: "Ask about pricing (₹500-600)"
     },
     {
+      category: "Demo",
       telugu: "మా స్కూల్ లో 450 మంది స్టూడెంట్స్ ఉన్నారు. మాకు శనివారం లైవ్ డెమో ఇవ్వగలరా?",
       label: "Request Live Demo (HOT Lead)"
     },
     {
+      category: "Objection",
       telugu: "మాకు ఇప్పటికే వేరే కంప్యూటర్ సిలబస్ ఉంది, ఇప్పుడు అవసరం లేదు.",
-      label: "Object: Already have syllabus"
+      label: "Already have syllabus"
     },
     {
+      category: "Callback",
       telugu: "ఇప్పుడు బిజీగా ఉన్నాను, రేపు సాయంత్రం 4 గంటలకి కాల్ చేయండి.",
       label: "Busy: Request Callback"
     },
     {
+      category: "Not Interested",
       telugu: "మాకు ఎలాంటి AI సిలబస్ ఆసక్తి లేదు.",
       label: "Cold: Not interested"
     }
   ];
+
+  const isRealCarrierCall = Boolean(callData?.is_real_telephony || callData?.provider_mode === 'REAL');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 overflow-y-auto">
@@ -337,8 +347,12 @@ export default function ActiveCallModal({
         {/* Call Header */}
         <div className="px-6 py-4 bg-slate-800/80 border-b border-slate-700/80 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 animate-pulse">
-              <PhoneCall className="w-5 h-5" />
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+              isRealCarrierCall 
+                ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 animate-pulse' 
+                : 'bg-amber-500/20 border border-amber-500/40 text-amber-400'
+            }`}>
+              {isRealCarrierCall ? <PhoneCall className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -349,11 +363,11 @@ export default function ActiveCallModal({
                   Telugu First AI
                 </span>
                 <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
-                  callData?.is_real_telephony || callData?.provider_mode === 'REAL'
+                  isRealCarrierCall
                     ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                     : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                 }`}>
-                  {callData?.is_real_telephony || callData?.provider_mode === 'REAL' ? 'Plivo Carrier Call' : 'In-Browser Audio'}
+                  {isRealCarrierCall ? '📞 Plivo Carrier Call' : '🧪 Audition Sandbox'}
                 </span>
               </div>
               <p className="text-xs text-slate-400">
@@ -362,7 +376,17 @@ export default function ActiveCallModal({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            {/* Why Am I Seeing This? Explainer trigger */}
+            <button
+              onClick={() => setShowExplainer(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs font-semibold transition cursor-pointer"
+              title="Explain what this screen is for and how calling works"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="hidden sm:inline">Why this screen?</span>
+            </button>
+
             {/* Audio Mute Toggle */}
             <button
               onClick={() => {
@@ -400,7 +424,7 @@ export default function ActiveCallModal({
         </div>
 
         {/* Telephony Status Notice Banner */}
-        {callData?.is_real_telephony || callData?.provider_mode === 'REAL' ? (
+        {isRealCarrierCall ? (
           <div className="px-6 py-2.5 bg-emerald-950/40 border-b border-emerald-900/50 flex items-center justify-between text-xs text-emerald-300">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
@@ -409,26 +433,38 @@ export default function ActiveCallModal({
             <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">REAL CARRIER CALL</span>
           </div>
         ) : (
-          <div className="px-6 py-2.5 bg-amber-950/40 border-b border-amber-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-amber-300">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>
-                <strong>In-Browser Audio Simulation Active:</strong> Carrier credentials not configured. 
-                Your physical mobile phone will <u>not</u> ring. Ananya is speaking directly through your browser speakers and listening to your mic!
+          <div className="px-6 py-3 bg-amber-950/40 border-b border-amber-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-200">
+            <div className="flex items-start gap-2.5">
+              <span className="px-2 py-0.5 mt-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold uppercase text-[10px] tracking-wide shrink-0">
+                🧪 Test Sandbox
               </span>
+              <div>
+                <span className="font-bold text-amber-100">You are auditioning Ananya in Browser Simulator Mode.</span>
+                <p className="text-[11px] text-amber-300/80 mt-0.5">
+                  No telecom charges. Roleplay as the school principal using your mic or the objection buttons below to audition how Ananya responds before calling real schools.
+                </p>
+              </div>
             </div>
-            {onNavigateToSettings && (
+            <div className="flex items-center gap-2.5 shrink-0">
               <button
-                onClick={() => {
-                  onClose();
-                  onNavigateToSettings();
-                }}
-                className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 transition shrink-0 flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                onClick={() => setShowExplainer(true)}
+                className="text-[11px] font-semibold text-indigo-300 hover:text-white underline cursor-pointer"
               >
-                <Key className="w-3 h-3" />
-                Configure Plivo to Ring Phones
+                How does this work?
               </button>
-            )}
+              {onNavigateToSettings && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onNavigateToSettings();
+                  }}
+                  className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 transition shrink-0 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Key className="w-3.5 h-3.5" />
+                  Connect Plivo for Real Calls
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -494,7 +530,7 @@ export default function ActiveCallModal({
             </div>
 
             {/* Live Transcript Stream */}
-            <div className="flex-1 overflow-y-auto space-y-3 pr-2 max-h-[250px]">
+            <div className="flex-1 overflow-y-auto space-y-3 pr-2 min-h-[280px] max-h-[380px]">
               {transcript.map((item, index) => {
                 const isAI = item.role === 'ai';
                 return (
@@ -529,74 +565,99 @@ export default function ActiveCallModal({
               <div ref={transcriptEndRef} />
             </div>
 
-            {/* Turn Simulator & Quick Principal Responses */}
-            <div className="mt-4 pt-3 border-t border-slate-800/80">
-              <div className="text-[11px] font-semibold text-slate-400 mb-2 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-indigo-400" />
-                  Principal's response (Click options or talk into microphone):
-                </span>
-                {speechNotice && (
-                  <span className="text-[11px] text-amber-300 font-medium animate-pulse flex items-center gap-1">
-                    <Mic className="w-3 h-3 text-rose-400" /> {speechNotice}
+            {/* Bottom Controls: Live Telephony Cockpit vs Audition Sandbox */}
+            {isRealCarrierCall ? (
+              <div className="mt-4 pt-3 border-t border-slate-800/80 p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-emerald-400 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                    Live Plivo Carrier Audio Stream Connected
                   </span>
-                )}
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    Dialed: {callData?.phone_number}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300">
+                  The Principal is speaking directly on their mobile phone. Ananya's speech recognition and reasoning are handling the conversation autonomously. Qualification status and demo booking update in real time above.
+                </p>
               </div>
+            ) : (
+              <div className="mt-4 pt-3 border-t border-slate-800/80">
+                <div className="text-[11px] font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 font-bold text-slate-200">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    Audition Ananya: Test Principal Objections & Questions
+                  </span>
+                  {speechNotice && (
+                    <span className="text-[11px] text-amber-300 font-medium animate-pulse flex items-center gap-1">
+                      <Mic className="w-3 h-3 text-rose-400" /> {speechNotice}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-400 mb-2">
+                  Roleplay as the Principal: Click any objection below or talk into your mic to test how Ananya responds:
+                </p>
 
-              {/* Quick Option Pills */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mb-3">
-                {quickResponses.map((btn, idx) => (
+                {/* Quick Option Pills */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mb-3">
+                  {quickResponses.map((btn, idx) => (
+                    <button
+                      key={idx}
+                      disabled={isProcessing}
+                      onClick={() => handleSendUtterance(btn.telugu)}
+                      className="text-left px-2.5 py-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/50 hover:border-indigo-500/50 text-[11px] transition flex flex-col justify-center disabled:opacity-50 cursor-pointer group"
+                    >
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                          {btn.category}
+                        </span>
+                        <span className="text-[9px] text-slate-400 group-hover:text-indigo-300">{btn.label}</span>
+                      </div>
+                      <span className="font-medium text-slate-200 truncate">{btn.telugu}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Custom Input & Mic Button */}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSendUtterance(customInput);
+                  }}
+                  className="flex items-center gap-2"
+                >
                   <button
-                    key={idx}
-                    disabled={isProcessing}
-                    onClick={() => handleSendUtterance(btn.telugu)}
-                    className="text-left px-2.5 py-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/50 hover:border-indigo-500/50 text-[11px] transition flex flex-col justify-center disabled:opacity-50 cursor-pointer"
+                    type="button"
+                    onClick={toggleMicrophone}
+                    className={`px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                      isListening
+                        ? 'bg-rose-600 text-white animate-pulse shadow-lg shadow-rose-600/50'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                    }`}
+                    title={isListening ? "Stop microphone recording" : "Speak into microphone in Telugu/English"}
                   >
-                    <span className="font-medium text-slate-200 truncate">{btn.telugu}</span>
-                    <span className="text-[9px] text-indigo-400">{btn.label}</span>
+                    {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-indigo-400" />}
+                    <span className="hidden sm:inline">{isListening ? 'Listening...' : 'Mic'}</span>
                   </button>
-                ))}
+
+                  <input
+                    type="text"
+                    value={customInput}
+                    onChange={(e) => setCustomInput(e.target.value)}
+                    placeholder="Type test principal reply in Telugu or English (or click an option above)..."
+                    className="flex-1 bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                    disabled={isProcessing}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!customInput.trim() || isProcessing}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition cursor-pointer"
+                  >
+                    Send Turn
+                  </button>
+                </form>
               </div>
-
-              {/* Custom Input & Mic Button */}
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSendUtterance(customInput);
-                }}
-                className="flex items-center gap-2"
-              >
-                <button
-                  type="button"
-                  onClick={toggleMicrophone}
-                  className={`px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
-                    isListening
-                      ? 'bg-rose-600 text-white animate-pulse shadow-lg shadow-rose-600/50'
-                      : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
-                  }`}
-                  title={isListening ? "Stop microphone recording" : "Speak into microphone in Telugu/English"}
-                >
-                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-indigo-400" />}
-                  <span className="hidden sm:inline">{isListening ? 'Listening...' : 'Mic'}</span>
-                </button>
-
-                <input
-                  type="text"
-                  value={customInput}
-                  onChange={(e) => setCustomInput(e.target.value)}
-                  placeholder="Type principal response in Telugu or English (e.g. 'Avunu, demo arrange cheyandi')..."
-                  className="flex-1 bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-                  disabled={isProcessing}
-                />
-                <button
-                  type="submit"
-                  disabled={!customInput.trim() || isProcessing}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition cursor-pointer"
-                >
-                  Send
-                </button>
-              </form>
-            </div>
+            )}
           </div>
 
           {/* Real-time AI Lead Qualification & Insights (4 cols) */}
@@ -723,6 +784,115 @@ export default function ActiveCallModal({
         </div>
 
       </div>
+
+      {/* Explainer Modal: Why Am I Seeing This Screen? */}
+      {showExplainer && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-150">
+          <div className="bg-slate-900 border border-slate-700 text-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                  <HelpCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-tight">
+                    What is this Platform & Why are you seeing this screen?
+                  </h3>
+                  <p className="text-xs text-slate-400">Skila AI Autonomous School Partnership Telecalling Engine</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowExplainer(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs leading-relaxed text-slate-300">
+              {/* Mission */}
+              <div className="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-800/40 space-y-1.5">
+                <div className="font-bold text-indigo-200 text-sm flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-indigo-400" />
+                  1. What this Platform is For
+                </div>
+                <p>
+                  Instead of paying human cold-callers to manually dial 1,000+ schools, <strong>Ananya (Skila AI's Voice Assistant)</strong> calls school principals across Telangana to:
+                </p>
+                <ul className="list-disc pl-5 space-y-1 text-slate-300">
+                  <li>Speak naturally in polite <strong>conversational Telugu</strong> with English tech terms.</li>
+                  <li>Introduce Skila AI's Class 1–10 AI, Coding, and Robotics curriculum.</li>
+                  <li>Qualify the school (student count, existing LMS, ₹500–₹600/student budget guardrail).</li>
+                  <li><strong>The Key Goal: Book a 15-minute live product demo</strong> and hand off the hot lead to your human sales team!</li>
+                </ul>
+              </div>
+
+              {/* Two Execution Modes */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                {/* Mode A */}
+                <div className="p-3.5 rounded-xl bg-slate-800/90 border border-slate-700/80 space-y-1.5">
+                  <div className="font-bold text-emerald-400 flex items-center gap-1.5">
+                    <PhoneCall className="w-4 h-4" />
+                    Mode A: Real Outbound Calling
+                  </div>
+                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Production Mode
+                  </span>
+                  <p className="text-[11px] text-slate-300">
+                    When Plivo carrier credentials are configured, Ananya <strong>rings the school's real mobile phone</strong> (+91...). The principal picks up and speaks. <strong>You don't type or click anything</strong>—the dashboard simply displays live audio streaming, real-time Telugu transcription, and records booked demos directly into your CRM.
+                  </p>
+                </div>
+
+                {/* Mode B */}
+                <div className="p-3.5 rounded-xl bg-amber-950/30 border border-amber-800/40 space-y-1.5">
+                  <div className="font-bold text-amber-400 flex items-center gap-1.5">
+                    <Zap className="w-4 h-4" />
+                    Mode B: In-Browser Audition
+                  </div>
+                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    Current Sandbox Mode
+                  </span>
+                  <p className="text-[11px] text-slate-300">
+                    Because no telecom carrier is hooked up yet, the system opens this <strong>Test Drive Sandbox</strong> so you don't burn carrier credits. In this mode, <strong>YOU play the role of the Principal</strong> (using your mic or the objection buttons) to audition how Ananya responds before launching real campaigns!
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Banner */}
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span className="font-bold text-slate-200 block text-xs">Ready to make real carrier calls?</span>
+                  <span className="text-[11px] text-slate-400">
+                    Add your Plivo Auth ID, Token & Outbound Number in Settings.
+                  </span>
+                </div>
+                {onNavigateToSettings && (
+                  <button
+                    onClick={() => {
+                      setShowExplainer(false);
+                      onClose();
+                      onNavigateToSettings();
+                    }}
+                    className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shrink-0 transition"
+                  >
+                    <Key className="w-3.5 h-3.5" />
+                    Go to Calling Settings
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setShowExplainer(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg cursor-pointer transition"
+              >
+                Close & Return to Call
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
