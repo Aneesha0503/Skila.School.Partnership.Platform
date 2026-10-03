@@ -41,8 +41,10 @@ class CallSession:
         self.is_speaking = False
         self.interrupted = False
 
-        # Conversation State
+        # 8-Stage Conversion Funnel State:
+        # CALL -> INTRODUCE -> UNDERSTAND -> QUALIFY -> EXPLAIN -> GENERATE_INTEREST -> BOOK_DEMO -> SALES_HANDOFF
         self.state: Dict[str, Any] = {
+            "funnel_stage": "INTRODUCE",
             "language": "te-IN",
             "student_count": None,
             "current_lms": None,
@@ -61,6 +63,25 @@ class CallSession:
         # Timestamped transcript
         self.transcript_lines: List[Dict[str, Any]] = []
         self.conversation_history: List[Dict[str, str]] = []
+
+    def compute_funnel_stage(self) -> str:
+        """
+        Dynamically tracks progress through the 8-Step Conversion Funnel:
+        CALL -> INTRODUCE -> UNDERSTAND -> QUALIFY -> EXPLAIN -> GENERATE_INTEREST -> BOOK_DEMO -> SALES_HANDOFF
+        """
+        if self.state.get("demo_requested"):
+            return "SALES_HANDOFF" if not self.is_active else "BOOK_DEMO"
+        if self.state.get("pricing_discussed") or len(self.state.get("pain_points", [])) > 0:
+            return "GENERATE_INTEREST"
+        if self.state.get("student_count") or self.state.get("current_lms") is not None:
+            return "EXPLAIN"
+        if len(self.conversation_history) >= 4:
+            return "QUALIFY"
+        if len(self.conversation_history) >= 2:
+            return "UNDERSTAND"
+        if len(self.conversation_history) >= 1:
+            return "INTRODUCE"
+        return "CALL"
 
     def format_timestamp(self) -> str:
         elapsed = int(time.time() - self.started_at)
@@ -129,6 +150,7 @@ class CallSession:
 
         reply_text = brain_res.get("reply", "Arthamaindi sir, mee school requirements gurinchi cheppandi.")
         self.state = brain_res.get("updated_state", self.state)
+        self.state["funnel_stage"] = self.compute_funnel_stage()
 
         # 4. Check for immediate termination triggers
         is_closing = False
@@ -178,6 +200,12 @@ class CallSession:
         self.state["interest_level"] = analysis.get("interest_level", self.state.get("interest_level", "WARM"))
         if analysis.get("student_count"):
             self.state["student_count"] = analysis["student_count"]
+
+        # Final Funnel Stage: If Demo requested, it moves to Human Sales Handoff
+        if self.state.get("demo_requested") or analysis.get("demo_requested") or self.state.get("interest_level") == "HOT":
+            self.state["funnel_stage"] = "SALES_HANDOFF"
+        else:
+            self.state["funnel_stage"] = self.compute_funnel_stage()
 
         call_summary = {
             "call_id": self.call_id,

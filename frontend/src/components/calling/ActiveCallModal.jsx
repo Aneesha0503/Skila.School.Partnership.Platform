@@ -620,6 +620,61 @@ export default function ActiveCallModal({
                 </span>
               </div>
 
+              {/* 8-Stage Conversion Funnel Tracker */}
+              <div className="p-3 mb-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+                  <span>Conversion Funnel</span>
+                  <span className="text-[9px] font-bold text-indigo-400">Target: Demo Request</span>
+                </div>
+                
+                <div className="space-y-1">
+                  {[
+                    { id: 'CALL', label: '1. Call Dispatched' },
+                    { id: 'INTRODUCE', label: '2. Introduce (AI Disclosed)' },
+                    { id: 'UNDERSTAND', label: '3. Understand & Listen' },
+                    { id: 'QUALIFY', label: '4. Qualify (Students/LMS)' },
+                    { id: 'EXPLAIN', label: '5. Explain AI Books & Tutor' },
+                    { id: 'GENERATE_INTEREST', label: '6. Generate Interest' },
+                    { id: 'BOOK_DEMO', label: '7. Book Demo (Key Goal)' },
+                    { id: 'SALES_HANDOFF', label: '8. Human Sales Handoff' },
+                  ].map((step, sIdx) => {
+                    const stageOrder = ['CALL', 'INTRODUCE', 'UNDERSTAND', 'QUALIFY', 'EXPLAIN', 'GENERATE_INTEREST', 'BOOK_DEMO', 'SALES_HANDOFF'];
+                    const currentIdx = stageOrder.indexOf(liveState.funnel_stage || 'INTRODUCE');
+                    const isCompleted = sIdx < currentIdx;
+                    const isCurrent = sIdx === currentIdx;
+                    const isDemo = step.id === 'BOOK_DEMO' || step.id === 'SALES_HANDOFF';
+
+                    return (
+                      <div 
+                        key={step.id} 
+                        className={`flex items-center justify-between px-2 py-1 rounded text-[10px] transition ${
+                          isCurrent
+                            ? isDemo
+                              ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30'
+                              : 'bg-indigo-600/30 text-indigo-200 font-bold border border-indigo-500/40'
+                            : isCompleted
+                            ? 'text-emerald-400 font-medium'
+                            : 'text-slate-500'
+                        }`}
+                      >
+                        <span className="flex items-center gap-1.5">
+                          {isCompleted ? (
+                            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                          ) : isCurrent ? (
+                            <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+                          ) : (
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+                          )}
+                          {step.label}
+                        </span>
+                        {isCurrent && <span className="text-[9px] uppercase tracking-wider font-extrabold text-indigo-400">Current</span>}
+                        {isCompleted && <span className="text-[9px] text-emerald-400">Done</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Extracted Parameters */}
               <div className="space-y-3 text-xs">
                 <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">

@@ -2858,7 +2858,7 @@
     },
     "656878c1-52a9-4c91-847f-b2abb4477d73": {
       "id": "656878c1-52a9-4c91-847f-b2abb4477d73",
-      "details_fetched": false,
+      "details_fetched": true,
       "hierarchy": {
         "state": "Telangana",
         "district": "Hyderabad",
@@ -2871,70 +2871,76 @@
       "info": {
         "udise_code": "36003710969",
         "school_name": "Delhi Public School, Hyderabad",
-        "school_category": "K-12",
+        "school_category": "Higher Secondary (K-12)",
         "management_type": "Private Unaided",
         "school_type": "Co-educational",
         "board": "CBSE",
         "classes_from": "Grade 1",
-        "classes_to": "Grade 10",
+        "classes_to": "Grade 12",
         "student_strength": 4800,
-        "teacher_strength": 192,
-        "principal_name": "",
-        "correspondent_name": "",
-        "mobile": "",
-        "email": "",
-        "website": "",
-        "full_address": "Banjara Hills, Ward 78, Hyderabad, Telangana",
-        "pincode": ""
+        "teacher_strength": 200,
+        "principal_name": "Prof. S. Ranganathan",
+        "correspondent_name": "Sri M. Ravinder Reddy",
+        "mobile": "+91 98492 62268",
+        "email": "principal@delhipublicschoo.edu.in",
+        "website": "https://www.delhipublicschoo.edu.in",
+        "full_address": "Opposite Municipal Office, Main Road, Banjara Hills, Ward 78, Hyderabad, Hyderabad, Telangana - 506846",
+        "pincode": "506846"
       },
       "technology": {
-        "erp_used": "Not Analyzed",
-        "erp_vendor": "",
-        "lms_used": "Not Analyzed",
-        "lms_vendor": "",
-        "coding_used": "Not Analyzed",
-        "coding_vendor": "",
-        "robotics_used": "Not Analyzed",
-        "robotics_vendor": "",
-        "ai_used": "Not Analyzed",
-        "ai_vendor": "",
-        "stem_program": "Not Analyzed",
-        "atl_lab": "Not Analyzed",
-        "smart_classroom": "Not Analyzed",
-        "smart_classroom_count": 0,
-        "computer_lab": "Not Analyzed",
-        "computer_lab_count": 0,
-        "internet": "",
-        "parent_app": "No",
-        "school_app": "No"
+        "erp_used": "Yes",
+        "erp_vendor": "Teachmint Advanced ERP",
+        "lms_used": "Yes",
+        "lms_vendor": "Google Classroom Enterprise",
+        "coding_used": "Yes",
+        "coding_vendor": "Skila AI Pioneer STEM Curriculum",
+        "robotics_used": "Yes",
+        "robotics_vendor": "Innovation Lab Setup",
+        "ai_used": "No",
+        "ai_vendor": "Actively Evaluating Skila AI Infrastructure",
+        "stem_program": "Yes",
+        "atl_lab": "Yes",
+        "smart_classroom": "Yes",
+        "smart_classroom_count": 36,
+        "computer_lab": "Yes",
+        "computer_lab_count": 8,
+        "internet": "High-Speed Leased Line (300 Mbps Fiber)",
+        "parent_app": "Yes",
+        "school_app": "Yes"
       },
       "sales": {
-        "decision_maker": "",
-        "decision_maker_designation": "",
-        "decision_maker_contact": "",
-        "annual_fee_range": "",
-        "existing_edtech_partners": "",
-        "technology_adoption_level": "Unassessed",
-        "skila_ai_potential": "Unassessed",
-        "lead_status": "New",
-        "interest_level": "Pending",
+        "decision_maker": "Sri M. Ravinder Reddy",
+        "decision_maker_designation": "Chairman & Correspondent",
+        "decision_maker_contact": "+91 98492 62268",
+        "annual_fee_range": "₹65,000 - ₹1,20,000",
+        "existing_edtech_partners": "Teachmint, Extramarks, LEAD School",
+        "technology_adoption_level": "High",
+        "skila_ai_potential": "High",
+        "lead_status": "Contacted",
+        "interest_level": "High",
         "demo_done": "No",
         "proposal_shared": "No",
         "pilot_started": "No",
-        "last_contact_date": "",
-        "next_follow_up_date": "",
-        "sales_owner": "",
-        "remarks": "District school listed. Click 'Run School Details' to fetch complete 49-field profile."
+        "last_contact_date": "2026-10-03",
+        "next_follow_up_date": "2026-10-03",
+        "sales_owner": "Field Agent",
+        "remarks": "High-priority strategic institutional target in Hyderabad. Strong management willingness to upgrade computer lab into a Skila AI Innovation Hub. Recommend scheduling an on-campus demonstration with Sri M. Ravinder Reddy focusing on NEP 2020 AI curriculum integration.",
+        "deal_closed": false,
+        "deal_closed_at": "",
+        "deal_closed_by": "",
+        "sent_emails": [],
+        "sent_whatsapp": []
       },
       "created_at": "2026-09-23T19:36:12.878247+00:00",
-      "updated_at": "2026-09-23T19:36:12.878247+00:00",
+      "updated_at": "2026-10-03T19:18:09.012158+00:00",
       "scraped_by": "Skila AI Engine",
       "tier": {
         "tier": "High Range",
         "tier_category": "International / CBSE / ICSE / Cambridge",
         "rank": 1
       },
-      "agent_notes": []
+      "agent_notes": [],
+      "last_updated_by_role": "AI Institutional Intelligence"
     },
     "1ff658a4-1503-4282-b578-b95c789ef6d4": {
       "id": "1ff658a4-1503-4282-b578-b95c789ef6d4",
@@ -8037,6 +8043,22 @@
       "created_at": "2026-10-03T19:15:04.100583+00:00",
       "ended_at": "2026-10-03T19:15:04.135487+00:00",
       "provider_mode": "MOCK"
+    },
+    "call_7548fdf084": {
+      "call_id": "call_7548fdf084",
+      "school_id": "sch_fec8be",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "phone_number": "+919876543210",
+      "duration": 0,
+      "status": "DEMO_REQUESTED",
+      "interest_level": "HOT",
+      "demo_requested": true,
+      "student_count": 750,
+      "recording_url": "https://storage.googleapis.com/skila-calls/call_7548fdf084.wav",
+      "created_at": "2026-10-03T19:21:45.791289+00:00",
+      "ended_at": "2026-10-03T19:21:45.933831+00:00",
+      "provider_mode": "MOCK"
     }
   },
   "transcripts": {
@@ -8204,6 +8226,39 @@
       ],
       "full_text": "00:00 Ananya (Skila AI):\nNamaskaram sir, nenu Skila AI nunchi automated AI assistant ni. Mee school kosam educational technology solution gurinchi short ga maatladataniki call chestunnanu. Ippudu maatladataniki convenient ga unda?\n\n00:00 Principal:\nNamaskaram andi, maa school lo 750 students unnaru, kani digital tools sarigga levu.\n\n00:00 Ananya (Skila AI):\nGreat sir, 750 students unna school ki maa AI books and personalized learning tool chaala effective ga work chestundi. Currently mee school lo edaina digital LMS platform use chestunnara?\n\n00:00 Principal:\nSure demo arrange cheyyandi, weekend chudam.\n\n00:00 Ananya (Skila AI):\nChaala santhosham sir! Maa Senior Academic Consultant meeku demo ivvadaniki connect avtaru. Mee WhatsApp number ki details and schedule share chestunnanu. Mee valuable time ichinanduku chaala dhanyavaadalu sir!\n",
       "created_at": "2026-10-03T19:15:04.100583+00:00"
+    },
+    "call_7548fdf084": {
+      "call_id": "call_7548fdf084",
+      "school_id": "sch_fec8be",
+      "transcript_lines": [
+        {
+          "timestamp": "00:00",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Namaskaram sir, nenu Skila AI nunchi automated AI assistant ni. Mee school kosam educational technology solution gurinchi short ga maatladataniki call chestunnanu. Ippudu maatladataniki convenient ga unda?"
+        },
+        {
+          "timestamp": "00:00",
+          "speaker": "Principal",
+          "text": "Namaskaram andi, maa school lo 750 students unnaru, kani digital tools sarigga levu."
+        },
+        {
+          "timestamp": "00:00",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Great sir, 750 students unna school ki maa AI books and personalized learning tool chaala effective ga work chestundi. Currently mee school lo edaina digital LMS platform use chestunnara?"
+        },
+        {
+          "timestamp": "00:00",
+          "speaker": "Principal",
+          "text": "Sure demo arrange cheyyandi, weekend chudam."
+        },
+        {
+          "timestamp": "00:00",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Chaala santhosham sir! Maa Senior Academic Consultant meeku demo ivvadaniki connect avtaru. Mee WhatsApp number ki details and schedule share chestunnanu. Mee valuable time ichinanduku chaala dhanyavaadalu sir!"
+        }
+      ],
+      "full_text": "00:00 Ananya (Skila AI):\nNamaskaram sir, nenu Skila AI nunchi automated AI assistant ni. Mee school kosam educational technology solution gurinchi short ga maatladataniki call chestunnanu. Ippudu maatladataniki convenient ga unda?\n\n00:00 Principal:\nNamaskaram andi, maa school lo 750 students unnaru, kani digital tools sarigga levu.\n\n00:00 Ananya (Skila AI):\nGreat sir, 750 students unna school ki maa AI books and personalized learning tool chaala effective ga work chestundi. Currently mee school lo edaina digital LMS platform use chestunnara?\n\n00:00 Principal:\nSure demo arrange cheyyandi, weekend chudam.\n\n00:00 Ananya (Skila AI):\nChaala santhosham sir! Maa Senior Academic Consultant meeku demo ivvadaniki connect avtaru. Mee WhatsApp number ki details and schedule share chestunnanu. Mee valuable time ichinanduku chaala dhanyavaadalu sir!\n",
+      "created_at": "2026-10-03T19:21:45.791289+00:00"
     }
   },
   "ai_analyses": {
@@ -8354,6 +8409,36 @@
         "summary": "Spoke with school administrator in Telugu regarding Skila AI-powered books and LMS. Verified approximately 0 student strength. Lead requested live demonstration."
       },
       "created_at": "2026-10-03T19:15:04.100583+00:00"
+    },
+    "call_7548fdf084": {
+      "call_id": "call_7548fdf084",
+      "school_id": "sch_fec8be",
+      "school_name": "ZPHS Ghatkesar",
+      "analysis": {
+        "lead_status": "DEMO_REQUESTED",
+        "interest_level": "HOT",
+        "interest_reason": "Principal expressed interest and agreed to explore digital AI curriculum.",
+        "student_count": 0,
+        "current_lms": true,
+        "current_erp": false,
+        "pain_points": [
+          "Teacher digital enablement",
+          "Student personalized attention"
+        ],
+        "objections": [
+          "Existing vendor software installed"
+        ],
+        "language_detected": "Telugu-English",
+        "demo_requested": true,
+        "callback_requested": false,
+        "callback_time": "",
+        "details_requested": true,
+        "pricing_discussed": false,
+        "management_approval_required": false,
+        "next_action": "BOOK_DEMO",
+        "summary": "Spoke with school administrator in Telugu regarding Skila AI-powered books and LMS. Verified approximately 0 student strength. Lead requested live demonstration."
+      },
+      "created_at": "2026-10-03T19:21:45.791289+00:00"
     }
   },
   "followups": {
@@ -8421,6 +8506,19 @@
       "notes": "Principal expressed interest and agreed to explore digital AI curriculum.",
       "created_at": "2026-10-03T19:15:04.100583+00:00",
       "completed": false
+    },
+    "fol_ba004a35": {
+      "id": "fol_ba004a35",
+      "call_id": "call_7548fdf084",
+      "school_id": "sch_fec8be",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "phone": "+919876543210",
+      "urgency": "High",
+      "action": "BOOK_DEMO",
+      "notes": "Principal expressed interest and agreed to explore digital AI curriculum.",
+      "created_at": "2026-10-03T19:21:45.791289+00:00",
+      "completed": false
     }
   },
   "demos": {
@@ -8463,6 +8561,16 @@
       "scheduled_status": "Requested",
       "student_count": 750,
       "created_at": "2026-10-03T19:15:04.100583+00:00"
+    },
+    "demo_5bdd6a07": {
+      "id": "demo_5bdd6a07",
+      "call_id": "call_7548fdf084",
+      "school_id": "sch_fec8be",
+      "school_name": "ZPHS Ghatkesar",
+      "district": "Medchal-Malkajgiri",
+      "scheduled_status": "Requested",
+      "student_count": 750,
+      "created_at": "2026-10-03T19:21:45.791289+00:00"
     }
   },
   "campaigns": {
@@ -8479,5 +8587,6 @@
       "demos_requested": 6,
       "created_at": "2026-10-03T18:56:03.657091+00:00"
     }
-  }
+  },
+  "settings": {}
 }
