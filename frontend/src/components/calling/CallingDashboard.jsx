@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   PhoneCall, PhoneForwarded, Users, CheckCircle, Flame, Calendar, 
-  Clock, TrendingUp, Sparkles, AlertCircle, ArrowUpRight, Search, Play, Phone, Key, Radio, Volume2 
+  Clock, TrendingUp, Sparkles, AlertCircle, ArrowUpRight, Search, Play, Phone, Key, Radio, Volume2, School 
 } from 'lucide-react';
 import { fetchCallingDashboard, initiateAICall, fetchCallingSettings } from '../../utils/callingApi';
 
