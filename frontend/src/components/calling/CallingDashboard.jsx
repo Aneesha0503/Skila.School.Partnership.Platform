@@ -141,37 +141,36 @@ export default function CallingDashboard({
   return (
     <div className="space-y-6">
       
-      {/* Platform Banner */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-indigo-900/60 via-slate-900 to-indigo-950/80 border border-indigo-800/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      {/* Clean Dashboard Action Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-              Skila AI Outbound Calling Platform
-            </span>
-            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              Telugu-First Engine
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              AI Outbound Calling & Telemetry
+            </h1>
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+              Live Pipeline
             </span>
           </div>
-          <h1 className="text-xl md:text-2xl font-black text-white tracking-tight">
-            Autonomous Telugu School Outreach & Lead Qualification
-          </h1>
-          <p className="text-xs md:text-sm text-slate-300 mt-1 max-w-2xl">
-            Powered by Ananya (Skila AI Outreach Assistant). Calls Telangana schools, conducts natural Telugu conversation, qualifies student strength and interest, and automatically queues HOT leads for human sales demos.
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Autonomous Telugu outreach with Ananya AI assistant. Qualifies Telangana schools, verifies student strength, and queues HOT leads for human demos.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
             onClick={() => onNavigateTab('schools')}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg transition cursor-pointer"
+            className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-xs hover:shadow-indigo-500/20 transition cursor-pointer flex items-center gap-2"
           >
-            Open School Directory
+            <School className="w-4 h-4" />
+            <span>School Directory</span>
           </button>
           <button
             onClick={() => onNavigateTab('hot-leads')}
-            className="px-4 py-2 bg-rose-600/30 hover:bg-rose-600/40 text-rose-300 border border-rose-500/40 text-xs font-bold rounded-xl transition cursor-pointer"
+            className="px-3.5 py-2 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800 text-xs font-semibold rounded-xl transition cursor-pointer flex items-center gap-2"
           >
-            View HOT Leads
+            <Flame className="w-4 h-4 text-rose-500" />
+            <span>HOT Leads</span>
           </button>
         </div>
       </div>
@@ -183,16 +182,16 @@ export default function CallingDashboard({
           return (
             <div
               key={idx}
-              className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition shadow-sm"
+              className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-2xs"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-medium text-slate-400">{kpi.label}</span>
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{kpi.label}</span>
                 <div className={`p-1.5 rounded-lg ${kpi.bg}`}>
                   <Icon className={`w-4 h-4 ${kpi.color}`} />
                 </div>
               </div>
-              <div className="text-xl md:text-2xl font-black text-white tracking-tight">{kpi.val}</div>
-              <div className="text-[10px] text-slate-500 mt-0.5">{kpi.sub}</div>
+              <div className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">{kpi.val}</div>
+              <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{kpi.sub}</div>
             </div>
           );
         })}
@@ -202,27 +201,27 @@ export default function CallingDashboard({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Quick 1-Click Outbound Dialer (4 cols) */}
-        <div className="lg:col-span-4 p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md flex flex-col justify-between">
+        <div className="lg:col-span-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-800">
-              <Phone className="w-4 h-4 text-emerald-400" />
-              <h2 className="text-sm font-bold text-white">Instant AI Telugu Dialer</h2>
+            <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
+              <Phone className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Instant AI Telugu Dialer</h2>
             </div>
             
-            <p className="text-xs text-slate-400 mb-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
               Trigger Ananya to call any Telangana school immediately with complete conversational disclosure and curriculum qualification.
             </p>
 
             <form onSubmit={handleQuickDial} className="space-y-3">
               {schoolsList.length > 0 && (
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
                     Select School from Directory (Auto-Fill)
                   </label>
                   <select
                     value={selectedSchoolId}
                     onChange={(e) => handleSelectDirectorySchool(e.target.value)}
-                    className="w-full bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
                   >
                     <option value="">-- Choose school or enter details manually below --</option>
                     {schoolsList.map((s) => (
@@ -235,47 +234,47 @@ export default function CallingDashboard({
               )}
 
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 block mb-1">School Name</label>
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">School Name</label>
                 <input
                   type="text"
                   value={quickSchoolName}
                   onChange={(e) => setQuickSchoolName(e.target.value)}
                   placeholder="e.g. ZPHS High School"
-                  className="w-full bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 placeholder-slate-400"
                   required
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 block mb-1">Principal / In-Charge Name</label>
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">Principal / In-Charge Name</label>
                 <input
                   type="text"
                   value={quickPrincipal}
                   onChange={(e) => setQuickPrincipal(e.target.value)}
                   placeholder="e.g. Headmaster"
-                  className="w-full bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 placeholder-slate-400"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">Phone Number</label>
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">Phone Number</label>
                   <input
                     type="tel"
                     value={quickPhone}
                     onChange={(e) => setQuickPhone(e.target.value)}
                     placeholder="e.g. 9849012345"
-                    className="w-full bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 font-mono placeholder-slate-400"
                     required
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">District</label>
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">District</label>
                   {uniqueDistricts.length > 0 ? (
                     <select
                       value={quickDistrict}
                       onChange={(e) => setQuickDistrict(e.target.value)}
-                      className="w-full bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
                     >
                       <option value="">Select District</option>
                       {uniqueDistricts.map((d) => (
@@ -288,7 +287,7 @@ export default function CallingDashboard({
                       value={quickDistrict}
                       onChange={(e) => setQuickDistrict(e.target.value)}
                       placeholder="e.g. Hyderabad"
-                      className="w-full bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 placeholder-slate-400"
                     />
                   )}
                 </div>
@@ -297,33 +296,33 @@ export default function CallingDashboard({
               {/* Telephony Connection Mode Badge */}
               <div className={`p-2.5 rounded-xl border text-[11px] flex items-center justify-between gap-2 ${
                 telephonyConfig.has_plivo
-                  ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
-                  : 'bg-amber-950/30 border-amber-500/30 text-amber-300'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-300'
+                  : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-500/30 text-amber-800 dark:text-amber-300'
               }`}>
                 <div className="flex items-center gap-1.5">
-                  <span className={`w-2 h-2 rounded-full ${telephonyConfig.has_plivo ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`}></span>
-                  <span>{telephonyConfig.has_plivo ? 'Plivo Carrier Ready (Rings mobile phone)' : 'In-Browser Simulation (Speakers & Mic)'}</span>
+                  <span className={`w-2 h-2 rounded-full ${telephonyConfig.has_plivo ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}`}></span>
+                  <span className="font-medium">{telephonyConfig.has_plivo ? 'Plivo Carrier Ready (Rings mobile phone)' : 'In-Browser Simulation (Speakers & Mic)'}</span>
                 </div>
                 {!telephonyConfig.has_plivo && (
                   <button
                     type="button"
                     onClick={() => onNavigateTab('settings')}
-                    className="text-[10px] font-bold underline hover:text-white cursor-pointer shrink-0"
+                    className="text-[10px] font-bold text-amber-700 dark:text-amber-300 underline hover:text-amber-900 dark:hover:text-white cursor-pointer shrink-0"
                   >
                     Setup Plivo
                   </button>
                 )}
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400">
-                <div className="font-semibold text-slate-300 mb-0.5">Telugu Speech Persona:</div>
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400">
+                <div className="font-semibold text-slate-700 dark:text-slate-300 mb-0.5">Telugu Speech Persona:</div>
                 Ananya initiates with formal Telugu greetings, verifies availability, qualifies students, answers curriculum questions, and offers demo booking.
               </div>
 
               <button
                 type="submit"
                 disabled={callingInProgress}
-                className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-lg hover:shadow-emerald-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <PhoneCall className="w-4 h-4" />
                 {callingInProgress ? 'Connecting Ananya...' : (telephonyConfig.has_plivo ? 'Place Outbound Carrier Call' : 'Start In-Browser Telugu Call')}
@@ -333,22 +332,22 @@ export default function CallingDashboard({
         </div>
 
         {/* Recent Calls Feed (8 cols) */}
-        <div className="lg:col-span-8 p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md">
-          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+        <div className="lg:col-span-8 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
             <div>
-              <h2 className="text-sm font-bold text-white">Recent Calls & AI Transcripts</h2>
-              <p className="text-xs text-slate-400">Real-time outbound conversations with school principals</p>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Recent Calls & AI Transcripts</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Real-time outbound conversations with school principals</p>
             </div>
             <button
               onClick={() => onNavigateTab('calls')}
-              className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer"
+              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 cursor-pointer"
             >
               All Calls <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
           {recentCalls.length === 0 ? (
-            <div className="py-16 text-center text-slate-500 text-xs">
+            <div className="py-16 text-center text-slate-400 dark:text-slate-500 text-xs">
               No calls made yet. Use the dialer or School Directory to trigger your first AI call.
             </div>
           ) : (
@@ -360,42 +359,44 @@ export default function CallingDashboard({
                   <div
                     key={call.call_id ? `${call.call_id}-${idx}` : `call-${idx}`}
                     onClick={() => onViewCallDetails(call.call_id, call)}
-                    className="p-3.5 rounded-xl bg-slate-950/50 hover:bg-slate-800/60 border border-slate-800/80 hover:border-slate-700 transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 hover:bg-slate-100 dark:hover:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                        isHot ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-indigo-500/10 text-indigo-400'
+                        isHot 
+                          ? 'bg-rose-50 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30' 
+                          : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20'
                       }`}>
                         {isHot ? <Flame className="w-4 h-4" /> : <PhoneCall className="w-4 h-4" />}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-white hover:text-indigo-300 transition">
+                          <span className="text-xs font-bold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-300 transition">
                             {call.school_name || 'Telangana School'}
                           </span>
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
                             isHot 
-                              ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' 
+                              ? 'bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/30' 
                               : interest === 'WARM'
-                              ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                              : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                              ? 'bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30'
+                              : 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30'
                           }`}>
                             {interest}
                           </span>
                           {call.demo_requested && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30">
                               Demo
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-slate-400 mt-0.5">
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                           {call.district} • {call.phone_number} • Duration: {call.duration || 45}s
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 self-end sm:self-center">
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
                         {call.created_at ? new Date(call.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today'}
                       </span>
                       <button
@@ -403,7 +404,7 @@ export default function CallingDashboard({
                           e.stopPropagation();
                           onViewCallDetails(call.call_id, call);
                         }}
-                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium transition cursor-pointer"
+                        className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
                       >
                         Inspect AI Analysis
                       </button>

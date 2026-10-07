@@ -897,28 +897,29 @@ function SkilaApp() {
       />
 
       {/* Main Content Area */}
-      <main className="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6 flex-1">
-        
-        {/* Pan-India Vision & Interactive Vector Map Hero - Visible only to guests */}
-        {!isAuthenticated && (
-          <IndiaMapHero
-            onSelectState={handleSelectState}
-            selectedState={selectedHierarchy.state}
-            isAuthenticated={isAuthenticated}
-            onRequireAuth={handleOpenLogin}
-          />
-        )}
-
-        {/* Without sign in, except hero section, every functionality is invisible */}
-        {isAuthenticated ? (
-          platformMode === 'calling' ? (
-            <CallingHub 
-              onBackToCRM={() => {
-                setPlatformMode('crm');
-                localStorage.setItem('skila_platform_mode', 'crm');
-              }}
+      {/* Main Content Area: Calling Hub or Core School Directory */}
+      {isAuthenticated && platformMode === 'calling' ? (
+        <CallingHub 
+          onBackToCRM={() => {
+            setPlatformMode('crm');
+            localStorage.setItem('skila_platform_mode', 'crm');
+          }}
+        />
+      ) : (
+        <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 w-full flex-1">
+          
+          {/* Pan-India Vision & Interactive Vector Map Hero - Visible only to guests */}
+          {!isAuthenticated && (
+            <IndiaMapHero
+              onSelectState={handleSelectState}
+              selectedState={selectedHierarchy.state}
+              isAuthenticated={isAuthenticated}
+              onRequireAuth={handleOpenLogin}
             />
-          ) : (
+          )}
+
+          {/* Without sign in, except hero section, every functionality is invisible */}
+          {isAuthenticated ? (
             <>
               {/* Quick AI Calling Banner */}
               <div className="mb-4 p-3.5 rounded-xl bg-gradient-to-r from-indigo-900/40 via-purple-900/30 to-indigo-950/40 border border-indigo-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
@@ -1044,13 +1045,14 @@ function SkilaApp() {
               />
             )}
           </>
-        )) : (
+        ) : (
           <AuthGateSection 
             onOpenLogin={handleOpenLogin} 
             onOpenRegister={handleOpenRegister} 
           />
         )}
       </main>
+    )}
 
       {/* School Detail Modal */}
       {isAuthenticated && selectedSchool && (

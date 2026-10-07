@@ -53,46 +53,67 @@ export default function CallingHub({
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-[calc(100vh-64px)] flex flex-col font-sans transition-colors duration-200">
       
-      {/* Top Calling Navigation Bar */}
-      <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 sm:px-6 py-3">
-        <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Top Calling Sub-Header Bar */}
+      <div className="sticky top-0 z-20 bg-white dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-2xs transition-colors duration-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          <div className="flex items-center gap-3">
-            {onBackToCRM && (
-              <button
-                onClick={onBackToCRM}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition flex items-center gap-1 text-xs font-semibold cursor-pointer"
-                title="Return to School CRM"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span className="hidden md:inline">CRM</span>
-              </button>
-            )}
+          {/* Top Row: Brand, Back to CRM & Status */}
+          <div className="flex items-center justify-between py-2.5 border-b border-slate-100 dark:border-slate-800/80 gap-3">
+            <div className="flex items-center gap-3">
+              {onBackToCRM && (
+                <button
+                  onClick={onBackToCRM}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition text-xs font-semibold cursor-pointer shadow-2xs"
+                  title="Return to School CRM"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back to CRM</span>
+                </button>
+              )}
 
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-sm shadow-md">
-                SK
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-sm font-black tracking-tight text-white">
-                    Skila AI Calling Hub
-                  </h1>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                    Telugu Outreach
-                  </span>
+              <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
+
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-xs shadow-xs">
+                  SK
                 </div>
-                <p className="text-[11px] text-slate-400">
-                  Telangana Schools • Ananya AI Assistant • Sarvam Speech Engine
-                </p>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">
+                      Skila AI Calling Hub
+                    </h1>
+                    <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/80">
+                      Telugu First AI
+                    </span>
+                  </div>
+                </div>
               </div>
+            </div>
+
+            {/* Right Status Indicator & Quick Settings */}
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[11px] font-semibold">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Ananya AI Ready</span>
+              </div>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`p-1.5 rounded-lg transition cursor-pointer ${
+                  activeTab === 'settings'
+                    ? 'bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300'
+                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+                title="AI & Telecom Settings"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          {/* Tab Navigation Pills */}
-          <div className="flex items-center gap-1 overflow-x-auto py-1 scrollbar-none">
+          {/* Bottom Row: Full-width Horizontal Navigation Tabs (Never squished!) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-2">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -100,16 +121,20 @@ export default function CallingHub({
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
                     isActive
-                      ? 'bg-indigo-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                      ? 'bg-indigo-600 text-white shadow-xs font-bold'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/70'
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
                   <span>{item.label}</span>
                   {item.badge && (
-                    <span className="ml-1 px-1.5 py-0.2 rounded-full text-[9px] font-black bg-rose-500 text-white">
+                    <span className={`ml-1 px-1.5 py-0.2 rounded-full text-[9px] font-extrabold ${
+                      isActive 
+                        ? 'bg-white/20 text-white' 
+                        : 'bg-rose-500 text-white'
+                    }`}>
                       HOT
                     </span>
                   )}
@@ -119,10 +144,10 @@ export default function CallingHub({
           </div>
 
         </div>
-      </header>
+      </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
         {activeTab === 'dashboard' && (
           <CallingDashboard
             onStartCall={handleStartCall}

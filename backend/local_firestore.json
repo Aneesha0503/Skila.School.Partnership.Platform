@@ -7556,15 +7556,15 @@
           "roster_verified_students": 0
         },
         "deal_closed_by": "Admin",
-        "last_contact_date": "",
+        "last_contact_date": "2026-10-03",
         "interest_level": "Pending",
         "sales_owner": "",
         "deal_closed_at": "2026-09-29T12:39:33.025536+00:00",
         "pilot_started": "No",
-        "lead_status": "New"
+        "lead_status": "Contacted"
       },
       "created_at": "2026-09-23T19:36:12.878247+00:00",
-      "updated_at": "2026-09-23T19:36:12.878247+00:00",
+      "updated_at": "2026-10-03T19:48:07.066619+00:00",
       "scraped_by": "Skila AI Engine",
       "tier": {
         "tier_category": "International / CBSE / ICSE / Cambridge",
@@ -12279,7 +12279,9 @@
         "welcome_kit_dispatched": false,
         "teacher_training_date": "",
         "roster_verified_students": 0
-      }
+      },
+      "ai_calling_status": "INTERESTED",
+      "ai_interest_level": "WARM"
     },
     "656878c1-52a9-4c91-847f-b2abb4477d73": {
       "id": "656878c1-52a9-4c91-847f-b2abb4477d73",
@@ -19523,6 +19525,46 @@
       "created_at": "2026-10-03T19:44:08.499419+00:00",
       "ended_at": "2026-10-03T19:44:08.546528+00:00",
       "provider_mode": "MOCK"
+    },
+    "call_4e76ccd673": {
+      "call_id": "call_4e76ccd673",
+      "school_id": "849179ab-9a07-4251-bf28-5ca16ab8e79b",
+      "school_name": "The Hyderabad Public School",
+      "district": "Hyderabad",
+      "phone_number": "+91 9440 496 922",
+      "duration": 26,
+      "status": "INTERESTED",
+      "interest_level": "WARM",
+      "demo_requested": false,
+      "student_count": 5200,
+      "recording_url": "https://storage.googleapis.com/skila-calls/call_4e76ccd673.wav",
+      "created_at": "2026-10-03T19:48:07.066619+00:00",
+      "ended_at": "2026-10-03T19:48:33.285586+00:00",
+      "provider_mode": "MOCK"
+    },
+    "call_efe33a601f": {
+      "call_id": "call_efe33a601f",
+      "school_id": "849179ab-9a07-4251-bf28-5ca16ab8e79b",
+      "school_name": "The Hyderabad Public School",
+      "district": "Hyderabad",
+      "phone_number": "+91 9440 496 922",
+      "duration": 0,
+      "status": "CONNECTED",
+      "interest_level": "WARM",
+      "created_at": "2026-10-03T19:48:39.281647+00:00",
+      "provider_mode": "MOCK"
+    },
+    "call_3e81ded880": {
+      "call_id": "call_3e81ded880",
+      "school_id": "656878c1-52a9-4c91-847f-b2abb4477d73",
+      "school_name": "Delhi Public School, Hyderabad",
+      "district": "Hyderabad",
+      "phone_number": "+91 98492 62268",
+      "duration": 0,
+      "status": "CONNECTED",
+      "interest_level": "WARM",
+      "created_at": "2026-10-03T19:56:13.390228+00:00",
+      "provider_mode": "MOCK"
     }
   },
   "transcripts": {
@@ -19789,6 +19831,49 @@
       ],
       "full_text": "00:00 Ananya (Skila AI):\nNamaskaram sir, nenu Skila AI nunchi automated AI assistant ni. Mee school kosam educational technology solution gurinchi short ga maatladataniki call chestunnanu. Ippudu maatladataniki convenient ga unda?\n\n00:00 Principal:\nNamaskaram andi, maa school lo 750 students unnaru, kani digital tools sarigga levu.\n\n00:00 Ananya (Skila AI):\nGreat sir, 750 students unna school ki maa AI books and personalized learning tool chaala effective ga work chestundi. Currently mee school lo edaina digital LMS platform use chestunnara?\n\n00:00 Principal:\nSure demo arrange cheyyandi, weekend chudam.\n\n00:00 Ananya (Skila AI):\nChaala santhosham sir! Mee school management and teachers kosam 15-minute live demo schedule confirm chesamu. Maa Senior Academic Consultant meeku direct ga connect avtaru. Mee WhatsApp number ki complete invitation and schedule share chestunnanu. Dhanyavaadalu sir!\n",
       "created_at": "2026-10-03T19:44:08.499419+00:00"
+    },
+    "call_4e76ccd673": {
+      "call_id": "call_4e76ccd673",
+      "school_id": "849179ab-9a07-4251-bf28-5ca16ab8e79b",
+      "transcript_lines": [
+        {
+          "timestamp": "00:00",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Namaskaram sir, nenu Skila AI nunchi automated AI assistant ni. Mee school kosam educational technology solution gurinchi short ga maatladataniki call chestunnanu. Ippudu maatladataniki convenient ga unda?"
+        },
+        {
+          "timestamp": "00:08",
+          "speaker": "Principal",
+          "text": "మాకు ఇప్పటికే వేరే కంప్యూటర్ సిలబస్ ఉంది, ఇప్పుడు అవసరం లేదు."
+        },
+        {
+          "timestamp": "00:08",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Skila AI educational solutions and modern AI books gurinchi brief ga maatladataniki call chesanu sir. Mee school lo students strength entha undi sir?"
+        },
+        {
+          "timestamp": "00:17",
+          "speaker": "Principal",
+          "text": "ఇప్పుడు బిజీగా ఉన్నాను, రేపు సాయంత్రం 4 గంటలకి కాల్ చేయండి."
+        },
+        {
+          "timestamp": "00:17",
+          "speaker": "Ananya (Skila AI)",
+          "text": "Tappakunda sir, mee time respect chestanu. Meeru cheppina vidhamga repu evening maa team malli call chesi connect avtaru. Dhanyavaadalu sir!"
+        },
+        {
+          "timestamp": "00:22",
+          "speaker": "Principal",
+          "text": "మాకు ఎలాంటి AI సిలబస్ ఆసక్తి లేదు."
+        },
+        {
+          "timestamp": "00:22",
+          "speaker": "Ananya (Skila AI)",
+          "text": "No problem sir. Mee valuable time ichinanduku chaala dhanyavaadalu. Have a wonderful day!"
+        }
+      ],
+      "full_text": "00:00 Ananya (Skila AI):\nNamaskaram sir, nenu Skila AI nunchi automated AI assistant ni. Mee school kosam educational technology solution gurinchi short ga maatladataniki call chestunnanu. Ippudu maatladataniki convenient ga unda?\n\n00:08 Principal:\nమాకు ఇప్పటికే వేరే కంప్యూటర్ సిలబస్ ఉంది, ఇప్పుడు అవసరం లేదు.\n\n00:08 Ananya (Skila AI):\nSkila AI educational solutions and modern AI books gurinchi brief ga maatladataniki call chesanu sir. Mee school lo students strength entha undi sir?\n\n00:17 Principal:\nఇప్పుడు బిజీగా ఉన్నాను, రేపు సాయంత్రం 4 గంటలకి కాల్ చేయండి.\n\n00:17 Ananya (Skila AI):\nTappakunda sir, mee time respect chestanu. Meeru cheppina vidhamga repu evening maa team malli call chesi connect avtaru. Dhanyavaadalu sir!\n\n00:22 Principal:\nమాకు ఎలాంటి AI సిలబస్ ఆసక్తి లేదు.\n\n00:22 Ananya (Skila AI):\nNo problem sir. Mee valuable time ichinanduku chaala dhanyavaadalu. Have a wonderful day!\n",
+      "created_at": "2026-10-03T19:48:07.066619+00:00"
     }
   },
   "ai_analyses": {
@@ -20029,6 +20114,34 @@
         "summary": "Spoke with school administrator in Telugu regarding Skila AI-powered books and LMS. Verified approximately 0 student strength. Lead requested live demonstration."
       },
       "created_at": "2026-10-03T19:44:08.499419+00:00"
+    },
+    "call_4e76ccd673": {
+      "call_id": "call_4e76ccd673",
+      "school_id": "849179ab-9a07-4251-bf28-5ca16ab8e79b",
+      "school_name": "The Hyderabad Public School",
+      "analysis": {
+        "lead_status": "INTERESTED",
+        "interest_level": "WARM",
+        "interest_reason": "Receptive institutional interaction.",
+        "student_count": 0,
+        "current_lms": false,
+        "current_erp": false,
+        "pain_points": [
+          "Teacher digital enablement",
+          "Student personalized attention"
+        ],
+        "objections": [],
+        "language_detected": "Telugu-English",
+        "demo_requested": false,
+        "callback_requested": false,
+        "callback_time": "",
+        "details_requested": false,
+        "pricing_discussed": false,
+        "management_approval_required": false,
+        "next_action": "ASSIGN_SALESPERSON",
+        "summary": "Spoke with school administrator in Telugu regarding Skila AI-powered books and LMS. Verified approximately 0 student strength. Shared overview and scheduled follow-up."
+      },
+      "created_at": "2026-10-03T19:48:07.066619+00:00"
     }
   },
   "followups": {
