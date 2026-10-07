@@ -48,7 +48,7 @@ class PlivoTelephonyProvider(TelephonyProvider):
     def __init__(self, auth_id: Optional[str] = None, auth_token: Optional[str] = None, default_from: Optional[str] = None):
         self.auth_id = (auth_id or os.environ.get("PLIVO_AUTH_ID", "")).strip()
         self.auth_token = (auth_token or os.environ.get("PLIVO_AUTH_TOKEN", "")).strip()
-        self.default_from = (default_from or os.environ.get("PLIVO_PHONE_NUMBER", "+919876543210")).strip()
+        self.default_from = (default_from or os.environ.get("PLIVO_PHONE_NUMBER", "")).strip()
         self.is_configured = bool(self.auth_id and self.auth_token)
 
     def normalize_phone_number(self, phone: str) -> str:
@@ -316,6 +316,6 @@ class MockTelephonyProvider(TelephonyProvider):
             "status": payload.get("status") or "CONNECTED",
             "duration": payload.get("duration") or 60,
             "from": payload.get("from") or "+918000SKILA",
-            "to": payload.get("to") or "+919876543210",
+            "to": payload.get("to") or payload.get("phone_number", ""),
             "recording_url": ""
         }

@@ -14,7 +14,7 @@ from firebase_config import get_db
 from voice_ai import (
     TelephonyProvider, PlivoTelephonyProvider, MockTelephonyProvider,
     VoiceProvider, SarvamVoiceProvider, MockVoiceProvider,
-    LLMProvider, OpenAIProvider, GeminiProvider, MockLLMProvider,
+    LLMProvider, OpenAIProvider, GeminiProvider, MistralProvider, MockLLMProvider,
     CallSession, VoicePipelineManager
 )
 
@@ -28,12 +28,13 @@ pipeline_mgr = VoicePipelineManager()
 def get_providers(force_mock: bool = False):
     """
     Instantiates telephony, voice, and LLM providers.
-    Uses real Plivo, Sarvam, Gemini, or OpenAI if credentials are present.
+    Uses real Plivo, Sarvam, Gemini, OpenAI, or Mistral AI if credentials are present.
     """
     has_plivo = bool(os.environ.get("PLIVO_AUTH_ID") and os.environ.get("PLIVO_AUTH_TOKEN"))
     has_sarvam = bool(os.environ.get("SARVAM_API_KEY"))
     has_gemini = bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
     has_openai = bool(os.environ.get("OPENAI_API_KEY"))
+    has_mistral = bool(os.environ.get("MISTRAL_API_KEY"))
 
     if not force_mock and has_plivo:
         telephony = PlivoTelephonyProvider()
@@ -49,10 +50,12 @@ def get_providers(force_mock: bool = False):
         llm = GeminiProvider()
     elif not force_mock and has_openai:
         llm = OpenAIProvider()
+    elif not force_mock and has_mistral:
+        llm = MistralProvider()
     else:
         llm = MockLLMProvider()
 
-    is_real_mode = not force_mock and (has_plivo and has_sarvam and (has_gemini or has_openai))
+    is_real_mode = not force_mock and (has_plivo and has_sarvam and (has_gemini or has_openai or has_mistral))
     return telephony, voice, llm, is_real_mode
 
 
@@ -631,6 +634,7 @@ def get_calling_settings():
     has_sarvam = bool(os.environ.get("SARVAM_API_KEY"))
     has_gemini = bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
     has_openai = bool(os.environ.get("OPENAI_API_KEY"))
+    has_mistral = bool(os.environ.get("MISTRAL_API_KEY"))
 
     doc = db.collection("settings").document("ai_calling").get()
     saved = doc.to_dict() if doc.exists else {}
@@ -643,7 +647,14 @@ def get_calling_settings():
     openai_key = os.environ.get("OPENAI_API_KEY", "").strip()
     public_url = os.environ.get("PUBLIC_APP_URL", "").strip()
 
-    brain_status = "Active (Google Gemini 2.5 Flash)" if has_gemini else ("Active (OpenAI GPT-4o)" if has_openai else "Simulation / Heuristic LLM")
+    if has_gemini:
+        brain_status = "Active (Google Gemini 2.5 Flash)"
+    elif has_openai:
+        brain_status = "Active (OpenAI GPT-4o)"
+    elif has_mistral:
+        brain_status = "Active (Mistral AI Ministral-14B)"
+    else:
+        brain_status = "Simulation / Heuristic LLM"
 
     return {
         "status": "success",
@@ -660,11 +671,12 @@ def get_calling_settings():
             "telephony_status": "Connected (Plivo Carrier Telephony)" if has_plivo else "In-Browser Simulation (No Plivo Keys)",
             "voice_stt_tts_status": "Active (Sarvam AI Telugu)" if has_sarvam else "Simulation / Browser Speech Synthesis",
             "brain_llm_status": brain_status,
-            "active_mode": "REAL TELEPHONY" if (has_plivo and has_sarvam and (has_gemini or has_openai)) else "MOCK SIMULATION",
+            "active_mode": "REAL TELEPHONY" if (has_plivo and has_sarvam and (has_gemini or has_openai or has_mistral)) else "MOCK SIMULATION",
             "has_plivo": has_plivo,
             "has_sarvam": has_sarvam,
             "has_gemini": has_gemini,
             "has_openai": has_openai,
+            "has_mistral": has_mistral,
             "credentials": {
                 "plivo_auth_id_masked": mask_key(plivo_id),
                 "plivo_auth_token_set": bool(plivo_token),

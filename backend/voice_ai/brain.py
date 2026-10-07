@@ -329,6 +329,160 @@ FORMAT OUTPUT AS JSON:
             return await MockLLMProvider().analyze_call(transcript, metadata)
 
 
+class MistralProvider(LLMProvider):
+    """Production Mistral AI LLM Provider for dynamic Telugu dialogue."""
+
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None, base_url: Optional[str] = None):
+        self.api_key = api_key or os.environ.get("MISTRAL_API_KEY") or os.environ.get("\ufeffMISTRAL_API_KEY") or "NSE2fNMAHxsXAnAJyMlzKK5nYpNdvtu3"
+        self.model = model or os.environ.get("MISTRAL_MODEL", "ministral-14b-latest")
+        self.base_url = base_url or os.environ.get("MISTRAL_BASE_URL", "https://api.mistral.ai/v1")
+        self.is_configured = bool(self.api_key)
+
+    async def generate_response(
+        self,
+        conversation_history: List[Dict[str, str]],
+        current_state: Dict[str, Any],
+        user_utterance: str,
+        school_info: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        if not self.is_configured:
+            return await MockLLMProvider().generate_response(conversation_history, current_state, user_utterance, school_info)
+
+        school_context = ""
+        if school_info:
+            school_context = f"\nSchool Name: {school_info.get('school_name', '')}, District: {school_info.get('district', '')}, Contact: {school_info.get('principal_name', '')}"
+
+        system_instruction = f"""{SKILA_AI_SYSTEM_PROMPT}
+
+CURRENT CONTEXT & CALL STATE:
+{school_context}
+Current State: {json.dumps(current_state, ensure_ascii=False)}
+
+TASK:
+1. Respond to the principal naturally in conversational Telugu (with natural English code-switching).
+2. Keep response concise (1 to 2 sentences max) suitable for rapid voice synthesis.
+3. Update extracted information in JSON output.
+
+FORMAT OUTPUT AS JSON:
+{{
+  "reply": "Telugu response text here",
+  "extracted_student_count": null,
+  "current_lms_mentioned": null,
+  "current_erp_mentioned": null,
+  "pain_points": [],
+  "demo_requested": false,
+  "pricing_inquiry": false,
+  "callback_requested": false,
+  "not_interested": false,
+  "do_not_call": false
+}}"""
+
+        messages = [{"role": "system", "content": system_instruction}]
+        for turn in conversation_history[-8:]:
+            messages.append(turn)
+        messages.append({"role": "user", "content": user_utterance})
+
+        import urllib.request
+        import asyncio
+
+        def _call_sync():
+            url = f"{self.base_url}/chat/completions"
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": self.model,
+                "messages": messages,
+                "temperature": 0.3,
+                "response_format": {"type": "json_object"}
+            }
+            data = json.dumps(payload).encode("utf-8")
+            req = urllib.request.Request(url, data=data, headers=headers)
+            with urllib.request.urlopen(req, timeout=10) as response:
+                res_json = json.loads(response.read().decode("utf-8"))
+                content = res_json["choices"][0]["message"]["content"]
+                return json.loads(content)
+
+        try:
+            loop = asyncio.get_event_loop()
+            parsed = await loop.run_in_executor(None, _call_sync)
+
+            updated_state = dict(current_state)
+            if parsed.get("extracted_student_count") is not None:
+                updated_state["student_count"] = parsed["extracted_student_count"]
+            if parsed.get("current_lms_mentioned") is not None:
+                updated_state["current_lms"] = parsed["current_lms_mentioned"]
+            if parsed.get("current_erp_mentioned") is not None:
+                updated_state["current_erp"] = parsed["current_erp_mentioned"]
+            if parsed.get("pain_points"):
+                pts = updated_state.setdefault("pain_points", [])
+                for p in parsed["pain_points"]:
+                    if p not in pts:
+                        pts.append(p)
+            if parsed.get("demo_requested"):
+                updated_state["demo_requested"] = True
+            if parsed.get("pricing_inquiry"):
+                updated_state["pricing_discussed"] = True
+                updated_state["pricing_discussion_required"] = True
+            if parsed.get("callback_requested"):
+                updated_state["callback_requested"] = True
+            if parsed.get("not_interested"):
+                updated_state["lead_status"] = "NOT_INTERESTED"
+                updated_state["interest_level"] = "COLD"
+            if parsed.get("do_not_call"):
+                updated_state["lead_status"] = "DO_NOT_CALL"
+                updated_state["interest_level"] = "COLD"
+
+            return {
+                "reply": parsed.get("reply", "Namaskaram andi, mee school requirements gurinchi cheppandi."),
+                "updated_state": updated_state
+            }
+        except Exception as e:
+            print(f"[Mistral Chat Error] {e}")
+            return await MockLLMProvider().generate_response(conversation_history, current_state, user_utterance, school_info)
+
+    async def analyze_call(
+        self,
+        transcript: str,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        if not self.is_configured:
+            return await MockLLMProvider().analyze_call(transcript, metadata)
+
+        import urllib.request
+        import asyncio
+
+        prompt = POST_CALL_ANALYSIS_PROMPT.format(transcript=transcript)
+        messages = [{"role": "user", "content": prompt}]
+
+        def _call_sync():
+            url = f"{self.base_url}/chat/completions"
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": self.model,
+                "messages": messages,
+                "temperature": 0.2,
+                "response_format": {"type": "json_object"}
+            }
+            data = json.dumps(payload).encode("utf-8")
+            req = urllib.request.Request(url, data=data, headers=headers)
+            with urllib.request.urlopen(req, timeout=12) as response:
+                res_json = json.loads(response.read().decode("utf-8"))
+                content = res_json["choices"][0]["message"]["content"]
+                return json.loads(content)
+
+        try:
+            loop = asyncio.get_event_loop()
+            return await loop.run_in_executor(None, _call_sync)
+        except Exception as e:
+            print(f"[Mistral Post Call Analysis Error] {e}")
+            return await MockLLMProvider().analyze_call(transcript, metadata)
+
+
 class MockLLMProvider(LLMProvider):
     """
     State-Aware Dynamic Conversational Engine for local sandbox simulations.

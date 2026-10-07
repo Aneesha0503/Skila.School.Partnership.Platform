@@ -305,39 +305,6 @@ export default function ActiveCallModal({
     setIsSpeakingAI(false);
   };
 
-  const quickResponses = [
-    {
-      category: "Curriculum",
-      telugu: "ఔను, మీ Skila AI ప్రోగ్రామ్ గురించి చెప్పండి, సిలబస్ ఏముంటుంది?",
-      label: "Ask about curriculum (Interested)"
-    },
-    {
-      category: "Pricing",
-      telugu: "స్టూడెంట్ కి ఎంత ఫీజు అవుతుంది? డిస్కౌంట్ ఏమైనా ఉంటుందా?",
-      label: "Ask about pricing (₹500-600)"
-    },
-    {
-      category: "Demo",
-      telugu: "మా స్కూల్ లో 450 మంది స్టూడెంట్స్ ఉన్నారు. మాకు శనివారం లైవ్ డెమో ఇవ్వగలరా?",
-      label: "Request Live Demo (HOT Lead)"
-    },
-    {
-      category: "Objection",
-      telugu: "మాకు ఇప్పటికే వేరే కంప్యూటర్ సిలబస్ ఉంది, ఇప్పుడు అవసరం లేదు.",
-      label: "Already have syllabus"
-    },
-    {
-      category: "Callback",
-      telugu: "ఇప్పుడు బిజీగా ఉన్నాను, రేపు సాయంత్రం 4 గంటలకి కాల్ చేయండి.",
-      label: "Busy: Request Callback"
-    },
-    {
-      category: "Not Interested",
-      telugu: "మాకు ఎలాంటి AI సిలబస్ ఆసక్తి లేదు.",
-      label: "Cold: Not interested"
-    }
-  ];
-
   const isRealCarrierCall = Boolean(callData?.is_real_telephony || callData?.provider_mode === 'REAL');
 
   return (
@@ -371,7 +338,7 @@ export default function ActiveCallModal({
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                {callData?.district || 'Telangana'} • Destination: <span className="font-mono text-slate-300 font-semibold">{callData?.phone_number || '9876543210'}</span>
+                {callData?.district || 'Telangana'} • Destination: <span className="font-mono text-slate-300 font-semibold">{callData?.phone_number || 'Direct Phone'}</span>
               </p>
             </div>
           </div>
@@ -583,39 +550,16 @@ export default function ActiveCallModal({
               </div>
             ) : (
               <div className="mt-4 pt-3 border-t border-slate-800/80">
-                <div className="text-[11px] font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+                <div className="text-[11px] font-semibold text-slate-300 mb-2 flex items-center justify-between">
                   <span className="flex items-center gap-1.5 font-bold text-slate-200">
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    Audition Ananya: Test Principal Objections & Questions
+                    Interactive Voice & Speech Input
                   </span>
                   {speechNotice && (
                     <span className="text-[11px] text-amber-300 font-medium animate-pulse flex items-center gap-1">
                       <Mic className="w-3 h-3 text-rose-400" /> {speechNotice}
                     </span>
                   )}
-                </div>
-                <p className="text-[10px] text-slate-400 mb-2">
-                  Roleplay as the Principal: Click any objection below or talk into your mic to test how Ananya responds:
-                </p>
-
-                {/* Quick Option Pills */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mb-3">
-                  {quickResponses.map((btn, idx) => (
-                    <button
-                      key={idx}
-                      disabled={isProcessing}
-                      onClick={() => handleSendUtterance(btn.telugu)}
-                      className="text-left px-2.5 py-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/50 hover:border-indigo-500/50 text-[11px] transition flex flex-col justify-center disabled:opacity-50 cursor-pointer group"
-                    >
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                          {btn.category}
-                        </span>
-                        <span className="text-[9px] text-slate-400 group-hover:text-indigo-300">{btn.label}</span>
-                      </div>
-                      <span className="font-medium text-slate-200 truncate">{btn.telugu}</span>
-                    </button>
-                  ))}
                 </div>
 
                 {/* Custom Input & Mic Button */}

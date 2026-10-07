@@ -24,9 +24,9 @@ export async function initiateAICall({ school_id, school_name, phone_number, dis
     headers: getAuthHeaders(),
     body: JSON.stringify({
       school_id: school_id || null,
-      school_name: school_name || 'Telangana High School',
-      phone_number: phone_number || '9876543210',
-      district: district || 'Hyderabad',
+      school_name: school_name || 'School',
+      phone_number: phone_number || '',
+      district: district || '',
       principal_name: principal_name || 'Principal',
       force_mock
     })
