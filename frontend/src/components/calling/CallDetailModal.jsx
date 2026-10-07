@@ -63,11 +63,11 @@ export default function CallDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 text-white rounded-2xl shadow-2xl max-w-4xl w-full flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col w-screen h-screen overflow-hidden animate-in fade-in duration-150">
+      <div className="bg-slate-900 text-white w-full h-full flex flex-col overflow-hidden">
         
         {/* Header */}
-        <div className="px-6 py-4 bg-slate-800/80 border-b border-slate-700/80 flex items-center justify-between">
+        <div className="px-6 py-4 bg-slate-800/80 border-b border-slate-700/80 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
               <School className="w-5 h-5" />
@@ -102,11 +102,11 @@ export default function CallDetailModal({
 
         {/* Modal Body */}
         {loading ? (
-          <div className="py-20 text-center text-slate-400 text-sm">
+          <div className="py-20 text-center text-slate-400 text-sm flex-1 flex items-center justify-center">
             Loading call recording, transcript, and AI analysis...
           </div>
         ) : (
-          <div className="p-6 overflow-y-auto max-h-[75vh] space-y-6">
+          <div className="p-6 sm:p-8 overflow-y-auto flex-1 h-full min-h-0 space-y-6">
             
             {/* Audio Recording Player */}
             <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">

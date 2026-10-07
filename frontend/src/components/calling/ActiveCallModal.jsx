@@ -341,11 +341,11 @@ export default function ActiveCallModal({
   const isRealCarrierCall = Boolean(callData?.is_real_telephony || callData?.provider_mode === 'REAL');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 text-white rounded-2xl shadow-2xl max-w-4xl w-full flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col w-screen h-screen overflow-hidden select-text animate-in fade-in duration-150">
+      <div className="bg-slate-900 text-white w-full h-full flex flex-col overflow-hidden">
         
         {/* Call Header */}
-        <div className="px-6 py-4 bg-slate-800/80 border-b border-slate-700/80 flex items-center justify-between">
+        <div className="px-6 py-3.5 bg-slate-800/90 border-b border-slate-700/80 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
               isRealCarrierCall 
@@ -425,7 +425,7 @@ export default function ActiveCallModal({
 
         {/* Telephony Status Notice Banner */}
         {isRealCarrierCall ? (
-          <div className="px-6 py-2.5 bg-emerald-950/40 border-b border-emerald-900/50 flex items-center justify-between text-xs text-emerald-300">
+          <div className="px-6 py-2.5 bg-emerald-950/40 border-b border-emerald-900/50 flex items-center justify-between text-xs text-emerald-300 shrink-0">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
               <span><strong>Live Plivo Telephony Active:</strong> Ringing mobile phone <span className="font-mono text-white font-bold">{callData?.phone_number}</span>. Callee voice audio streaming in real time.</span>
@@ -433,7 +433,7 @@ export default function ActiveCallModal({
             <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">REAL CARRIER CALL</span>
           </div>
         ) : (
-          <div className="px-6 py-3 bg-amber-950/40 border-b border-amber-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-200">
+          <div className="px-6 py-2.5 bg-amber-950/40 border-b border-amber-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-200 shrink-0">
             <div className="flex items-start gap-2.5">
               <span className="px-2 py-0.5 mt-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold uppercase text-[10px] tracking-wide shrink-0">
                 🧪 Test Sandbox
@@ -469,13 +469,13 @@ export default function ActiveCallModal({
         )}
 
         {/* Call Live Body: Split into Visualizer/Transcript & Realtime Qualification */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[460px]">
+        <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 h-full min-h-0 overflow-hidden">
           
           {/* Main Conversation Stream (8 cols) */}
-          <div className="lg:col-span-8 p-5 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-800">
+          <div className="lg:col-span-8 xl:col-span-8 p-4 sm:p-6 flex flex-col h-full min-h-0 justify-between border-b lg:border-b-0 lg:border-r border-slate-800 overflow-hidden">
             
             {/* Ananya AI Voice Status Banner & Soundwave */}
-            <div className="p-3 mb-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+            <div className="p-3 mb-2 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center font-bold text-xs text-white shadow-md">
@@ -530,7 +530,7 @@ export default function ActiveCallModal({
             </div>
 
             {/* Live Transcript Stream */}
-            <div className="flex-1 overflow-y-auto space-y-3 pr-2 min-h-[280px] max-h-[380px]">
+            <div className="flex-1 overflow-y-auto space-y-3 pr-2 min-h-0 my-1">
               {transcript.map((item, index) => {
                 const isAI = item.role === 'ai';
                 return (
@@ -567,7 +567,7 @@ export default function ActiveCallModal({
 
             {/* Bottom Controls: Live Telephony Cockpit vs Audition Sandbox */}
             {isRealCarrierCall ? (
-              <div className="mt-4 pt-3 border-t border-slate-800/80 p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+              <div className="shrink-0 mt-3 pt-3 border-t border-slate-800/80 p-4 rounded-xl bg-slate-950/60 border border-slate-800">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-bold text-emerald-400 flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
@@ -582,7 +582,7 @@ export default function ActiveCallModal({
                 </p>
               </div>
             ) : (
-              <div className="mt-4 pt-3 border-t border-slate-800/80">
+              <div className="shrink-0 mt-3 pt-3 border-t border-slate-800/80">
                 <div className="text-[11px] font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
                   <span className="flex items-center gap-1.5 font-bold text-slate-200">
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
@@ -661,7 +661,7 @@ export default function ActiveCallModal({
           </div>
 
           {/* Real-time AI Lead Qualification & Insights (4 cols) */}
-          <div className="lg:col-span-4 p-5 bg-slate-950/40 flex flex-col justify-between">
+          <div className="lg:col-span-4 xl:col-span-4 p-4 sm:p-6 bg-slate-950/40 flex flex-col h-full min-h-0 overflow-y-auto justify-between space-y-4">
             <div>
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
                 <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">

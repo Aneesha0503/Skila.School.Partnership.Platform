@@ -57,7 +57,7 @@ export default function CallingHub({
       
       {/* Top Calling Navigation Bar */}
       <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 sm:px-6 py-3">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           
           <div className="flex items-center gap-3">
             {onBackToCRM && (
@@ -122,7 +122,7 @@ export default function CallingHub({
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
+      <main className="flex-1 w-full p-4 sm:p-6 lg:p-8">
         {activeTab === 'dashboard' && (
           <CallingDashboard
             onStartCall={handleStartCall}
